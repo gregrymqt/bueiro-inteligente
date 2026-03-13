@@ -1,0 +1,20 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Validação e Configurações (Essencial para seu ETL)
+pydantic
+pydantic-settings
+python-dotenv
+
+# Clientes de Dados
+supabase
+redis
+httpx        # Para fazer requisições assíncronas à API da Adafruit
+
+# Utilitários
+python-multipart
+
+# Segurança e JWT
+python-jose[cryptography]
+passlib[bcrypt]

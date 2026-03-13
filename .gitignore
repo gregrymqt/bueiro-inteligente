@@ -1,0 +1,62 @@
+# Arquivos de ambiente - NUNCA comite este arquivo no seu repositório!
+# Ele contém segredos, chaves de API e configurações locais.
+.env
+.env.*
+!.env.example
+
+# Arquivos gerados pelo Sistema Operacional e Editores de Código
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.user
+
+### Python ###
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Ambientes virtuais
+venv/
+env/
+.venv/
+# Pacotes e distribuição
+build/
+dist/
+*.egg-info/
+*.egg
+
+### Node.js / React ###
+node_modules/
+build/
+dist/
+.next/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+
+### C++ ###
+# Arquivos compilados e executáveis
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.lib
+*.a
+
+### Kotlin / JVM (Gradle/Maven) ###
+# Diretórios de build do Gradle e Maven
+target/
+out/
+# Arquivos gerados pelo Gradle
+.gradle/
+# Arquivos de log e pacotes
+*.log
+*.jar
+*.war
+*.ear
+# Logs de crash da JVM
+hs_err_pid*
