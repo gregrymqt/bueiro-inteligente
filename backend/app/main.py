@@ -50,9 +50,9 @@ async def lifespan(app: FastAPI):
 
 # 1. Instanciando o servidor FastAPI (agora com o lifespan injetado)
 app = FastAPI(
-    title="API - Bueiro Inteligente",
+    title=os.getenv("PROJECT_NAME"),
     description="Backend de monitoramento IoT, ETL e Cache",
-    version="1.0.0",
+    version=os.getenv("VERSION"),
     lifespan=lifespan # <--- Conectamos o ciclo de vida aqui
 )
 
@@ -73,6 +73,6 @@ app.include_router(monitoring_controller.router)
 async def root():
     return {
         "status": "online", 
-        "projeto": "Bueiro Inteligente",
+        "projeto": os.getenv("PROJECT_NAME"),
         "tecnologias": "FastAPI, Redis, Supabase"
     }
