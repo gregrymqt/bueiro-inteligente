@@ -37,7 +37,10 @@ def get_monitoring_service(
 # ---------------------------------------------------------
 # ROTA 1: POST
 # ---------------------------------------------------------
-@router.post("/webhook/{bueiro_id}", response_model=DrainStatusDTO, status_code=status.HTTP_200_OK)
+@router.post(
+        "/webhook/{bueiro_id}",
+        response_model=DrainStatusDTO,
+        status_code=status.HTTP_200_OK)
 async def adafruit_webhook(
     bueiro_id: str,
     payload: AdafruitWebhookDTO,
@@ -56,7 +59,10 @@ async def adafruit_webhook(
 # ---------------------------------------------------------
 # ROTA 2: GET
 # ---------------------------------------------------------
-@router.get("/{bueiro_id}/status", response_model=DrainStatusDTO, status_code=status.HTTP_200_OK)
+@router.get(
+        "/{bueiro_id}/status",
+        response_model=DrainStatusDTO,
+        status_code=status.HTTP_200_OK)
 async def obter_status_bueiro(
     bueiro_id: str,
     service: MonitoringService = Depends(get_monitoring_service)

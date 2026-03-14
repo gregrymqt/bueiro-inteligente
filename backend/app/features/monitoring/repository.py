@@ -65,3 +65,29 @@ class DrainRepository(IDrainRepository):
         except Exception as e:
             logger.error(f"Erro ao buscar histórico no banco de dados para bueiro {bueiro_id}: {e}")
             raise Exception("Falha ao consultar medição no banco de dados") from e
+        
+
+    async def get_unsynced_data(self, limit: int = 100) -> list[DrainStatusDTO]:
+        try:
+            resposta_db = await self._db.table("historico_medicoes") \
+                .select("*") \
+                .eq("sincronizado_rows", False) \
+                .order("criado_em", ascending=True) \
+                .limit(limit) \
+                .execute()
+            
+            return [DrainStatusDTO(**row) for row in resposta_db.data] if resposta_db.data else []
+        except Exception as e:
+            logger.error(f"Erro ao buscar dados não sincronizados: {e}")
+            return []
+
+    async def mark_as_synced(self, ids: list[str]) -> None:
+        if not ids: return
+        try:
+            # Atualiza todos os IDs passados para True
+            await self._db.table("historico_medicoes") \
+                .update({"sincronizado_rows": True}) \
+                .in_("id_bueiro", ids) \
+                .execute() # Nota: Supabase requer que id_bueiro seja chave primária ou única na tabela para isso funcionar perfeitamente com UUIDs
+        except Exception as e:
+            logger.error(f"Erro ao marcar dados como sincronizados: {e}")    

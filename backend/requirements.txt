@@ -15,6 +15,9 @@ httpx        # Para fazer requisições assíncronas à API da Adafruit
 # Utilitários
 python-multipart
 
+# Agendamento de Tarefas
+apscheduler
+
 # Segurança e JWT
 python-jose[cryptography]
 passlib[bcrypt]
