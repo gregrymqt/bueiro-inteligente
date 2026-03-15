@@ -1,0 +1,45 @@
+.embed-wrapper {
+  // Mobile-first
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border: 1px solid $color-border;
+  
+  // No mobile, iframes de tabelas podem precisar de um pouco menos de altura
+  // para não ocupar a tela inteira, forçando o scroll na própria página.
+  height: 400px !important; 
+
+  @include respond-to('md') {
+    // No desktop/tablet, respeita a altura passada via props no React
+    height: 100% !important; 
+  }
+
+  .embed-loader {
+    position: absolute;
+    inset: 0; // Top, right, bottom, left = 0
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(#ffffff, 0.9);
+    z-index: 10;
+    font-family: $font-stack;
+    color: $color-text-main;
+    font-size: 0.875rem;
+
+    @include respond-to('md') {
+      font-size: 1rem;
+    }
+    
+    // Animação simples de pulso para o texto de "Carregando"
+    span {
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

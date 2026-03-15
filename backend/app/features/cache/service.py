@@ -6,7 +6,7 @@ from .interfaces import ICacheService
 
 T = TypeVar('T', bound=BaseModel)
 
-class RedisCacheService:
+class RedisCacheService(ICacheService):
     def __init__(self, redis_client: redis.Redis) -> None:
         self._redis = redis_client
 

@@ -1,0 +1,42 @@
+// ==========================================
+// VARIÁVEIS GERAIS (Design Tokens)
+// ==========================================
+
+// Cores de Status (Alinhadas com o Pydantic / TypeScript)
+$color-success: #10b981; // Verde (Normal)
+$color-warning: #f59e0b; // Amarelo (Alerta)
+$color-danger:  #ef4444; // Vermelho (Crítico)
+
+// Cores de Interface
+$color-bg-light: #f9fafb;
+$color-text-main: #1f2937;
+$color-border: #e5e7eb;
+
+// Tipografia e Espaçamentos
+$font-stack: 'Inter', system-ui, sans-serif;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+
+// ==========================================
+// MIXINS: MOBILE-FIRST RESPONSIVIDADE
+// ==========================================
+// Os estilos fora das media queries aplicam-se a telemóveis.
+// Usamos este mixin para escalar para ecrãs maiores.
+
+$breakpoints: (
+  'sm': 576px,  // Tablets pequenos
+  'md': 768px,  // Tablets / Laptops pequenos
+  'lg': 992px,  // Desktops
+  'xl': 1200px  // Monitores grandes
+);
+
+@mixin respond-to($size) {
+  @if map-has-key($breakpoints, $size) {
+    @media (min-width: map-get($breakpoints, $size)) {
+      @content;
+    }
+  } @else {
+    @warn "O tamanho '#{$size}' não existe nos breakpoints.";
+  }
+}

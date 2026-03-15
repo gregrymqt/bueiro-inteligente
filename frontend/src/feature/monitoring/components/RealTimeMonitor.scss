@@ -1,0 +1,130 @@
+.monitor-card {
+  // Mobile-first
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  background-color: #ffffff;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  padding: $spacing-md;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid $color-border;
+    padding-bottom: $spacing-md;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__title {
+    font-family: $font-stack;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $color-text-main;
+    margin: 0;
+  }
+
+  &__id {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-family: monospace;
+  }
+
+  &__metrics {
+    display: grid;
+    grid-template-columns: 1fr; // Uma coluna no mobile
+    gap: $spacing-md;
+
+    @include respond-to('sm') {
+      grid-template-columns: 1fr 1fr; // Duas colunas em tablets+
+    }
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    background-color: $color-bg-light;
+    padding: $spacing-md;
+    border-radius: 6px;
+    border: 1px solid $color-border;
+
+    &__label {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    &__value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $color-text-main;
+    }
+  }
+
+  &__footer {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: auto;
+  }
+
+  // Modificadores de Estado (Loading e Erro)
+  &--loading, &--error {
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  &--error {
+    color: $color-danger;
+    border-color: rgba($color-danger, 0.3);
+    background-color: rgba($color-danger, 0.05);
+
+    .btn-retry {
+      margin-top: $spacing-md;
+      padding: 0.5rem 1rem;
+      background-color: $color-danger;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+  }
+}
+
+// Animação super simples pro spinner
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

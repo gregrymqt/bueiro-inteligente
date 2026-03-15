@@ -6,6 +6,9 @@ import os
 
 # Importando o roteador que criamos no controller
 from app.features.monitoring import controller as monitoring_controller
+from app.features.auth.repository import mock_auth_repo
+from app.features.auth import controller as auth_controller # Importa o controller de autenticação
+from app.middleware import JWTMiddleware # Importa o middleware
 
 # Importações do nosso novo Job e das interfaces/implementações
 from app.core.scheduler import setup_scheduler, scheduler
@@ -22,6 +25,9 @@ async def lifespan(app: FastAPI):
     # 1. SETUP INICIAL (Executa quando a API arranca)
     # =======================================================
     print("A iniciar ligações e serviços em background...")
+
+    # Inicializa o repositório de autenticação mock
+    await mock_auth_repo.initialize()
     
     # Instanciamos as nossas dependências (Inversão de Dependência)
     repo = DrainRepository(get_db(), get_cache())
@@ -65,8 +71,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Adiciona o middleware JWT
+app.add_middleware(JWTMiddleware)
+
 # 3. Conectando as rotas da nossa feature
 app.include_router(monitoring_controller.router)
+app.include_router(auth_controller.router) # Adiciona as rotas de autenticação
 
 # 4. Rota de Health Check (Teste rápido)
 @app.get("/", tags=["Sistema"])

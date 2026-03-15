@@ -1,0 +1,56 @@
+.badge {
+  // Mobile-first: Estilos padrão para telas pequenas
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px; // Formato de pílula
+  font-family: $font-stack;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: $color-bg-light;
+  border: 1px solid $color-border;
+  transition: all 0.2s ease;
+
+  // Responsividade: Aumentando a legibilidade em telas maiores (Tablets/Desktops)
+  @include respond-to('md') {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  // O "ponto" colorido dentro do badge
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    
+    @include respond-to('md') {
+      width: 8px;
+      height: 8px;
+    }
+  }
+
+  // Modificadores de Estado (Cores)
+  &--success {
+    color: darken($color-success, 10%);
+    background-color: rgba($color-success, 0.1);
+    border-color: rgba($color-success, 0.2);
+    .badge__dot { background-color: $color-success; }
+  }
+
+  &--warning {
+    color: darken($color-warning, 15%);
+    background-color: rgba($color-warning, 0.1);
+    border-color: rgba($color-warning, 0.2);
+    .badge__dot { background-color: $color-warning; }
+  }
+
+  &--danger {
+    color: darken($color-danger, 10%);
+    background-color: rgba($color-danger, 0.1);
+    border-color: rgba($color-danger, 0.2);
+    .badge__dot { background-color: $color-danger; }
+  }
+}

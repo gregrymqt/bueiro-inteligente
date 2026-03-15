@@ -1,0 +1,91 @@
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; // Previne o scroll na página inteira; o scroll fica dentro do main
+  background-color: $color-bg-light; // Puxando do default.scss
+}
+
+.dashboard-main {
+  flex: 1; // Ocupa todo o espaço restante ao lado da Sidebar
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // Previne overflow de flexbox com iframes largos
+}
+
+// ==========================================
+// MOBILE TOPBAR
+// ==========================================
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background-color: #ffffff;
+  border-bottom: 1px solid $color-border;
+  
+  @include respond-to('md') {
+    display: none; // Esconde no Desktop, a Sidebar já cumpre esse papel
+  }
+
+  &__menu-btn {
+    background: transparent;
+    border: none;
+    color: $color-text-main;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 4px;
+
+    &:active {
+      background-color: $color-border;
+    }
+  }
+
+  &__title {
+    font-family: $font-stack;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: $color-text-main;
+  }
+}
+
+// ==========================================
+// CONTEÚDO PRINCIPAL (Main)
+// ==========================================
+.dashboard-content {
+  flex: 1;
+  overflow-y: auto; // O scroll acontece APENAS aqui dentro
+  padding: $spacing-md;
+
+  @include respond-to('md') {
+    padding: $spacing-lg 2rem;
+  }
+
+  &__header {
+    margin-bottom: $spacing-lg;
+    display: none; // Escondido no mobile (a topbar já mostra o título)
+
+    @include respond-to('md') {
+      display: block; // Mostra no desktop
+    }
+  }
+
+  .desktop-title {
+    font-family: $font-stack;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $color-text-main;
+    margin: 0;
+  }
+
+  &__body {
+    // Aqui é onde o RealTimeMonitor ou o RowsEmbed são renderizados
+    width: 100%;
+    max-width: 1200px; // Limita a largura máxima para não esticar demais em monitores ultrawide
+    margin: 0 auto;
+  }
+}
