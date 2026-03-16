@@ -38,20 +38,21 @@ def get_monitoring_service(
 # ROTA 1: POST
 # ---------------------------------------------------------
 @router.post(
-        "/webhook/{bueiro_id}",
+        "/medicoes", # Nova rota mais semântica
         response_model=DrainStatusDTO,
         status_code=status.HTTP_200_OK)
-async def adafruit_webhook(
-    bueiro_id: str,
-    payload: AdafruitWebhookDTO,
-    token: str = Query(..., description="Token de segurança do Webhook"),
+async def receber_dados_sensor(
+    payload: SensorPayloadDTO, # Novo DTO
+    token: str = Query(..., description="Token de segurança do Hardware"),
     service: MonitoringService = Depends(get_monitoring_service)
 ):
-    if token != settings.ADAFRUIT_WEBHOOK_TOKEN:
-        raise HTTPException(status_code=401, detail="Token de webhook inválido")
+    # Dica: Atualize sua variável de ambiente de ADAFRUIT_WEBHOOK_TOKEN para HARDWARE_TOKEN
+    if token != settings.HARDWARE_TOKEN:
+        raise HTTPException(status_code=401, detail="Token de segurança inválido")
 
     try:
-        return await service.process_sensor_data(bueiro_id, payload)
+        # Passamos apenas o payload, o ID já está dentro dele
+        return await service.process_sensor_data(payload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
