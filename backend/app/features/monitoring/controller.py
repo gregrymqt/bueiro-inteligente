@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, logger, status
 
-from .dto import AdafruitWebhookDTO, DrainStatusDTO
+from .dto import AdafruitWebhookDTO, DrainStatusDTO, SensorPayloadDTO
 from .interfaces import IMonitoringService
 from .service import MonitoringService
 from .repository import DrainRepository
@@ -10,6 +10,7 @@ from app.core.cache import get_cache
 from app.features.cache.service import RedisCacheService
 from redis.asyncio import Redis
 from app.core.config import settings
+from app.core.websockets import websocket_manager
 
 # Cria o roteador
 router = APIRouter(
@@ -79,3 +80,21 @@ async def obter_status_bueiro(
     except Exception as e:
         # Erro genérico de servidor 
         raise HTTPException(status_code=500, detail=f"Erro ao buscar status: {str(e)}")
+    
+
+# ---------------------------------------------------------
+# ROTA WEBSOCKET: Conexão em Tempo Real
+# ---------------------------------------------------------
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    O React e o Kotlin vão se conectar nesta rota: ws://seuservidor/monitoring/ws
+    """
+    await websocket_manager.connect(websocket)
+    try:
+        while True:
+            # O servidor fica aguardando, mantendo o túnel aberto
+            data = await websocket.receive_text()
+            logger.info(f"Recebido do WS: {data}")
+    except WebSocketDisconnect:
+        websocket_manager.disconnect(websocket)

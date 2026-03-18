@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from app.features.monitoring.dto import SensorPayloadDTO, DrainStatusDTO
 from app.features.monitoring.interfaces import IDrainRepository
 from app.features.cache.service import RedisCacheService
+from app.core.websockets import websocket_manager
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,6 @@ class MonitoringService:
         """
         Recebe o DTO direto do hardware, calcula a obstrução e salva via Repository.
         """
-        # Agora acessamos payload.distancia_cm diretamente
         distancia_lida = max(0.0, min(payload.distancia_cm, self.MAX_BUCKET_DEPTH_CM))
         espaco_ocupado_cm: float = self.MAX_BUCKET_DEPTH_CM - distancia_lida
         nivel_obstrucao: float = (espaco_ocupado_cm / self.MAX_BUCKET_DEPTH_CM) * 100.0
@@ -33,7 +33,7 @@ class MonitoringService:
             status = "Alerta"
 
         resultado = DrainStatusDTO(
-            id_bueiro=payload.id_bueiro, # Pego do payload
+            id_bueiro=payload.id_bueiro, 
             distancia_cm=round(distancia_lida, 2),
             nivel_obstrucao=round(nivel_obstrucao, 2),
             status=status,
@@ -43,6 +43,16 @@ class MonitoringService:
         )
 
         await self._repository.save_sensor_data(resultado)
+
+        # MÁGICA DO WEBSOCKET AQUI:
+        # Se o bueiro estiver crítico ou em alerta, avisa todos os apps conectados
+        if status in ["Crítico", "Alerta"]:
+            evento = {
+                "evento_tipo": "BUEIRO_STATUS_MUDOU",
+                "dados": resultado.model_dump(mode="json") # Força a conversão de datetime para string
+            }
+            await websocket_manager.broadcast(evento)
+
         return resultado
 
     async def get_drain_status(self, bueiro_id: str) -> DrainStatusDTO:

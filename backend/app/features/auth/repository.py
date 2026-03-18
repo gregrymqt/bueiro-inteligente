@@ -11,14 +11,12 @@ class MockAuthRepository(IAuthRepository):
         self._users_db = {}
 
     async def initialize(self):
-        """
-        Inicializa o "banco de dados" com um usuário de exemplo.
-        """
         hashed_password = await get_password_hash("string")
         user_data = {
             "username": "user@example.com",
             "full_name": "User Example",
             "hashed_password": hashed_password,
+            "roles": ["admin", "manutencao"] # Definindo as roles aqui!
         }
         user_in_db = UserInDB(**user_data)
         self._users_db[user_in_db.username] = user_in_db

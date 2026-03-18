@@ -60,15 +60,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
 
-async def get_current_user_data(payload: dict = Depends(get_current_user)) -> User:
-    """
-    Dependência que valida o token E busca os dados do usuário no repositório.
-    Retorna um DTO do usuário, garantindo que ele existe no sistema.
-    """
+async def get_current_user_data(payload: dict = Depends(get_current_user)):
+    """Extrai as informações do token já validado."""
     username = payload.get("sub")
-    user_in_db = await mock_auth_repo.get_user_by_username(username)
-
-    if user_in_db is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return User(username=user_in_db.username, full_name=user_in_db.full_name)
+    roles = payload.get("roles", []) # Lembre-se de adicionar isso ao gerar o token!
+    
+    # Retorna um dicionário ou o seu DTO de User
+    return {"username": username, "roles": roles}

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 # =======================================================
 # DTOs para Login e Tokens
@@ -28,11 +28,9 @@ class TokenPayload(BaseModel):
 # =======================================================
 
 class UserBase(BaseModel):
-    """
-    DTO base com os campos comuns de um usuário.
-    """
     username: EmailStr
     full_name: str | None = None
+    roles: list[str] = Field(default_factory=list)
 
 class User(UserBase):
     """

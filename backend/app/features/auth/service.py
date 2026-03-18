@@ -28,10 +28,8 @@ class AuthService(IAuthService):
         return User(username=user_in_db.username, full_name=user_in_db.full_name)
 
     def create_access_token(self, user: User) -> str:
-        """
-        Cria um token de acesso JWT para o usuário fornecido.
-        """
-        return create_token(data={"sub": user.username})
+        # Passamos as roles do usuário para o payload do token
+        return create_token(data={"sub": user.username, "roles": user.roles})
 
     async def logout(self, token_jti: str) -> None:
         """

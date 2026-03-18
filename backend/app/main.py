@@ -71,8 +71,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Adiciona o middleware JWT
-app.add_middleware(JWTMiddleware)
 
 # 3. Conectando as rotas da nossa feature
 app.include_router(monitoring_controller.router)
