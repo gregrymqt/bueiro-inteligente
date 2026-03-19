@@ -25,7 +25,7 @@ class AuthService(IAuthService):
         if not await verify_password(password, user_in_db.hashed_password):
             return None
             
-        return User(username=user_in_db.username, full_name=user_in_db.full_name)
+        return User(username=user_in_db.username, full_name=user_in_db.full_name, roles=user_in_db.roles)
 
     def create_access_token(self, user: User) -> str:
         # Passamos as roles do usuário para o payload do token

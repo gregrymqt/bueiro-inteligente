@@ -7,8 +7,13 @@ Este é o backend do projeto **Bueiro Inteligente**, responsável por fornecer a
 - **[FastAPI](https://fastapi.tiangolo.com/)**: Framework web moderno e rápido para construção de APIs com Python 3.7+ baseado em standard Python type hints.
 - **[Uvicorn](https://www.uvicorn.org/)**: Servidor ASGI leve e rápido.
 - **[Supabase](https://supabase.com/)**: Alternativa Open Source ao Firebase, utilizado como banco de dados principal.
-- **[Redis](https://redis.io/)**: Banco de dados em memória, utilizado para cache e otimização de performance.
-- **Integração IoT**: Comunicação com a API da **Adafruit** via `httpx` para coleta de dados dos sensores.
+- **[Redis](https://redis.io/)**: Banco de dados em memória, utilizado para cache, otimização de performance e Blacklist de JWT.
+- **Autenticação e Segurança (JWT & RBAC)**: Autenticação baseada em tokens (via `python-jose`), controle de acesso por papéis e criptografia de senhas com `passlib`.
+- **Background Jobs (APScheduler)**: Execução de rotinas assíncronas em background (como sincronização de planilhas ETL).
+- **WebSockets**: Comunicação em tempo real para os painéis de monitoramento (React/Kotlin).
+- **Integrações Externas (`httpx`)**: 
+  - Comunicação com hardware IoT.
+  - Sincronização e ETL com a plataforma de planilhas de dados **Rows.com**.
 
 ## Estrutura de Diretórios
 
@@ -17,11 +22,13 @@ O projeto segue uma arquitetura baseada em features/módulos para facilitar a ma
 ```
 backend/
 ├── app/
-│   ├── main.py                 # Ponto de entrada da aplicação FastAPI
-│   ├── core/                   # Configurações globais, banco de dados, segurança e cache
+│   ├── main.py                 # Ponto de entrada da aplicação FastAPI e ciclo de vida
+│   ├── core/                   # Configs, DB, cache, segurança (JWT/RBAC), websockets e scheduler
 │   └── features/               # Módulos específicos da aplicação (domínios)
+│       ├── auth/               # Autenticação de usuários, login e logout (blacklist com Redis)
 │       ├── cache/              # Serviços e interfaces para manipulação do Redis
-│       └── monitoring/         # Lógica de negócio, controllers e integração para monitoramento
+│       ├── monitoring/         # Lógica IoT de bueiros, regras de negócio e rotas de WebSocket
+│       └── rows/               # Classes e rotinas de ETL para sincronização de dados via Rows API
 ├── Dockerfile                  # Instruções para conteinerização da aplicação
 └── requirements.txt            # Dependências em Python do projeto
 ```

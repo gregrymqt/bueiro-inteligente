@@ -8,7 +8,6 @@ import os
 from app.features.monitoring import controller as monitoring_controller
 from app.features.auth.repository import mock_auth_repo
 from app.features.auth import controller as auth_controller # Importa o controller de autenticação
-from app.middleware import JWTMiddleware # Importa o middleware
 
 # Importações do nosso novo Job e das interfaces/implementações
 from app.core.scheduler import setup_scheduler, scheduler

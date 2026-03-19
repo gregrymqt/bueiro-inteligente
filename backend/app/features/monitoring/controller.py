@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, logger, status
 
+from backend.app.core.roles import RoleChecker
+
 from .dto import AdafruitWebhookDTO, DrainStatusDTO, SensorPayloadDTO
 from .interfaces import IMonitoringService
 from .service import MonitoringService
@@ -36,50 +38,36 @@ def get_monitoring_service(
 
 
 # ---------------------------------------------------------
-# ROTA 1: POST
+# ROTA DO HARDWARE (C++): Usa o Token do ESP32
+# Não tem JWT aqui!
 # ---------------------------------------------------------
-@router.post(
-        "/medicoes", # Nova rota mais semântica
-        response_model=DrainStatusDTO,
-        status_code=status.HTTP_200_OK)
+@router.post("/medicoes", status_code=status.HTTP_200_OK)
 async def receber_dados_sensor(
-    payload: SensorPayloadDTO, # Novo DTO
+    payload: SensorPayloadDTO,
     token: str = Query(..., description="Token de segurança do Hardware"),
     service: MonitoringService = Depends(get_monitoring_service)
 ):
-    # Dica: Atualize sua variável de ambiente de ADAFRUIT_WEBHOOK_TOKEN para HARDWARE_TOKEN
     if token != settings.HARDWARE_TOKEN:
-        raise HTTPException(status_code=401, detail="Token de segurança inválido")
-
-    try:
-        # Passamos apenas o payload, o ID já está dentro dele
-        return await service.process_sensor_data(payload)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+        raise HTTPException(status_code=401, detail="Token de hardware inválido")
+    
+    return await service.process_sensor_data(payload)
 
 
 # ---------------------------------------------------------
 # ROTA 2: GET
 # ---------------------------------------------------------
-@router.get(
-        "/{bueiro_id}/status",
-        response_model=DrainStatusDTO,
-        status_code=status.HTTP_200_OK)
+@router.get("/{bueiro_id}/status")
 async def obter_status_bueiro(
     bueiro_id: str,
-    service: MonitoringService = Depends(get_monitoring_service)
+    service: MonitoringService = Depends(get_monitoring_service),
+    # A MÁGICA AQUI: Só passa se for admin, manutencao ou cidadao logado
+    user_logado: dict = Depends(RoleChecker(allowed_roles=["admin", "manutencao", "cidadao"]))
 ):
     """
-    Retorna o status atual do bueiro, solicitando toda a lógica do Service
+    Retorna o status atual do bueiro. 
+    A documentação do Swagger vai exigir o cadeado (Bearer Token) automaticamente!
     """
-    try:
-        return await service.get_drain_status(bueiro_id)
-    except ValueError as val_ex:
-        # Se veio um ValueError do Service, significa que o repositório devolveu None
-        raise HTTPException(status_code=404, detail=str(val_ex))
-    except Exception as e:
-        # Erro genérico de servidor 
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar status: {str(e)}")
+    return await service.get_drain_status(bueiro_id)
     
 
 # ---------------------------------------------------------

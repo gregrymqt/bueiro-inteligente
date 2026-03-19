@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from .dto import Token, User, LoginRequest
+from .dto import Token, User, LoginRequest, UserTokenData
 from .service import AuthService
 from .repository import mock_auth_repo
 from backend.app.core.security import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
+
 
 # =======================================================
 # Injeção de Dependência (Simples)
@@ -34,27 +35,24 @@ async def login_for_access_token(credentials: LoginRequest):
 
 
 @router.post("/logout", summary="Revogar Token (Logout)")
-async def logout(current_user: dict = Depends(get_current_user)):
+async def logout(current_user: UserTokenData = Depends(get_current_user)):
     """
     Adiciona o token atual à blacklist para invalidá-lo.
     """
-    jti = current_user.get("jti")
-    if jti:
-        await auth_service.logout(jti)
+    await auth_service.logout(current_user.jti)
     return {"message": "Logout successful"}
 
 
 @router.get("/users/me", response_model=User, summary="Obter informações do usuário atual")
-async def read_users_me(current_user: dict = Depends(get_current_user)):
+async def read_users_me(current_user: UserTokenData = Depends(get_current_user)):
     """
     Rota protegida que retorna as informações do usuário logado.
     """
     # O `get_current_user` já valida o token. Aqui, apenas retornamos os dados.
     # Em um caso real, você poderia buscar dados mais detalhados do usuário no banco.
-    username = current_user.get("username")
-    user_in_db = await mock_auth_repo.get_user_by_username(username)
+    user_in_db = await mock_auth_repo.get_user_by_username(current_user.username)
     if user_in_db:
-        return User(username=user_in_db.username, full_name=user_in_db.full_name)
+        return User(username=user_in_db.username, full_name=user_in_db.full_name, roles=user_in_db.roles)
     
     # Isso não deve acontecer se o token for válido, mas é uma boa prática de segurança
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

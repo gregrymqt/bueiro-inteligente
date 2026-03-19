@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from backend.app.features.auth.dto import User
+from backend.app.features.auth.dto import User, UserTokenData
 from .config import settings
 from .blacklist import is_blacklisted
 
@@ -30,10 +30,9 @@ async def verify_password(plain_password: str, hashed_password: str) -> bool:
 async def get_password_hash(password: str) -> str:
     return await asyncio.to_thread(pwd_context.hash, password)
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserTokenData:
     """
-    Valida o token, verifica a blacklist e retorna o payload decodificado.
-    Usado principalmente para o endpoint de logout.
+    Valida o token, verifica a blacklist e retorna os dados do usuário contidos no token.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,6 +43,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         jti: str = payload.get("jti")
+        roles: list[str] = payload.get("roles", [])
 
         if username is None or jti is None:
             raise credentials_exception
@@ -55,15 +55,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        return payload # Retorna o payload para o logout usar o JTI
+        return UserTokenData(username=username, roles=roles, jti=jti)
             
     except JWTError:
         raise credentials_exception
-
-async def get_current_user_data(payload: dict = Depends(get_current_user)):
-    """Extrai as informações do token já validado."""
-    username = payload.get("sub")
-    roles = payload.get("roles", []) # Lembre-se de adicionar isso ao gerar o token!
-    
-    # Retorna um dicionário ou o seu DTO de User
-    return {"username": username, "roles": roles}

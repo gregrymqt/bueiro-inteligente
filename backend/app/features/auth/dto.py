@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 # =======================================================
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class Token(BaseModel):
@@ -44,3 +44,8 @@ class UserInDB(UserBase):
     incluindo o hash da senha.
     """
     hashed_password: str
+
+class UserTokenData(BaseModel):
+    username: str
+    roles: list[str] = []
+    jti: str
