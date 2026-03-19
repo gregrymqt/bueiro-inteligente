@@ -8,6 +8,9 @@ import os
 from app.features.monitoring import controller as monitoring_controller
 from app.features.auth.repository import mock_auth_repo
 from app.features.auth import controller as auth_controller # Importa o controller de autenticação
+from app.features.monitoring.controller import router as monitoring_router
+from app.features.realtime.controller import router as realtime_router
+
 
 # Importações do nosso novo Job e das interfaces/implementações
 from app.core.scheduler import setup_scheduler, scheduler
@@ -74,6 +77,7 @@ app.add_middleware(
 # 3. Conectando as rotas da nossa feature
 app.include_router(monitoring_controller.router)
 app.include_router(auth_controller.router) # Adiciona as rotas de autenticação
+app.include_router(realtime_router)
 
 # 4. Rota de Health Check (Teste rápido)
 @app.get("/", tags=["Sistema"])
