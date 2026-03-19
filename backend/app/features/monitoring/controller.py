@@ -70,19 +70,3 @@ async def obter_status_bueiro(
     return await service.get_drain_status(bueiro_id)
     
 
-# ---------------------------------------------------------
-# ROTA WEBSOCKET: Conexão em Tempo Real
-# ---------------------------------------------------------
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    O React e o Kotlin vão se conectar nesta rota: ws://seuservidor/monitoring/ws
-    """
-    await websocket_manager.connect(websocket)
-    try:
-        while True:
-            # O servidor fica aguardando, mantendo o túnel aberto
-            data = await websocket.receive_text()
-            logger.info(f"Recebido do WS: {data}")
-    except WebSocketDisconnect:
-        websocket_manager.disconnect(websocket)
