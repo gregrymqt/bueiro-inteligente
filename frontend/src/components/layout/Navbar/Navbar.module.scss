@@ -1,0 +1,145 @@
+@use '../../../styles/default.scss' as *;
+
+.header {
+  background-color: $color-bg-light;
+  border-bottom: 1px solid $color-border;
+  padding: $spacing-md $spacing-lg;
+  position: relative;
+  z-index: 50;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: $color-text-main;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.hamburger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: $color-text-main;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm;
+  
+  /* Mobile-first: sempre exibe no mobile, esconde no desktop */
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+.navMenu {
+  /* Mobile-first: escondido por padrão, empilhado em absoluto */
+  display: none;
+  flex-direction: column;
+  gap: $spacing-md;
+  
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: $color-bg-light;
+  border-bottom: 1px solid $color-border;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+  &.isOpen {
+    display: flex;
+  }
+
+  /* Desktop ajusta para flex-row na mesma linha do header */
+  @include respond-to('md') {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: auto;
+    flex: 1;
+    margin-left: map-get($breakpoints, 'md') * 0.05; /* espaçamento relativo orgânico para empurrar os links */
+    padding: 0;
+    border-bottom: none;
+    box-shadow: none;
+    gap: $spacing-lg;
+  }
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  @include respond-to('md') {
+    flex-direction: row;
+    gap: $spacing-lg;
+  }
+}
+
+.navLink {
+  color: $color-text-main;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #0b5fb4; /* Primary color hint */
+  }
+
+  &.active {
+    font-weight: 700;
+    color: #0b5fb4;
+  }
+}
+
+.authSection {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid $color-border;
+  padding-top: $spacing-md;
+
+  @include respond-to('md') {
+    border-top: none;
+    padding-top: 0;
+    margin-left: auto;
+  }
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  color: $color-text-main;
+  font-weight: 500;
+}
+
+.loginButton {
+  background-color: #0b5fb4; // ou sua cor primária configurada
+  color: #ffffff;
+  border: none;
+  padding: $spacing-sm $spacing-md;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #0d4a8c;
+  }
+}

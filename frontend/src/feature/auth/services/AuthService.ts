@@ -1,13 +1,26 @@
 import { apiClient } from '@/core/http/ApiClient';
-import type { LoginRequestDTO, LoginResponseDTO } from '../types';
+import type { LoginRequestDTO, LoginResponseDTO, UserDTO } from '../types';
 
 export class AuthService {
   /**
-   * Envia as credenciais para a API e retorna o Token JWT.
+   * Realiza o login e obtém o token.
    */
   public static async login(credentials: LoginRequestDTO): Promise<LoginResponseDTO> {
-    // Usamos o nosso ApiClient genérico. 
-    // Passamos o tipo de Resposta (LoginResponseDTO) e o tipo do Body (LoginRequestDTO)
     return apiClient.post<LoginResponseDTO, LoginRequestDTO>('/auth/login', credentials);
+  }
+
+  /**
+   * Invalida o token atual no servidor (Blacklist via Redis).
+   */
+  public static async logout(): Promise<void> {
+    // O interceptor injeta o token automaticamente no Header
+    return apiClient.post<void, void>('/auth/logout');
+  }
+
+  /**
+   * Obtém os dados do usuário logado (Perfil e Roles).
+   */
+  public static async getMe(): Promise<UserDTO> {
+    return apiClient.get<UserDTO>('/auth/users/me');
   }
 }

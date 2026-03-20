@@ -1,9 +1,14 @@
-export interface DrainStatusDTO {
+export interface DrainStatus {
   id_bueiro: string;
   distancia_cm: number;
   nivel_obstrucao: number;
-  status: 'normal' | 'alerta' | 'critico' | 'Normal' | 'Alerta' | 'Crítico';
-  latitude: number | null;
-  longitude: number | null;
-  ultima_atualizacao: string;
+  status: string;
+  latitude?: number;
+  longitude?: number;
+  ultima_atualizacao: string; // ISO Date do Pydantic
+}
+
+export interface WSPayload {
+  evento_tipo: "BUEIRO_STATUS_MUDOU";
+  dados: DrainStatus;
 }

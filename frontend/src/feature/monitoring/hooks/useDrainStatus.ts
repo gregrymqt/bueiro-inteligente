@@ -1,33 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MonitoringService } from '../services/MonitoringService';
-import type { DrainStatusDTO } from '../types';
+import type { DrainStatus } from '../types';
 
-export const useDrainStatus = (bueiroId: string, pollIntervalMs: number = 5000) => {
-  const [data, setData] = useState<DrainStatusDTO | null>(null);
+export const useDrainStatus = (bueiroId: string) => {
+  const [data, setData] = useState<DrainStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatus = useCallback(async () => {
+  // 1. Lógica de Busca Inicial
+  const fetchInitial = useCallback(async () => {
     try {
-      // O Hook agora consome o Service de forma isolada
-      const response = await MonitoringService.getDrainStatus(bueiroId);
+      setLoading(true);
+      const response = await MonitoringService.getInitialStatus(bueiroId);
       setData(response);
-      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao conectar com o sensor.');
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados iniciais');
     } finally {
       setLoading(false);
     }
   }, [bueiroId]);
 
   useEffect(() => {
-    fetchStatus();
+    fetchInitial();
 
-    if (pollIntervalMs > 0) {
-      const intervalId = setInterval(fetchStatus, pollIntervalMs);
-      return () => clearInterval(intervalId);
-    }
-  }, [fetchStatus, pollIntervalMs]);
+    // 2. Inscrição no Real-time via Service
+    const unsubscribe = MonitoringService.subscribeToUpdates((payload) => {
+      // Regra de Negócio: Só atualiza se o evento for o correto e o ID bater
+      if (payload.evento_tipo === "BUEIRO_STATUS_MUDOU" && payload.dados.id_bueiro === bueiroId) {
+        setData(payload.dados);
+      }
+    });
 
-  return { data, loading, error, refetch: fetchStatus };
+    return () => unsubscribe(); // Limpa o listener ao desmontar
+  }, [bueiroId, fetchInitial]);
+
+  return { data, loading, error, refetch: fetchInitial };
 };

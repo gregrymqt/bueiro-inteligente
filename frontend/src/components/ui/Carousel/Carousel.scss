@@ -1,0 +1,19 @@
+.generic-carousel {
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  .generic-swiper {
+    width: 100%;
+    height: 100%;
+    padding-bottom: 30px; /* Espaço para paginação não sobrepor itens */
+  }
+
+  /* Variáveis de tema do Swiper (mude para as cores do seu design system) */
+  --swiper-theme-color: #0b5fb4; 
+  --swiper-navigation-size: 24px;
+  
+  .swiper-pagination-bullet-active {
+    background: var(--swiper-theme-color);
+  }
+}

@@ -1,0 +1,73 @@
+@import '@/styles/variables.scss'; // Importa o seu logError.md renomeado ou referenciado
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: $spacing-md; // Mobile padding
+  background-color: $color-bg-light;
+  font-family: $font-stack;
+}
+
+.login-form {
+  background: white;
+  padding: $spacing-lg;
+  border-radius: 8px;
+  border: 1px solid $color-border;
+  width: 100%;
+  max-width: 400px;
+
+  &__title {
+    color: $color-text-main;
+    font-size: 1.5rem;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__error {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+    padding: $spacing-sm;
+    border-radius: 4px;
+    margin-bottom: $spacing-md;
+    font-size: 0.875rem;
+  }
+
+  &__button {
+    width: 100%;
+    padding: $spacing-md;
+    background-color: $color-text-main; // Ou uma cor primária de sua escolha
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:disabled { opacity: 0.7; cursor: not-allowed; }
+  }
+
+  // Responsividade: Aumenta o padding em telas maiores
+  @include respond-to('md') {
+    padding: $spacing-lg * 2;
+  }
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+  
+  label {
+    display: block;
+    margin-bottom: $spacing-sm;
+    color: $color-text-main;
+    font-size: 0.875rem;
+  }
+
+  input {
+    width: 100%;
+    padding: $spacing-sm;
+    border: 1px solid $color-border;
+    border-radius: 4px;
+    outline-color: $color-success;
+  }
+}

@@ -1,0 +1,57 @@
+
+.homeContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding-bottom: $spacing-lg;
+}
+
+.section {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid $color-border;
+  padding: $spacing-md;
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+
+  &Title {
+    color: $color-text-main;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: $spacing-md;
+  }
+}
+
+// Estilo para o Mock do Mapa
+.mapMock {
+  height: 200px;
+  background-color: $color-text-main; // Cor primária
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  gap: $spacing-sm;
+  font-weight: 600;
+
+  @include respond-to('md') {
+    height: 300px;
+  }
+}
+
+// Skeletons para Loading (UX)
+.skeleton {
+  height: 150px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
