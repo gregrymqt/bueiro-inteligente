@@ -26,7 +26,7 @@ class BueiroService:
 
     async def process_sensor_data(self, payload: SensorPayloadDTO) -> DrainStatusDTO:
         """
-        Recebe o DTO direto do hardware, calcula a obstrução e salva via Repository[cite: 2].
+        Recebe o DTO direto do hardware, calcula a obstruÃ§Ã£o e salva via Repository.
         """
         distancia_lida = max(0.0, min(payload.distancia_cm, self.MAX_BUCKET_DEPTH_CM))
         espaco_ocupado_cm: float = self.MAX_BUCKET_DEPTH_CM - distancia_lida
@@ -34,7 +34,7 @@ class BueiroService:
 
         status: str = "Normal"
         if nivel_obstrucao >= self.CRITICAL_THRESHOLD_PERCENT:
-             status = "Crítico" [cite: 3]
+             status = "CrÃ­tico" 
         elif nivel_obstrucao >= self.ALERT_THRESHOLD_PERCENT:
             status = "Alerta"
 
@@ -43,15 +43,15 @@ class BueiroService:
             distancia_cm=round(distancia_lida, 2),
             nivel_obstrucao=round(nivel_obstrucao, 2),
             status=status,
-            latitude=payload.latitude, [cite: 4]
+            latitude=payload.latitude, 
             longitude=payload.longitude,
             ultima_atualizacao=datetime.now(timezone.utc)
         )
 
-        # 1. Salva o dado fresco no Redis e o histórico no Supabase [cite: 10]
+        # 1. Salva o dado fresco no Redis e o histÃ³rico no Supabase 
         await self._repository.save_sensor_data(resultado)
 
-        # 2. Busca a medição mais recente no Supabase como garantia 
+        # 2. Busca a mediÃ§Ã£o mais recente no Supabase como garantia 
         status_confirmado_db = await self._repository.get_latest_status(payload.id_bueiro)
         
         # 3. Se encontrou no banco, dispara pelo socket para atualizar React e Kotlin
@@ -62,18 +62,18 @@ class BueiroService:
 
     async def get_drain_status(self, bueiro_id: str) -> DrainStatusDTO:
         """
-        Orquestra a busca do status do bueiro (Cache -> Banco de Dados)[cite: 6].
-        Dessa forma, tiramos essa responsabilidade do controller[cite: 7].
+        Orquestra a busca do status do bueiro (Cache -> Banco de Dados).
+        Dessa forma, tiramos essa responsabilidade do controller.
         """
         cache_key = f"bueiro:{bueiro_id}:status"
 
         async def fetch_fallback_from_db() -> DrainStatusDTO:
             status_db = await self._repository.get_latest_status(bueiro_id)
             if not status_db:
-                raise ValueError("Bueiro não encontrado ou sem medições.")
+                raise ValueError("Bueiro nÃ£o encontrado ou sem mediÃ§Ãµes.")
             return status_db
 
-        status_atual: DrainStatusDTO = await self._cache_service.get_or_set( [cite: 8]
+        status_atual: DrainStatusDTO = await self._cache_service.get_or_set( 
             key=cache_key,
             fetch_func=fetch_fallback_from_db,
             model_type=DrainStatusDTO,

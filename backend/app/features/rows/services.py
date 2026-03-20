@@ -1,12 +1,12 @@
 import logging
-from interfaces import IRowsService
+from app.features.rows.interfaces import IRowsService
 import httpx
 from fastapi import HTTPException
 
 # Importando os DTOs que criamos no passo anterior
 from .dtos import RowsAppendRequest, RowsCreateTableRequest, RowsCreateTableResponse
 
-# Configuração básica de log para a feature
+# ConfiguraÃ§Ã£o bÃ¡sica de log para a feature
 logger = logging.getLogger(__name__)
 
 class RowsService(IRowsService):
@@ -24,37 +24,37 @@ class RowsService(IRowsService):
             spreadsheet_id: str,
             table_id: str,
             payload: RowsAppendRequest) -> bool:
-        # Endpoint padrão do Rows para Append
+        # Endpoint padrÃ£o do Rows para Append
         endpoint = f"{self.base_url}/spreadsheets/{spreadsheet_id}/tables/{table_id}/values:append"
         
-        # httpx.AsyncClient gerencia a sessão assíncrona perfeitamente
+        # httpx.AsyncClient gerencia a sessÃ£o assÃ­ncrona perfeitamente
         async with httpx.AsyncClient() as client:
             try:
                 logger.info(f"Iniciando envio de lote para a tabela {table_id}...")
                 
-                # dump_model() converte o Pydantic DTO para um dicionário Python seguro para JSON
+                # dump_model() converte o Pydantic DTO para um dicionÃ¡rio Python seguro para JSON
                 response = await client.post(
                     endpoint, 
                     headers=self.headers, 
                     json=payload.model_dump() 
                 )
                 
-                # Lança uma exceção se o status HTTP for de erro (4xx ou 5xx)
+                # LanÃ§a uma exceÃ§Ã£o se o status HTTP for de erro (4xx ou 5xx)
                 response.raise_for_status()
                 
                 logger.info(f"Lote de dados inserido com sucesso na tabela {table_id}.")
                 return True
                 
             except httpx.HTTPStatusError as exc:
-                # Erros que a própria API do Rows retornou (Ex: 401 Unauthorized, 400 Bad Request)
+                # Erros que a prÃ³pria API do Rows retornou (Ex: 401 Unauthorized, 400 Bad Request)
                 logger.error(f"Erro na API do Rows: {exc.response.status_code} - {exc.response.text}")
                 # Repassando como HTTPException do FastAPI para o Controller lidar adequadamente
                 raise HTTPException(status_code=exc.response.status_code, detail="Erro ao integrar com a plataforma Rows.")
                 
             except httpx.RequestError as exc:
                 # Erros de rede, timeout, DNS (O servidor do Rows caiu ou estamos sem internet)
-                logger.error(f"Falha de conexão ao tentar acessar o Rows: {exc}")
-                raise HTTPException(status_code=503, detail="Serviço de visualização temporariamente indisponível.")
+                logger.error(f"Falha de conexÃ£o ao tentar acessar o Rows: {exc}")
+                raise HTTPException(status_code=503, detail="ServiÃ§o de visualizaÃ§Ã£o temporariamente indisponÃ­vel.")
             
             except Exception as exc:
                 # Catch-all para erros inesperados

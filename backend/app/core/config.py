@@ -1,20 +1,20 @@
+# app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # Configurações Gerais
-    PROJECT_NAME: str
-    VERSION: str
-    API_STR: str
+    PROJECT_NAME: str = "Bueiro Inteligente"
+    VERSION: str = "1.0.0"
+    API_STR: str = "/api/v1"
 
-    # JWT
+    # JWT / Segurança
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-
-    # Adafruit
-    ADAFRUIT_IO_USERNAME: str
-    ADAFRUIT_IO_KEY: str
-    ADAFRUIT_WEBHOOK_TOKEN: str
+    
+    # TOKEN DO HARDWARE (ESP32 / IoT)
+    # Adicionado para validar as requisições que vêm da placa
+    HARDWARE_TOKEN: str
 
     # Supabase
     SUPABASE_URL: str
@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_PASSWORD: str | None = None
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # ROWS (Planilhas / Scheduler)
+    # Adicionado para o SchedulerExtension conseguir sincronizar os dados
+    ROWS_API_KEY: str
+    ROWS_SPREADSHEET_ID: str
+    ROWS_TABLE_ID: str
+
+    # Carrega do arquivo .env
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
