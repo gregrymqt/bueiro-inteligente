@@ -1,0 +1,21 @@
+.layoutWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; // Garante que ocupa a tela toda
+}
+
+.container {
+  display: flex;
+  flex: 1; // Faz o meio da página crescer e empurrar o footer
+  position: relative;
+}
+
+.content {
+  flex: 1;
+  padding: $spacing-md;
+  background-color: #f9fafb; // Um fundo neutro para o conteúdo
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+}

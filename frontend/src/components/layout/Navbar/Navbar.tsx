@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
-// Aqui assumimos o caminho da sua feature de auth:
- import { useAuth } from '../../../feature/auth/hooks/useAuth';
+import { useAuth } from '../../../feature/auth/hooks/useAuth';
 
 import styles from './Navbar.module.scss';
 
-export const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Integração com o hook de autenticação (Descomente o import e use a linha abaixo no projeto real):
+interface NavbarProps {
+  onOpenMenu: () => void;
+}
+export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const { user } = useAuth();
-  
-  // Mock para fins de demonstração (Remova após plugar o hook verdadeiro):
-  // const user = null; // troque para { name: 'João' } para testar logado
 
-  const toggleMenu = () => setIsMenuOpen((prev) => !prev);
 
   return (
     <header className={styles.header}>
@@ -26,17 +21,12 @@ export const Navbar: React.FC = () => {
         </NavLink>
 
         {/* BOTÃO MOBILE (HAMBÚRGUER) */}
-        <button 
-          className={styles.hamburger} 
-          onClick={toggleMenu}
-          aria-label={isMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-          aria-expanded={isMenuOpen}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        <button className={styles.hamburger} onClick={onOpenMenu} aria-label="Abrir Menu">
+          <Menu size={24} />
         </button>
 
         {/* NAV MENU E AUTENTICAÇÃO */}
-        <nav className={`${styles.navMenu} ${isMenuOpen ? styles.isOpen : ''}`}>
+        <nav className={styles.desktopNav}>
           <div className={styles.links}>
             <NavLink to="/" className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
               Home
@@ -48,14 +38,9 @@ export const Navbar: React.FC = () => {
 
           <div className={styles.authSection}>
             {user ? (
-              <div className={styles.userInfo}>
-                <User size={20} />
-                <span>Olá, {user.name}</span>
-              </div>
+              <span className={styles.userInfo}>Olá, {user.username}</span>
             ) : (
-              <NavLink to="/auth" className={styles.loginButton} aria-label="Entrar no sistema">
-                Entrar
-              </NavLink>
+              <NavLink to="/login" className={styles.loginButton}>Entrar</NavLink>
             )}
           </div>
         </nav>
