@@ -1,6 +1,6 @@
 # app/features/monitoring/services/broadcast_service.py
 import logging
-from app.core.websockets import websocket_manager
+from app.extensions.realtime import realtime_extension
 from app.features.monitoring.dto import DrainStatusDTO
 
 logger = logging.getLogger(__name__)
@@ -18,4 +18,4 @@ class BroadcastService:
             }
             
             logger.info(f"Disparando broadcast para o bueiro {status_db.id_bueiro}")
-            await websocket_manager.broadcast(evento)
+            await realtime_extension.broadcast(evento)

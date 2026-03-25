@@ -2,12 +2,13 @@ package br.edu.fatecpg.feature.realtime.client
 
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import com.google.gson.Gson
-import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -19,68 +20,45 @@ class RealtimeWebSocketClient(
     private val gson: Gson
 ) {
     private var webSocket: WebSocket? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    // SharedFlow para publicar as atualizações de forma reativa para as ViewModels.
-    // Usamos um buffer para garantir que eventos próximos não sejam perdidos caso o coletor esteja ocupado.
-    private val _drainStatusUpdates = MutableSharedFlow<DrainStatusDTO>(
-        extraBufferCapacity = 10,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    val drainStatusUpdates: SharedFlow<DrainStatusDTO> = _drainStatusUpdates.asSharedFlow()
+    private val _drainStatusFlow = MutableSharedFlow<DrainStatusDTO>()
+    val drainStatusFlow: SharedFlow<DrainStatusDTO> = _drainStatusFlow.asSharedFlow()
 
-    fun connect(token: String?) {
-        // ws:// ou wss:// dependendo do ambiente. Usando o padrão de emulador apontando pro host.
-        val baseUrl = "ws://10.0.2.2:8000/realtime/ws"
-        
-        val requestBuilder = Request.Builder().url(baseUrl)
-        
-        // Se a sua API validar autenticação no socket baseando-se em Header, passamos desta forma:
-        if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
-        }
-
-        webSocket = okHttpClient.newWebSocket(requestBuilder.build(), createWebSocketListener())
+    fun connect() {
+        val request = Request.Builder()
+            .url("ws://10.0.2.2:8000/realtime/ws")
+            .build()
+        webSocket = okHttpClient.newWebSocket(request, DrainWebSocketListener())
     }
 
     fun disconnect() {
-        webSocket?.close(1000, "Client disconnected")
+        webSocket?.close(1000, "App closed")
         webSocket = null
     }
 
-    private fun createWebSocketListener(): WebSocketListener {
-        return object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                try {
-                    // Desserializa a mensagem para identificar o tipo do evento
-                    val WsMessage = gson.fromJson(text, RealtimeMessageWrapper::class.java)
-                    
-                    if (WsMessage.type == "BUEIRO_STATUS_MUDOU" && WsMessage.data != null) {
-                        // Converte o payload JSON (data) para o nosso DTO existente da feature de monitoring
-                        val drainStatus = gson.fromJson(WsMessage.data, DrainStatusDTO::class.java)
-                        
-                        // tryEmit emite o dado para os coletores de maneira segura e não bloqueante
-                        _drainStatusUpdates.tryEmit(drainStatus)
+    private inner class DrainWebSocketListener : WebSocketListener() {
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            try {
+                val message = gson.fromJson(text, RealtimeMessage::class.java)
+                if (message.eventoTipo == "BUEIRO_STATUS_MUDOU" && message.dados != null) {
+                    val status = gson.fromJson(gson.toJson(message.dados), DrainStatusDTO::class.java)
+                    coroutineScope.launch {
+                        _drainStatusFlow.emit(status)
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+        }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                super.onFailure(webSocket, t, response)
-                t.printStackTrace()
-            }
-
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                super.onClosed(webSocket, code, reason)
-                println("WebSocket Closed: $code / $reason")
-            }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            t.printStackTrace()
         }
     }
 
-    // Estrutura auxiliar esperada do BroadcastService no Backend (Python)
-    private data class RealtimeMessageWrapper(
-        @SerializedName("type") val type: String,
-        @SerializedName("data") val data: JsonElement?
+    private data class RealtimeMessage(
+        @SerializedName("evento_tipo") val eventoTipo: String,
+        @SerializedName("dados") val dados: Any?
     )
 }
