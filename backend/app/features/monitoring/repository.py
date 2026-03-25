@@ -2,14 +2,15 @@ import logging
 from typing import Optional
 from .interfaces import IDrainRepository
 from .dto import DrainStatusDTO
+from app.features.cache.interfaces import ICacheService
 
 logger = logging.getLogger(__name__)
 
 class DrainRepository(IDrainRepository):
     # Recebemos as conexões já instanciadas lá da nossa pasta /core
-    def __init__(self, db_client, cache_client):
+    def __init__(self, db_client, cache_service: ICacheService):
         self._db = db_client
-        self._cache = cache_client
+        self._cache = cache_service
 
     async def save_sensor_data(self, data: DrainStatusDTO) -> None:
         """
@@ -21,9 +22,7 @@ class DrainRepository(IDrainRepository):
         
         try:
             # O model_dump_json() do Pydantic já converte o DTO para uma string JSON válida
-            await self._cache.set(cache_key, data.model_dump_json())
-            # Definir um tempo de expiração (TTL) no Redis se o sensor parar de enviar
-            await self._cache.expire(cache_key, 3600) # Expira em 1 hora
+            await self._cache.set(cache_key, data.model_dump_json(), ttl_seconds=3600)
         except Exception as e:
             logger.error(f"Erro ao salvar no cache o bueiro {data.id_bueiro}: {e}")
 

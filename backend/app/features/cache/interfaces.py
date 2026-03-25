@@ -1,5 +1,6 @@
 from typing import Protocol, TypeVar, Callable, Awaitable, Optional, Type
 from pydantic import BaseModel
+from .dtos import CacheResponseDTO
 
 # Criamos um "Generic" que obriga a ser um modelo do Pydantic (DTO)
 T = TypeVar('T', bound=BaseModel)
@@ -23,9 +24,9 @@ class ICacheService(Protocol):
         fetch_func: Callable[[], Awaitable[T]], 
         model_type: Type[T],
         ttl_seconds: Optional[int] = None
-    ) -> T:
+    ) -> CacheResponseDTO[T]:
         """
         Tenta buscar do cache. Se não existir, executa a função (fetch_func),
-        salva no cache e retorna o DTO fortemente tipado.
+        salva no cache e retorna o DTO fortemente tipado dentro de um CacheResponseDTO.
         """
         ...

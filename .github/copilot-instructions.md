@@ -22,12 +22,12 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 - **Framework Principal:** React 19 (criado com Vite)
 - **Linguagem:** TypeScript
 - **Roteamento:** React Router DOM (v7)
-- **Estilização:** SCSS / CSS Modules (Padrão: nomes de arquivos como `Component.scss`)
-- **Gestão de Estado/Hooks:** Custom Hooks por feature (`useLogin.ts`, `useDrainStatus.ts`)
+- **Estilização:** SCSS / CSS Modules (Padrão: nomes de arquivos como `Component.scss` ou `Component.module.scss`)
+- **Gestão de Estado/Hooks:** Custom Hooks por feature (`useAuth.ts`, `useHomeCarousel.ts`, `useDrainStatus.ts`)
 - **Estrutura/Padrões:**
-  - Arquitetura baseada em Features (`src/feature/`).
-  - Serviços de HTTP isolados (`src/core/http/ApiClient.ts`, `TokenService.ts`).
-  - Componentização modular (`src/components/`, `src/pages/`).
+  - Arquitetura baseada em Features (`src/feature/`). Cada feature tem subpastas (`components`, `hooks`, `services`, `types`).
+  - Serviços de HTTP isolados (`src/core/http/ApiClient.ts`, `TokenService.ts`, e interceptors como `AuthInterceptor.tsx`).
+  - Componentização modular (`src/components/`, `src/pages/`, `src/router/`).
 
 ### Mobile (Android)
 - **Plataforma:** Android (SDK 24 ao 36+)
@@ -46,23 +46,34 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 ## 📁 Estrutura de Diretórios e Padrões Arquiteturais
 
 ### Padrões do Backend (`/backend/app`)
-- `/core`: Configurações globais, conexão com banco de dados, cache, websockets, schedulers, e segurança (JWT e RBAC com blacklist no Redis).
-- `/features`: Módulos de negócio isolados. Cada feature (como `auth`, `monitoring`, `rows`, `cache`) geralmente contém:
+- `/core`: Configurações globais e de ambiente (`config.py`).
+- `/extensions`: Inicialização de infraestrutura como banco de dados/cache (`infrastructure.py`), segurança (`auth.py`), websockets (`realtime.py`) e agendamentos (`scheduler.py`).
+- `/features`: Módulos de negócio isolados. Cada feature (como `auth`, `monitoring`, `rows`, `cache`, `realtime`) pode conter:
   - `controller.py`: Endpoints do FastAPI (Rotas).
-  - `service.py` / `services.py`: Regras de negócio da aplicação.
+  - `service.py` ou pasta `/services/`: Regras de negócio da aplicação (quando complexa, a feature divide serviços em arquivos, ex: `broadcast_service.py` em `monitoring`).
   - `repository.py`: Interação direta com a camada de dados (Supabase/Redis).
   - `interfaces.py`: Classes abstratas / Tipagens para injeção de dependência.
   - `dto.py` / `dtos.py`: Modelos Pydantic para validação de entrada/saída (Schemas).
+- `/routes`: Pasta destinada à agregação e registro das rotas dos controllers.
 
 ### Padrões do Frontend (`/frontend/src`)
-- `/core`: Utilitários centrais como clientes HTTP base e manipulação de tokens.
-- `/feature`: Regras de negócio e hooks divididos por contexto (ex: `auth`, `monitoring`).
-- `/components`: Componentes reutilizáveis (UI) ou de Layout estrutural (UI e View).
-- `/pages`: Componentes de maior nível que representam rotas do sistema.
-- `/assets` e `/styles`: Arquivos estáticos e SCSS globais.
+- `/core`: Utilitários centrais como clientes HTTP base, interceptors e manipulação de tokens (`ApiClient.ts`, `TokenService.ts`, `AuthInterceptor.tsx`).
+- `/feature`: Funcionalidades e regras de negócio isoladas (ex: `auth`, `home`, `monitoring`). Dentro de cada feature, dividimos em `/components`, `/hooks`, `/services` e `/types`.
+- `/components`: Componentes reutilizáveis distribuídos em interface (`ui/`, como `Card`, `Carousel`) e estruturais de layout (`layout/`, como `Navbar`, `Sidebar`).
+- `/pages`: Componentes de maior nível que representam as páginas e rotas da aplicação (ex: `Home`, `DashBoard`).
+- `/router`: Arquivos de roteamento (`Router.tsx`) e middlewares de controle de acesso (`ProtectedLayout.tsx`, `RoleMiddleware.tsx`).
+- `/assets` e `/styles`: Arquivos estáticos e estilos globais (SCSS).
 
 ### Padrões do Mobile (`/app`)
-- Aplicativo Android nativo padrão configurado através do `build.gradle.kts`. Contém views em XML ou Compose (dependendo da feature), manifestos e testes.
+- Aplicativo Android nativo padrão configurado através do `build.gradle.kts`. Entregando consistência com as demais camadas, adota a **Arquitetura Modular Baseada em Features** utilizando o padrão **MVVM com Clean Architecture**. O código central está consolidado no pacote `br.edu.fatecpg`:
+  - `/core`: Utilitários centrais como rede e comunicação, contendo a instância abstrata do Client (`network/ApiClient.kt`), interceptadores de autenticação (`AuthInterceptor.kt`) e mapeamento de dependência local (`TokenManager.kt`).
+  - `/feature`: Funcionalidades isoladas (ex: `auth`, `monitoring`, `realtime`). Cada feature geralmente é estruturada com:
+    - `dto/`: Data Classes para serialização via `Gson` e mapeamento da comunicação de entrada/saída com a API.
+    - `services/`: Interfaces atreladas ao `Retrofit` e executadas utilizando `suspend functions` para integração com blocos assíncronos.
+    - `repository/`: Camada da lógica de dados onde os Serviços são acionados sobre as threads secundárias (`Dispatchers.IO`), retornando encapsuladores seguros de sucesso/falha (`Result<T>`).
+    - `viewmodel/`: Lógica de transição UI gerenciada através de Kotlin Coroutines e emissões via `StateFlow` e `Sealed Classes` (gerindo dinâmicas como `Idle`, `Loading`, `Success` e `Error`).
+    - `client/`: (Como em features de tempo real) Instâncias de acesso ativo, como um websocket.
+  - Contém as Views em XML ou Compose dependendo da feature correspondente.
 
 ### Padrões do Hardware (`/hardware/esp_bueiro`)
 - Código embarcado (C++) em arquivo `.ino`. Concentra lógicas de leitura de sensores e formatação de payload `JSON` no loop de execução para enviar para a rota de medições da API.

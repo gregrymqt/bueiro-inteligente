@@ -73,10 +73,10 @@ class BueiroService:
                 raise ValueError("Bueiro nÃ£o encontrado ou sem mediÃ§Ãµes.")
             return status_db
 
-        status_atual: DrainStatusDTO = await self._cache_service.get_or_set( 
+        response = await self._cache_service.get_or_set( 
             key=cache_key,
             fetch_func=fetch_fallback_from_db,
             model_type=DrainStatusDTO,
             ttl_seconds=3600
         )
-        return status_atual
+        return response.data

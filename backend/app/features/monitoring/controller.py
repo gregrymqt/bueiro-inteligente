@@ -15,8 +15,8 @@ def get_monitoring_service(
     db = Depends(get_db),
     cache = Depends(get_cache)
 ) -> BueiroService:
-    repository = DrainRepository(db_client=db, cache_client=cache)
     cache_service = RedisCacheService(redis_client=cache)
+    repository = DrainRepository(db_client=db, cache_service=cache_service)
     broadcast_service = BroadcastService()
     return BueiroService(repository, cache_service, broadcast_service)
 

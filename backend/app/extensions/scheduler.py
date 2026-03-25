@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.features.rows.services import RowsService
 from app.features.rows.job import RowsSyncJob
 from app.features.monitoring.repository import DrainRepository
+from app.features.cache.service import RedisCacheService
 
 # Importamos a infraestrutura para pegar os clientes de DB e Cache
 from app.extensions.infrastructure import infrastructure
@@ -36,9 +37,10 @@ class SchedulerExtension:
 
             # 2. Instancia o Repository (NecessÃ¡rio para o Job ler os dados do Supabase)
             # Usamos o cliente que jÃ¡ foi aberto na InfrastructureExtension
+            cache_service = RedisCacheService(infrastructure.redis_client)
             repository = DrainRepository(
                 db_client=infrastructure.supabase, 
-                cache_client=infrastructure.redis_client
+                cache_service=cache_service
             )
 
             # 3. Configura a instÃ¢ncia do Job

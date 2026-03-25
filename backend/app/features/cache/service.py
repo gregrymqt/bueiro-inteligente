@@ -3,6 +3,7 @@ from typing import Callable, Awaitable, Optional, Type, TypeVar
 from pydantic import BaseModel
 import redis.asyncio as redis
 from .interfaces import ICacheService
+from .dtos import CacheResponseDTO
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -29,14 +30,15 @@ class RedisCacheService(ICacheService):
         fetch_func: Callable[[], Awaitable[T]], 
         model_type: Type[T],
         ttl_seconds: Optional[int] = None
-    ) -> T:
+    ) -> CacheResponseDTO[T]:
         # 1. Tenta buscar do cache
         cached_data = await self.get(key)
         
         if cached_data:
             # Se achou, converte o JSON do Redis de volta para o seu DTO Pydantic.
             # O IntelliSense vai saber que o retorno é do tipo "T" (seu DTO).
-            return model_type.model_validate_json(cached_data)
+            parsed_data = model_type.model_validate_json(cached_data)
+            return CacheResponseDTO(data=parsed_data, from_cache=True)
 
         # 2. Se não achou no cache (Cache Miss), executa a função que busca do banco/Adafruit
         fresh_data = await fetch_func()
@@ -44,4 +46,4 @@ class RedisCacheService(ICacheService):
         # 3. Salva no cache para a próxima vez, convertendo o DTO para JSON
         await self.set(key, fresh_data.model_dump_json(), ttl_seconds)
         
-        return fresh_data
+        return CacheResponseDTO(data=fresh_data, from_cache=False)
