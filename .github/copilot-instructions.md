@@ -66,14 +66,14 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 
 ### Padrões do Mobile (`/app`)
 - Aplicativo Android nativo padrão configurado através do `build.gradle.kts`. Entregando consistência com as demais camadas, adota a **Arquitetura Modular Baseada em Features** utilizando o padrão **MVVM com Clean Architecture**. O código central está consolidado no pacote `br.edu.fatecpg`:
-  - `/core`: Utilitários centrais como rede e comunicação, contendo a instância abstrata do Client (`network/ApiClient.kt`), interceptadores de autenticação (`AuthInterceptor.kt`) e mapeamento de dependência local (`TokenManager.kt`).
-  - `/feature`: Funcionalidades isoladas (ex: `auth`, `monitoring`, `realtime`). Cada feature geralmente é estruturada com:
+  - `/core`: Utilitários centrais como rede e comunicação, contendo instâncias abstratas em cliente (`network/ApiClient.kt` ou `http/ApiClient.kt`), interceptadores de autenticação (`AuthInterceptor.kt`) e mapeamento de dependência local (`TokenManager.kt`).
+  - `/feature`: Funcionalidades isoladas (ex: `auth`, `home`, `monitoring`, `realtime`). Cada feature geralmente é estruturada com:
     - `dto/`: Data Classes para serialização via `Gson` e mapeamento da comunicação de entrada/saída com a API.
     - `services/`: Interfaces atreladas ao `Retrofit` e executadas utilizando `suspend functions` para integração com blocos assíncronos.
-    - `repository/`: Camada da lógica de dados onde os Serviços são acionados sobre as threads secundárias (`Dispatchers.IO`), retornando encapsuladores seguros de sucesso/falha (`Result<T>`).
+    - `repository/`: Camada da lógica de dados onde os Serviços são acionados sobre as threads secundárias (`Dispatchers.IO`), retornando encapsuladores seguros de sucesso/falha.
     - `viewmodel/`: Lógica de transição UI gerenciada através de Kotlin Coroutines e emissões via `StateFlow` e `Sealed Classes` (gerindo dinâmicas como `Idle`, `Loading`, `Success` e `Error`).
-    - `client/`: (Como em features de tempo real) Instâncias de acesso ativo, como um websocket.
-  - Contém as Views em XML ou Compose dependendo da feature correspondente.
+    - `ui/`: (Ou Telas/Views) Contém os `Fragments`, `Activities` e Telas (Screens) em Jetpack Compose referentes à funcionalidade. Em caso de reaproveitamento, subdiretórios como `components/` também são válidos para isolar `Custom Views` ou `Composables`.
+    - `client/`: (Como em features de tempo real) Instâncias de acesso ativo e persistente, como um `WebSocketClient`.
 
 ### Padrões do Hardware (`/hardware/esp_bueiro`)
 - Código embarcado (C++) em arquivo `.ino`. Concentra lógicas de leitura de sensores e formatação de payload `JSON` no loop de execução para enviar para a rota de medições da API.

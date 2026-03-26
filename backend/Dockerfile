@@ -2,14 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Copia o requirements.txt a partir da raiz do contexto
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copia todo o conteúdo da pasta backend para o /app
+COPY backend/ .
 
-# A instrução CMD especifica o comando a ser executado quando o contêiner for iniciado.
-# Assumi que seu arquivo de entrada principal se chama 'main.py'.
-# Se o seu arquivo estiver em um subdiretório (ex: app/main.py),
-# você deve alterar o comando para: CMD ["python", "app/main.py"]
-CMD ["python", "main.py"]
+# Comando para iniciar o servidor Uvicorn (FastAPI) rodando o arquivo app/main.py
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

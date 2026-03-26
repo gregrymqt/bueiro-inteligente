@@ -10,7 +10,9 @@ python-dotenv
 # Clientes de Dados
 supabase
 redis
-httpx        # Para fazer requisições assíncronas à API da Adafruit
+
+# Para fazer requisições assíncronas à API da Adafruit
+httpx
 
 # Utilitários
 python-multipart

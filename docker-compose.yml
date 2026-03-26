@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # SERVIÇOS WEB (Long-running)
+  # ==========================================
+
+  # Backend: API FastAPI
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: bueiro_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      # As variáveis do Supabase virão do seu arquivo .env na raiz do projeto
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    volumes:
+      # Mapeia a pasta backend para o /app local (útil para desenvolvimento/live reload da API)
+      - ./backend:/app
+    networks:
+      - bueiro_net
+    depends_on:
+      - redis
+    # Comentar a linha abaixo se não quiser usar o hot-reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # Frontend: React SPA servido pelo Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bueiro_frontend
+    ports:
+      - "8080:80" # Mapeia a 8080 local para a 80 do Nginx
+    networks:
+      - bueiro_net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Cache / Fila em Memória
+  redis:
+    image: redis:7-alpine
+    container_name: bueiro_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - bueiro_net
+    restart: unless-stopped
+
+  # ==========================================
+  # SERVIÇOS DE BUILD (Profiles Opcionais)
+  # ==========================================
+  
+  # Serviço para buildar o APK Android
+  # Rode: docker compose --profile tools run --rm app-mobile
+  app-mobile:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: bueiro_app_build
+    profiles: 
+      - tools
+    volumes:
+      # Sincroniza as saídas do build localmente para podermos pegar o .apk gerado!
+      - ./app/app/build:/app/app/build
+    networks:
+      - bueiro_net
+    command: ["./gradlew", "assembleDebug", "--no-daemon"]
+
+  # Serviço para compilar e validar o código C++ do ESP32
+  # Rode: docker compose --profile tools run --rm hardware
+  hardware:
+    build:
+      context: ./hardware/esp_bueiro
+      dockerfile: Dockerfile
+    container_name: bueiro_hardware_build
+    profiles: 
+      - tools
+    networks:
+      - bueiro_net
+    command: ["arduino-cli", "compile", "--fqbn", "esp32:esp32:esp32", "esp_bueiro.ino"]
+
+networks:
+  bueiro_net:
+    driver: bridge
