@@ -13,6 +13,9 @@ interface MonitoringService {
         @Path("bueiro_id") id: String
     ): Response<DrainStatusDTO>
 
+    @GET("monitoring/all")
+    suspend fun getAllDrains(): Response<List<DrainStatusDTO>>
+
     companion object {
         fun create(): MonitoringService {
             return ApiClient.createService(MonitoringService::class.java)
