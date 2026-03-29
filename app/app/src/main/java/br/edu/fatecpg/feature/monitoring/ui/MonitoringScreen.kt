@@ -26,8 +26,9 @@ import androidx.compose.ui.unit.sp
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringUiState
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -38,7 +39,6 @@ fun MonitoringScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing = uiState is MonitoringUiState.Loading
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
     val context = LocalContext.current
 
     Scaffold(
@@ -52,8 +52,8 @@ fun MonitoringScreen(
             )
         }
     ) { paddingValues ->
-        SwipeRefresh(
-            state = swipeRefreshState,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
             onRefresh = { viewModel.refreshDrains() },
             modifier = Modifier.padding(paddingValues)
         ) {
@@ -63,7 +63,7 @@ fun MonitoringScreen(
                         // SwipeRefresh já fornece o feedback visual de loading
                     }
                     is MonitoringUiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize().androidx.compose.foundation.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                        Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {  
                             ErrorState(
                                 message = state.message,
                                 onRetry = { viewModel.refreshDrains() }
@@ -72,7 +72,7 @@ fun MonitoringScreen(
                     }
                     is MonitoringUiState.Success -> {
                         if (state.drains.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize().androidx.compose.foundation.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                            Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                 EmptyState()
                             }
                         } else {
@@ -105,7 +105,7 @@ private fun openGoogleMaps(context: Context, drain: DrainStatusDTO) {
             context.startActivity(mapIntent)
         } else {
             // Fallback para abrir no navegador se o Google Maps não estiver instalado
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${drain.latitude},${drain.longitude}"))
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com/?q=${drain.latitude},${drain.longitude}"))
             context.startActivity(browserIntent)
         }
     } else {

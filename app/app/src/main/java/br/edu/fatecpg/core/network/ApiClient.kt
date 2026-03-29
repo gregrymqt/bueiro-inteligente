@@ -7,14 +7,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.0.2.2:8000/"
     private var retrofit: Retrofit? = null
 
     /**
      * Inicializa a instância Singleton do Retrofit.
      * Deve ser chamado idealmente no Application ou na Activity inicial.
      */
-    fun init(tokenManager: TokenManager) {
+    fun init(tokenManager: TokenManager, baseUrl: String) {
         if (retrofit == null) {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
@@ -30,7 +29,7 @@ object ApiClient {
                 .build()
 
             retrofit = Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(baseUrl)
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()

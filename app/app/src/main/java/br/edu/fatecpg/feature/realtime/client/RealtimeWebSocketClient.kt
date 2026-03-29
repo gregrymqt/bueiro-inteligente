@@ -17,7 +17,8 @@ import okhttp3.WebSocketListener
 
 class RealtimeWebSocketClient(
     private val okHttpClient: OkHttpClient,
-    private val gson: Gson
+    private val gson: Gson,
+    private val baseUrl: String
 ) {
     private var webSocket: WebSocket? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -25,11 +26,17 @@ class RealtimeWebSocketClient(
     private val _drainStatusFlow = MutableSharedFlow<DrainStatusDTO>()
     val drainStatusFlow: SharedFlow<DrainStatusDTO> = _drainStatusFlow.asSharedFlow()
 
-    fun connect() {
-        val request = Request.Builder()
-            .url("ws://10.0.2.2:8000/realtime/ws")
-            .build()
-        webSocket = okHttpClient.newWebSocket(request, DrainWebSocketListener())
+    private val _connectionErrorFlow = MutableSharedFlow<String?>()
+    val connectionErrorFlow: SharedFlow<String?> = _connectionErrorFlow.asSharedFlow()
+
+    fun connect(token: String?) {
+        val requestBuilder = Request.Builder().url(baseUrl)
+        
+        if (!token.isNullOrEmpty()) {
+            requestBuilder.addHeader("Authorization", "Bearer $token")
+        }
+        
+        webSocket = okHttpClient.newWebSocket(requestBuilder.build(), DrainWebSocketListener())
     }
 
     fun disconnect() {
@@ -38,6 +45,12 @@ class RealtimeWebSocketClient(
     }
 
     private inner class DrainWebSocketListener : WebSocketListener() {
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            coroutineScope.launch {
+                _connectionErrorFlow.emit(null)
+            }
+        }
+
         override fun onMessage(webSocket: WebSocket, text: String) {
             try {
                 val message = gson.fromJson(text, RealtimeMessage::class.java)
@@ -54,6 +67,9 @@ class RealtimeWebSocketClient(
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             t.printStackTrace()
+            coroutineScope.launch {
+                _connectionErrorFlow.emit("Falha na conexão de tempo real. Tentando novamente...")
+            }
         }
     }
 

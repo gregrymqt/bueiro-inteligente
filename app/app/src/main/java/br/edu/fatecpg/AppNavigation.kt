@@ -2,7 +2,6 @@ package br.edu.fatecpg
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
@@ -10,7 +9,6 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -24,6 +22,11 @@ import br.edu.fatecpg.feature.auth.services.AuthService
 import br.edu.fatecpg.feature.auth.ui.LoginScreen
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
+import br.edu.fatecpg.feature.home.ui.HomeScreen
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
+import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
+import br.edu.fatecpg.feature.realtime.services.RealtimeService
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.monitoring.ui.MonitoringScreen
@@ -38,7 +41,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation(tokenManager: TokenManager) {
+fun AppNavigation(tokenManager: TokenManager, baseUrl: String) {
     val navController = rememberNavController()
     
     // Rota inicial dependendo de ter token salvo ou não
@@ -121,10 +124,19 @@ fun AppNavigation(tokenManager: TokenManager) {
             }
             
             composable(Screen.Home.route) {
-                // Mock da Tela de Home (Alertas)
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    Text("Tela Home (Alertas Recentes)")
-                }
+                val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
+                
+                val okHttpClient = okhttp3.OkHttpClient()
+                val gson = com.google.gson.Gson()
+                val websocketClient = br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient(
+                    okHttpClient = okHttpClient,
+                    gson = gson,
+                    baseUrl = wsUrl
+                )
+                val realtimeService = RealtimeService(websocketClient)
+                val realtimeRepository = RealtimeRepository(realtimeService)    
+                val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(realtimeRepository, tokenManager))
+                HomeScreen(viewModel = viewModel)
             }
             
             composable(Screen.Monitoring.route) {

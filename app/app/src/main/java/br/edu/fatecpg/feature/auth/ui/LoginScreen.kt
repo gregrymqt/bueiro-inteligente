@@ -42,15 +42,19 @@ fun LoginScreen(
     }
 
     Scaffold { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo / Ícone
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Logo / Ícone
             Icon(
                 imageVector = Icons.Default.WaterDrop, // Representação genérica para água/bueiro
                 contentDescription = "Logo Bueiro Inteligente",
@@ -133,6 +137,7 @@ fun LoginScreen(
                     Text(text = "Entrar", fontSize = 16.sp)
                 }
             }
+        }
         }
     }
 }

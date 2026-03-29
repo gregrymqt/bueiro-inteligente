@@ -11,10 +11,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val tokenManager = TokenManager(this)
-        ApiClient.init(tokenManager)
+        
+        // Substitua pelo IP da sua máquina na rede local para testar no celular físico
+        // Exemplo: "http://192.168.1.15:8000/"
+        val baseUrl = "http://192.168.x.x:8000/"
+        
+        ApiClient.init(tokenManager, baseUrl)
 
         setContent {
-            AppNavigation(tokenManager = tokenManager)
+            AppNavigation(tokenManager = tokenManager, baseUrl = baseUrl)
         }
     }
 }

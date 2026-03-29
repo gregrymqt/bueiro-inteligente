@@ -1,78 +1,114 @@
 package br.edu.fatecpg.feature.home.components
 
-import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
-import android.util.AttributeSet
-import android.view.LayoutInflater
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
-import br.edu.fatecpg.R
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 
-class AlertCard @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr) {
+@Composable
+fun AlertCard(
+    alert: DrainStatusDTO,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val statusLower = alert.status.lowercase()
 
-    private var tvDrainId: TextView
-    private var tvLastUpdate: TextView
-    private var tvObstruction: TextView
-    private var progressBar: ProgressBar
-    private var btnClose: ImageButton
-    private var btnMap: Button
-    private var llBg: LinearLayout
-
-    private var onDismissCallback: (() -> Unit)? = null
-
-    init {
-        LayoutInflater.from(context).inflate(R.layout.view_alert_card, this, true)
-
-        tvDrainId = findViewById(R.id.tv_drain_id)
-        tvLastUpdate = findViewById(R.id.tv_last_update)
-        tvObstruction = findViewById(R.id.tv_obstruction)
-        progressBar = findViewById(R.id.progress_obstruction)
-        btnClose = findViewById(R.id.btn_close)
-        btnMap = findViewById(R.id.btn_map)
-        llBg = findViewById(R.id.ll_bg)
-
-        btnClose.setOnClickListener {
-            onDismissCallback?.invoke()
-        }
+    val cardColor = when (statusLower) {
+        "crítico", "critico" -> Color(0xFFFFCDD2) // Vermelho suave
+        "alerta" -> Color(0xFFFFE082) // Amarelo suave
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
-    fun setOnDismissListener(callback: () -> Unit) {
-        this.onDismissCallback = callback
-    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Bueiro ID: ${alert.idBueiro}",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Fechar Alerta",
+                        tint = Color.Black
+                    )
+                }
+            }
 
-    fun bind(alert: DrainStatusDTO) {
-        tvDrainId.text = "Bueiro ID: ${alert.idBueiro}"
-        val level = alert.nivelObstrucao.toInt()
-        tvObstruction.text = "Obstrução: $level%"
-        progressBar.progress = level
+            Spacer(modifier = Modifier.height(8.dp))
 
-        tvLastUpdate.text = "Atualizado às: ${alert.ultimaAtualizacao}"
+            Text(
+                text = "Atualizado às: ${alert.ultimaAtualizacao}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.DarkGray
+            )
 
-        val statusLower = alert.status.lowercase()
-        if (statusLower == "crítico" || statusLower == "critico") {
-            llBg.setBackgroundColor(Color.parseColor("#FFCDD2")) // Vermelho Suave
-        } else if (statusLower == "alerta") {
-            llBg.setBackgroundColor(Color.parseColor("#FFE082")) // Amarelo/Laranja Suave
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        btnMap.setOnClickListener {
-            val lat = alert.latitude ?: 0.0
-            val lng = alert.longitude ?: 0.0
-            val uri = "geo:$lat,$lng?q=$lat,$lng(Bueiro+${alert.idBueiro})"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-            intent.setPackage("com.google.android.apps.maps")
-            context.startActivity(intent)
+            val level = alert.nivelObstrucao
+            Text(
+                text = "Obstrução: ${level.toInt()}%",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            LinearProgressIndicator(
+                progress = { (level.toFloat() / 100f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = if (level >= 80) Color.Red else Color.DarkGray,
+                trackColor = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    val lat = alert.latitude ?: 0.0
+                    val lng = alert.longitude ?: 0.0
+                    val uri = "geo:$lat,$lng?q=$lat,$lng(Bueiro+${alert.idBueiro})"
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+                    intent.setPackage("com.google.android.apps.maps")
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Icon(imageVector = Icons.Default.Map, contentDescription = "Mapa", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Abrir no Mapa", color = Color.White)
+            }
         }
     }
 }
