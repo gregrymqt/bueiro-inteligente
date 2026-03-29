@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Optional, Protocol
 from .dto import SensorPayloadDTO, DrainStatusDTO # Atualizado aqui
 
 class IDrainRepository(Protocol):
@@ -8,6 +8,8 @@ class IDrainRepository(Protocol):
         ...
     async def mark_as_synced(self, ids: list[str]) -> None:
         ...    
+    async def get_latest_status(self, bueiro_id: str) -> Optional[DrainStatusDTO]:
+        ...
 
 class IMonitoringService(Protocol):
     # Atualizado para receber apenas o SensorPayloadDTO

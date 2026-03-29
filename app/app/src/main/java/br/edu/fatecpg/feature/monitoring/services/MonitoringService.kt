@@ -1,5 +1,6 @@
 package br.edu.fatecpg.feature.monitoring.services
 
+import android.util.Log
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import retrofit2.Response
@@ -18,7 +19,13 @@ interface MonitoringService {
 
     companion object {
         fun create(): MonitoringService {
-            return ApiClient.createService(MonitoringService::class.java)
+            return try {
+                Log.d("MonitoringService", "Criando instância do MonitoringService via ApiClient")
+                ApiClient.createService(MonitoringService::class.java)
+            } catch (e: Exception) {
+                Log.e("MonitoringService", "Erro ao criar instância de MonitoringService", e)
+                throw e
+            }
         }
     }
 }

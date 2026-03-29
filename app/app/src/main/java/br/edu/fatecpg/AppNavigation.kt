@@ -1,170 +1,170 @@
 package br.edu.fatecpg
 
+import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import br.edu.fatecpg.core.di.AppContainer
-import br.edu.fatecpg.core.navigation.BottomNavRoutes
-import br.edu.fatecpg.core.navigation.MainBottomBar
 import br.edu.fatecpg.feature.auth.ui.LoginScreen
-import br.edu.fatecpg.feature.auth.ui.RegisterScreen
-import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
-import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
-import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModel
-import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
+import br.edu.fatecpg.feature.auth.viewmodel.AuthViewModel
 import br.edu.fatecpg.feature.home.ui.HomeScreen
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
-import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import br.edu.fatecpg.feature.monitoring.ui.MonitoringScreen
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
-import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
 import br.edu.fatecpg.feature.profile.ui.ProfileScreen
 import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
-import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModelFactory
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(appContainer: AppContainer) {
-    val navController = rememberNavController()
-    
-    val isLoggedIn by appContainer.tokenManager.isLoggedIn.collectAsStateWithLifecycle()
-    
-    // Rota inicial dependendo de ter token salvo ou não (calculada na largada)
-    val startDestination = remember {
-        if (appContainer.tokenManager.getToken().isNullOrEmpty()) BottomNavRoutes.Login.route else BottomNavRoutes.Home.route
-    }
+    try {
+        val navController = rememberNavController()
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+        Scaffold(
+            topBar = {
+                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+                Log.d("AppNavigation", "Redesenhando TopBar. Rota atual: $currentRoute")
+                
+                if (currentRoute != "login") {
+                    TopAppBar(
+                        title = { Text(text = "Bueiro Inteligente", fontWeight = FontWeight.Bold) },
+                        actions = {
+                            IconButton(onClick = {
+                                try {
+                                    Log.i("AppNavigation", "Usuario clicou em Logout. Executando...")
+                                    appContainer.tokenManager.clearToken()
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AppNavigation", "Erro ao executar logout", e)
+                                }
+                            }) {
+                                Icon(Icons.Default.ExitToApp, contentDescription = "Sair")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
+            }
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = "login",
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable("login") {
+                    try {
+                        Log.d("AppNavigation", "NavHost -> Criando LoginScreen")
+                        val authViewModel: AuthViewModel = viewModel(factory = appContainer.authViewModelFactory)
+                        
+                        // Direciona para Home se ja tiver token salvo
+                        LaunchedEffect(Unit) {
+                            try {
+                                if (appContainer.tokenManager.getToken() != null) {
+                                    Log.i("AppNavigation", "Token encontrado. Redirecionando automaticamente para home.")
+                                    navController.navigate("home") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AppNavigation", "Erro ao checar token guardado na LoginScreen", e)
+                            }
+                        }
 
-    // Oculta bottom bar nas telas de autenticação
-    val showBottomBar = currentRoute != BottomNavRoutes.Login.route && currentRoute != BottomNavRoutes.Register.route
-
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        topBar = {
-            if (showBottomBar) {
-                TopAppBar(
-                    title = { Text(text = "Bueiro Inteligente") },
-                    actions = {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                appContainer.authRepository.logout()
-                                navController.navigate(BottomNavRoutes.Login.route) {
-                                    popUpTo(0) { inclusive = true } // Limpa a pilha de navegação
+                        LoginScreen(
+                            viewModel = authViewModel,
+                            onLoginSuccess = {
+                                try {
+                                    Log.d("AppNavigation", "Sinal de loginSuccessful recebido. Redirecionando a home.")
+                                    navController.navigate("home") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AppNavigation", "Erro na transicao pos-login", e)
                                 }
                             }
-                        }) {
-                            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Sair")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
-            }
-        },
-        bottomBar = {
-            if (showBottomBar) {
-                MainBottomBar(navController = navController, isLoggedIn = isLoggedIn)
+                        )
+                    } catch (e: Exception) {
+                        Log.e("AppNavigation", "Falha critica ao injetar ou exibir LoginScreen", e)
+                    }
+                }
+
+                composable("home") {
+                    try {
+                        Log.d("AppNavigation", "NavHost -> Criando HomeScreen")
+                        val homeViewModel: HomeViewModel = viewModel(factory = appContainer.homeViewModelFactory)
+                        val realtimeViewModel = appContainer.realtimeViewModel
+                        HomeScreen(
+                            viewModel = homeViewModel,
+                            realtimeViewModel = realtimeViewModel,
+                            onNavigateToMonitoring = {
+                                try {
+                                    Log.d("AppNavigation", "Redirecionando de Home -> Monitoring")
+                                    navController.navigate("monitoring")
+                                } catch (e: Exception) {
+                                    Log.e("AppNavigation", "Erro no clique home/monitoramento", e)
+                                }
+                            },
+                        )
+                    } catch (e: Exception) {
+                        Log.e("AppNavigation", "Falha critica ao exibir HomeScreen", e)
+                    }
+                }
+
+                composable("monitoring") {
+                    try {
+                        Log.d("AppNavigation", "NavHost -> Criando MonitoringScreen")
+                        val monitoringViewModel: MonitoringViewModel = viewModel(factory = appContainer.monitoringViewModelFactory)
+                        MonitoringScreen(
+                            viewModel = monitoringViewModel,
+                            onNavigateUp = { 
+                                try {
+                                    Log.d("AppNavigation", "Voltando de MonitoringScreen -> Home")
+                                    navController.navigateUp() 
+                                } catch (e: Exception) {
+                                    Log.e("AppNavigation", "Erro ao fechar tela de monitoramento", e)
+                                }
+                            }
+                        )
+                    } catch (e: Exception) {
+                        Log.e("AppNavigation", "Falha ao mostrar tela MonitoringScreen", e)
+                    }
+                }
+
+                composable("profile") {
+                    try {
+                        Log.d("AppNavigation", "NavHost -> Criando ProfileScreen")
+                        val profileViewModel: ProfileViewModel = viewModel(factory = appContainer.profileViewModelFactory)
+                        ProfileScreen(
+                            viewModel = profileViewModel,
+                            onNavigateUp = { 
+                                try {
+                                    Log.d("AppNavigation", "Voltando de ProfileScreen -> Home")
+                                    navController.navigateUp() 
+                                } catch (e: Exception) {
+                                    Log.e("AppNavigation", "Erro ao fechar Profile", e)
+                                }
+                            }
+                        )
+                    } catch (e: Exception) {
+                        Log.e("AppNavigation", "Falha ao demonstrar ProfileScreen", e)
+                    }
+                }
             }
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(BottomNavRoutes.Login.route) {
-                val viewModel: LoginViewModel = viewModel(
-                    factory = LoginViewModelFactory(appContainer.authRepository)
-                )
-                
-                LoginScreen(
-                    viewModel = viewModel,
-                    onNavigateToHome = {
-                        navController.navigate(BottomNavRoutes.Home.route) {
-                            popUpTo(BottomNavRoutes.Login.route) { inclusive = true }
-                        }
-                    },
-                    onNavigateToRegister = {
-                        navController.navigate(BottomNavRoutes.Register.route)
-                    }
-                )
-            }
-
-            composable(BottomNavRoutes.Register.route) {
-                val viewModel: RegisterViewModel = viewModel(
-                    factory = RegisterViewModelFactory(appContainer.authRepository)
-                )
-
-                RegisterScreen(
-                    viewModel = viewModel,
-                    onNavigateBackToLogin = {
-                        navController.popBackStack()
-                    },
-                    onRegisterSuccess = {
-                        // Após sucesso no cadastro, vai para login para realizar autenticação ou Home se preferir
-                        navController.navigate(BottomNavRoutes.Login.route) {
-                            popUpTo(BottomNavRoutes.Register.route) { inclusive = true }
-                        }
-                    onNavigateToLogin = {
-                        navController.navigate(BottomNavRoutes.Login.route) {
-                            popUpTo(BottomNavRoutes.Home.route) { inclusive = true }
-                            }
-                        }
-                    }
-                )
-            }
-            
-            composable(BottomNavRoutes.Monitoring.route) {
-                val viewModel: MonitoringViewModel = viewModel(
-                    factory = MonitoringViewModelFactory(appContainer.monitoringRepository, appContainer.locationHandler)
-                )
-                
-                MonitoringScreen(
-                    viewModel = viewModel,
-                    isLoggedIn = isLoggedIn,
-                    onNavigateToLogin = {
-                        navController.navigate(BottomNavRoutes.Login.route) {
-                            popUpTo(BottomNavRoutes.Home.route) { saveState = true }
-                        }
-                    }
-                )
-            }
-            
-            composable(BottomNavRoutes.Profile.route) {
-                val profileScope = rememberCoroutineScope()
-                
-                val profileViewModel: ProfileViewModel = viewModel(
-                    factory = ProfileViewModelFactory(appContainer.profileRepository)
-                )
-                
-                ProfileScreen(
-                    viewModel = profileViewModel,
-                    onLogoutClick = {
-                        profileScope.launch {
-                            appContainer.authRepository.logout()
-                            navController.navigate(BottomNavRoutes.Login.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
-                            }
-                        }
-                    }
-                )
-            }
-        }
+    } catch (e: Exception) {
+        Log.e("AppNavigation", "Falha terminal na estrutura do Scaffold(Host) Compose", e)
     }
 }

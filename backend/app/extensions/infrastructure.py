@@ -16,9 +16,9 @@ class InfrastructureExtension:
         """Implementação Singleton para garantir instância única."""
         if cls._instance is None:
             cls._instance = super(InfrastructureExtension, cls).__new__(cls)
-            # Inicializamos os atributos como None
-            cls._instance.supabase: AsyncClient = None
-            cls._instance.redis_client: redis.Redis = None
+            # Inicializamos os atributos como None (As declarações de tipo ficam implicadas em tempo de runtime)
+            cls._instance.supabase = None 
+            cls._instance.redis_client = None
         return cls._instance
 
     async def open(self):

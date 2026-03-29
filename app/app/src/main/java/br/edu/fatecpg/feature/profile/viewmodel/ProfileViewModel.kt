@@ -1,5 +1,6 @@
 package br.edu.fatecpg.feature.profile.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.feature.profile.dto.UserDTO
@@ -22,15 +23,28 @@ class ProfileViewModel(private val repository: ProfileRepository) : ViewModel() 
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     fun loadProfile() {
-        viewModelScope.launch {
-            _uiState.value = ProfileUiState.Loading
-            repository.fetchUserProfile()
-                .onSuccess { user ->
-                    _uiState.value = ProfileUiState.Success(user)
+        try {
+            Log.d("ProfileViewModel", "Iniciando carregamento do perfil via coroutineScope")
+            viewModelScope.launch {
+                try {
+                    _uiState.value = ProfileUiState.Loading
+                    repository.fetchUserProfile()
+                        .onSuccess { user ->
+                            Log.i("ProfileViewModel", "Perfil renderizavel carregado! Trocando state para Success.")
+                            _uiState.value = ProfileUiState.Success(user)
+                        }
+                        .onFailure { error ->
+                            Log.w("ProfileViewModel", "Estado de falha disparado no repositorio de viewmodel. Rastreio:", error)
+                            _uiState.value = ProfileUiState.Error(error.message ?: "Erro desconhecido ao carregar perfil")
+                        }
+                } catch (e: Exception) {
+                    Log.e("ProfileViewModel", "A coroutine do loadProfile encontrou um catch fatal", e)
+                    _uiState.value = ProfileUiState.Error("Erro inesperado ao gerar tela de perfil.")
                 }
-                .onFailure { error ->
-                    _uiState.value = ProfileUiState.Error(error.message ?: "Erro desconhecido ao carregar perfil")
-                }
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileViewModel", "O dispatcher de carregamento do perfil desabou", e)
+            _uiState.value = ProfileUiState.Error("Falha na renderização assíncrona.")
         }
     }
 }

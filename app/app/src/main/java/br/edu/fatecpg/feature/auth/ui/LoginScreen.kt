@@ -1,5 +1,6 @@
 package br.edu.fatecpg.feature.auth.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -37,9 +38,14 @@ fun LoginScreen(
 
     // Efeito para navegar quando o login for bem-sucedido
     LaunchedEffect(uiState) {
-        if (uiState is LoginUiState.Success) {
-            onNavigateToHome()
-            viewModel.resetState()
+        try {
+            if (uiState is LoginUiState.Success) {
+                Log.d("LoginScreen", "Navegando para Home apos sucesso.")
+                onNavigateToHome()
+                viewModel.resetState()
+            }
+        } catch (e: Exception) {
+            Log.e("LoginScreen", "Erro ao navegar para Home.", e)
         }
     }
 
@@ -49,107 +55,124 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Logo / Ícone
-            Icon(
-                imageVector = Icons.Default.WaterDrop, // Representação genérica para água/bueiro
-                contentDescription = "Logo Bueiro Inteligente",
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Bueiro Inteligente",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
+            try {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Logo / �cone
+                    Icon(
+                        imageVector = Icons.Default.WaterDrop, // Representação genérica para água/bueiro
+                        contentDescription = "Logo Bueiro Inteligente",
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
 
-            // Campo de E-mail
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("E-mail") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = uiState !is LoginUiState.Loading
-            )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Bueiro Inteligente",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-            // Campo de Senha
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Senha") },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = uiState !is LoginUiState.Loading,
-                trailingIcon = {
-                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    val description = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = image, contentDescription = description)
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Campo de E-mail
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("E-mail") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = uiState !is LoginUiState.Loading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Campo de Senha
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Senha") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = uiState !is LoginUiState.Loading,
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            val description = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = description)
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Exibição de Erros
+                    if (uiState is LoginUiState.Error) {
+                        Log.w("LoginScreen", "Exibindo erro: ")
+                        Text(
+                            text = (uiState as LoginUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botão de Entrar ou Indicador de Carregamento
+                    Button(
+                        onClick = { 
+                            try {
+                                viewModel.performLogin(email, password) 
+                            } catch (e: Exception) {
+                                Log.e("LoginScreen", "Erro ao executar performLogin", e)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        enabled = uiState !is LoginUiState.Loading && email.isNotBlank() && password.isNotBlank()
+                    ) {
+                        if (uiState is LoginUiState.Loading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(text = "Entrar", fontSize = 16.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Botão para ir para a tela de Registro
+                    TextButton(
+                        onClick = {
+                            try {
+                                onNavigateToRegister()
+                            } catch (e: Exception) {
+                                Log.e("LoginScreen", "Erro ao navegar para Register.", e)
+                            }
+                        },
+                        enabled = uiState !is LoginUiState.Loading
+                    ) {
+                        Text(text = "Ainda não tem conta? Cadastre-se")
                     }
                 }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Exibição de Erros
-            if (uiState is LoginUiState.Error) {
-                Text(
-                    text = (uiState as LoginUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp,
-                    modifier = Modifier.align(Alignment.Start)
-                )
+            } catch (e: Exception) {
+                Log.e("LoginScreen", "Erro critico na renderizacao da tela de Login", e)
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Botão de Entrar ou Indicador de Carregamento
-            Button(
-                onClick = { viewModel.performLogin(email, password) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                enabled = uiState !is LoginUiState.Loading && email.isNotBlank() && password.isNotBlank()
-            ) {
-                if (uiState is LoginUiState.Loading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(text = "Entrar", fontSize = 16.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Botão para ir para a tela de Registro
-            TextButton(
-                onClick = onNavigateToRegister,
-                enabled = uiState !is LoginUiState.Loading
-            ) {
-                Text(text = "Ainda não tem conta? Cadastre-se")
-            }
-        }
         }
     }
 }

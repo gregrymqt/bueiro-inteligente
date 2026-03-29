@@ -1,5 +1,6 @@
 package br.edu.fatecpg.core.network
 
+import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -10,42 +11,54 @@ object ApiClient {
     private var retrofit: Retrofit? = null
 
     /**
-     * Inicializa a inst√¢ncia Singleton do Retrofit.
-     * Deve ser chamado idealmente no Application ou na Activity inicial.
+     * Inicializa a inst‚ncia Singleton do Retrofit.
+     * Deve ser chamado idealmente no Application ou na Activity inicial.       
      */
     fun init(tokenManager: TokenManager, baseUrl: String) {
         if (retrofit == null) {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+            try {
+                Log.i("ApiClient", "Inicializando ApiClient com base url: $baseUrl")
+                
+                val loggingInterceptor = HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BODY
+                }
+
+                val authInterceptor = AuthInterceptor(tokenManager)
+
+                val tokenAuthenticator = TokenAuthenticator(tokenManager)
+
+                val okHttpClient = OkHttpClient.Builder()
+                    .addInterceptor(authInterceptor)
+                    .authenticator(tokenAuthenticator)
+                    .addInterceptor(loggingInterceptor) // Adicionado para debug em nÌvel BODY
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build()
+
+                retrofit = Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .client(okHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                
+                Log.i("ApiClient", "ApiClient inicializado com sucesso.")
+            } catch (e: Exception) {
+                Log.e("ApiClient", "Erro critico ao inicializar ApiClient: ${e.message}", e)
+                throw e
             }
-
-            val authInterceptor = AuthInterceptor(tokenManager)
-
-            val tokenAuthenticator = TokenAuthenticator(tokenManager)
-
-            val okHttpClient = OkHttpClient.Builder()
-                .addInterceptor(authInterceptor)
-                .authenticator(tokenAuthenticator)
-                .addInterceptor(loggingInterceptor) // Adicionado para debug em n√≠vel BODY
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build()
-
-            retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .client(okHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
         }
     }
 
     /**
-     * M√©todo gen√©rico para instanciar servi√ßos do Retrofit.
+     * Cria e retorna uma interface de serviÁo usando a inst‚ncia atual do Retrofit.
      */
     fun <T> createService(serviceClass: Class<T>): T {
-        val currentRetrofit = retrofit ?: throw IllegalStateException(
-            "ApiClient n√£o foi inicializado. Chame ApiClient.init(tokenManager) primeiro."
-        )
-        return currentRetrofit.create(serviceClass)
+        try {
+            val currentRetrofit = retrofit ?: throw IllegalStateException("ApiClient not initialized. Call init() first.")
+            return currentRetrofit.create(serviceClass)
+        } catch (e: Exception) {
+            Log.e("ApiClient", "Erro ao criar servico ${serviceClass.simpleName}: ${e.message}", e)
+            throw e
+        }
     }
 }

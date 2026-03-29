@@ -10,13 +10,16 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import android.util.Log
 
 interface AuthService {
-    
+
     @POST("auth/login")
-    suspend fun login(@Body request: LoginRequest): Response<TokenResponse>
+    suspend fun login(@Body request: LoginRequest): Response<TokenResponse>     
+
     @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<UserDTO>
+    suspend fun register(@Body request: RegisterRequest): Response<UserDTO>     
+
     @POST("auth/logout")
     suspend fun logout(): Response<ResponseBody>
 
@@ -25,7 +28,13 @@ interface AuthService {
 
     companion object {
         fun create(): AuthService {
-            return ApiClient.createService(AuthService::class.java)
+            return try {
+                Log.d("AuthService", "Criando instância do AuthService via ApiClient")
+                ApiClient.createService(AuthService::class.java)
+            } catch (e: Exception) {
+                Log.e("AuthService", "Erro ao criar instância do AuthService", e)
+                throw e
+            }
         }
     }
 }

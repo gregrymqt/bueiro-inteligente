@@ -10,12 +10,18 @@ class BroadcastService:
         """
         Recebe o status confirmado do banco e dispara para os clientes conectados.
         """
-        if status_db.status in ["Crítico", "Alerta"]:
-            evento = {
-                "evento_tipo": "BUEIRO_STATUS_MUDOU",
-                # Força a conversão de datetime para string usando o Pydantic
-                "dados": status_db.model_dump(mode="json") 
-            }
-            
-            logger.info(f"Disparando broadcast para o bueiro {status_db.id_bueiro}")
-            await realtime_extension.broadcast(evento)
+        try:
+            if status_db.status in ["Crítico", "Alerta"]:
+                evento = {
+                    "evento_tipo": "BUEIRO_STATUS_MUDOU",
+                    # Força a conversão de datetime para string usando o Pydantic
+                    "dados": status_db.model_dump(mode="json") 
+                }
+                
+                logger.info(f"Disparando broadcast de alerta/crítico para o bueiro {status_db.id_bueiro}")
+                await realtime_extension.broadcast(evento)
+            else:
+                logger.debug(f"Status Normal. Broadcast ignorado para o bueiro {status_db.id_bueiro}")
+        except Exception as e:
+            logger.error(f"Erro ao enviar broadcast socket para o bueiro {status_db.id_bueiro}: {str(e)}", exc_info=True)
+            # Obs: Como erro em Broadcast não deve parar o salvamento da medição, não subimos o 'raise' aqui.

@@ -1,11 +1,12 @@
 package br.edu.fatecpg.core.di
 
 import android.content.Context
+import android.util.Log
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import br.edu.fatecpg.feature.auth.services.AuthService
-import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
+import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository        
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.profile.repository.ProfileRepository
 import br.edu.fatecpg.feature.profile.services.ProfileService
@@ -16,22 +17,40 @@ import br.edu.fatecpg.core.navigation.LocationHandler
 import br.edu.fatecpg.core.navigation.AndroidLocationHandler
 
 /**
- * Container de InjeÃ§Ã£o de DependÃªncias manual (Service Locator).
- * MantÃƒÂ©m instÃƒÂ¢ncias globais ÃƒÂºnicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
+ * Container de Injeção de Dependências manual (Service Locator).
+ * Mantém instâncias globais únicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
  */
-class AppContainer(private val context: Context, private val baseUrl: String) {
+class AppContainer(private val context: Context, private val baseUrl: String) { 
 
     val tokenManager: TokenManager by lazy {
-        TokenManager(context)
+        try {
+            Log.i("AppContainer", "Criando TokenManager")
+            TokenManager(context)
+        } catch (e: Exception) {
+            Log.e("AppContainer", "Erro ao criar TokenManager", e)
+            throw e
+        }
     }
 
     val locationHandler: LocationHandler by lazy {
-        AndroidLocationHandler(context)
+        try {
+            Log.i("AppContainer", "Criando LocationHandler")
+            AndroidLocationHandler(context)
+        } catch (e: Exception) {
+            Log.e("AppContainer", "Erro ao criar LocationHandler", e)
+            throw e
+        }
     }
 
     init {
-        // Inicializa o ApiClient para todo o aplicativo
-        ApiClient.init(tokenManager, baseUrl)
+        try {
+            Log.i("AppContainer", "Inicializando AppContainer")
+            // Inicializa o ApiClient para todo o aplicativo
+            ApiClient.init(tokenManager, baseUrl)
+            Log.i("AppContainer", "ApiClient inicializado via AppContainer")
+        } catch (e: Exception) {
+            Log.e("AppContainer", "Falha critica no INIT do AppContainer", e)
+        }
     }
 
     // --- Auth Feature ---
@@ -48,12 +67,18 @@ class AppContainer(private val context: Context, private val baseUrl: String) {
 
     // --- Realtime/Home Feature ---
     val realtimeWebSocketClient: RealtimeWebSocketClient by lazy {
-        val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
-        RealtimeWebSocketClient(
-            okHttpClient = okhttp3.OkHttpClient(),
-            gson = com.google.gson.Gson(),
-            baseUrl = wsUrl
-        )
+        try {
+            val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
+            Log.i("AppContainer", "Criando RealtimeWebSocketClient para url: $wsUrl")
+            RealtimeWebSocketClient(
+                okHttpClient = okhttp3.OkHttpClient(),
+                gson = com.google.gson.Gson(),
+                baseUrl = wsUrl
+            )
+        } catch (e: Exception) {
+            Log.e("AppContainer", "Erro ao criar RealtimeWebSocketClient", e)
+            throw e
+        }
     }
     val realtimeService: RealtimeService by lazy { RealtimeService(realtimeWebSocketClient) }
     val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }

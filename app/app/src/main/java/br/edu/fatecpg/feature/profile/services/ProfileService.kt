@@ -1,5 +1,6 @@
 package br.edu.fatecpg.feature.profile.services
 
+import android.util.Log
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.feature.profile.dto.UserDTO
 import retrofit2.Response
@@ -12,7 +13,13 @@ interface ProfileService {
 
     companion object {
         fun create(): ProfileService {
-            return ApiClient.retrofit.create(ProfileService::class.java)
+            return try {
+                Log.d("ProfileService", "Criando instância do ProfileService via ApiClient")
+                ApiClient.retrofit.create(ProfileService::class.java)
+            } catch (e: Exception) {
+                Log.e("ProfileService", "Erro ao criar instância de ProfileService", e)
+                throw e
+            }
         }
     }
 }

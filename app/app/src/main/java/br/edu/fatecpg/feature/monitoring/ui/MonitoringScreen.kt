@@ -1,32 +1,28 @@
 package br.edu.fatecpg.feature.monitoring.ui
 
-import androidx.compose.foundation.Canvas
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.style.TextAlign
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringUiState
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,219 +31,176 @@ fun MonitoringScreen(
     isLoggedIn: Boolean,
     onNavigateToLogin: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
-    val isRefreshing = uiState is MonitoringUiState.Loading
+    try {
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
 
-    if (showLoginDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissLoginDialog() },
-            title = {
-                Text(text = "Acesso Restrito", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text(text = "Você precisa fazer login para visualizar detalhes técnicos e interagir com este bueiro.")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.dismissLoginDialog()
-                    onNavigateToLogin()
+        Scaffold(
+            floatingActionButton = {
+                FloatingActionButton(onClick = {
+                    try {
+                        viewModel.refreshDrains()
+                    } catch (e: Exception) {
+                        Log.e("MonitoringScreen", "Erro ao atualizar bueiros via FAB", e)
+                    }
                 }) {
-                    Text("Entrar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissLoginDialog() }) {
-                    Text("Cancelar")
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Atualizar")
                 }
             }
-        )
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Monitoramento", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = { viewModel.refreshDrains() },
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (val state = uiState) {
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                when (uiState) {
                     is MonitoringUiState.Loading -> {
-                        // SwipeRefresh já fornece o feedback visual de loading
-                    }
-                    is MonitoringUiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {  
-                            ErrorState(
-                                message = state.message,
-                                onRetry = { viewModel.refreshDrains() }
-                            )
-                        }
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                     is MonitoringUiState.Success -> {
-                        if (state.drains.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                EmptyState()
-                            }
+                        val drains = (uiState as MonitoringUiState.Success).drains
+                        
+                        if (drains.isEmpty()) {
+                            Text(
+                                "Nenhum bueiro cadastrado no momento.",
+                                modifier = Modifier.align(Alignment.Center)
+                            )
                         } else {
                             LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                modifier = Modifier.fillMaxSize()
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(state.drains) { drain ->
-                                    DrainItem(
+                                items(drains) { drain ->
+                                    DrainItemCard(
                                         drain = drain,
-                                        onClick = { 
-                                            viewModel.onDrainClick(isLoggedIn, drain)
+                                        onClick = {
+                                            try {
+                                                viewModel.onDrainClick(isLoggedIn, drain)
+                                            } catch (e: Exception) {
+                                                Log.e("MonitoringScreen", "Erro no click do card de bueiro", e)
+                                            }
                                         }
                                     )
                                 }
                             }
                         }
                     }
+                    is MonitoringUiState.Error -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = (uiState as MonitoringUiState.Error).message,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            Button(onClick = {
+                                try {
+                                    viewModel.refreshDrains()
+                                } catch (e: Exception) {
+                                    Log.e("MonitoringScreen", "Erro ao atualizar bueiros pelo botao de erro", e)
+                                }
+                            }) {
+                                Text("Tentar Novamente")
+                            }
+                        }
+                    }
+                }
+
+                if (showLoginDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            try {
+                                viewModel.dismissLoginDialog()
+                            } catch (e: Exception) {
+                                Log.e("MonitoringScreen", "Erro ao fechar modal de login", e)
+                            }
+                        },
+                        title = { Text("Acesso Restrito") },
+                        text = { Text("Para ver a localiza��o exata e detalhes do bueiro, � necess�rio estar logado.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                try {
+                                    viewModel.dismissLoginDialog()
+                                    onNavigateToLogin()
+                                } catch (e: Exception) {
+                                    Log.e("MonitoringScreen", "Erro ao navegar para login no dialog", e)
+                                }
+                            }) {
+                                Text("Fazer Login")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                try {
+                                    viewModel.dismissLoginDialog()
+                                } catch (e: Exception) {
+                                    Log.e("MonitoringScreen", "Erro no botao cancelar modal login", e)
+                                }
+                            }) {
+                                Text("Cancelar")
+                            }
+                        }
+                    )
                 }
             }
         }
+    } catch (e: Exception) {
+        Log.e("MonitoringScreen", "Falha global na renderizacao da MonitoringScreen", e)
     }
 }
 
 @Composable
-fun DrainItem(drain: DrainStatusDTO, onClick: () -> Unit) {
-    // Carrega a cor através do Mapeador da ViewModel
-    val statusColor = Color(MonitoringViewModel.getStatusColor(drain.status))
-    
-    // Converte a porcentagem de obstrução para um valor fracionário (0.0 até 1.0) para a barra de progresso
-    val obstructionFraction = (drain.nivelObstrucao / 100f).coerceIn(0.0, 1.0).toFloat()
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
+fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
+    try {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable { onClick() },
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            // Indicador visual de cor em formato de círculo
-            Canvas(modifier = Modifier.size(16.dp)) {
-                drawCircle(color = statusColor)
-            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Indicador de Status (Bolinha colorida)
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(
+                            color = Color(MonitoringViewModel.getStatusColor(drain.status)),
+                            shape = CircleShape
+                        )
+                )
 
-            Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Bueiro: ${drain.idBueiro}",
+                        text = "Bueiro ${drain.idBueiro}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = formatDateTime(drain.ultimaAtualizacao),
-                        fontSize = 12.sp,
+                        text = "Status: ${drain.status.uppercase()}",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        text = "Obstru��o: ${drain.nivelObstrucao.toInt()}%",
+                        fontSize = 14.sp,
                         color = Color.Gray
                     )
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Obstrução: ${drain.nivelObstrucao.toInt()}%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Barra de progresso baseada no nível de obstrução e com cor do status
-                LinearProgressIndicator(
-                    progress = obstructionFraction,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp),
-                    color = statusColor,
-                    trackColor = statusColor.copy(alpha = 0.2f)
-                )
             }
         }
-    }
-}
-
-@Composable
-fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = "Erro",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(48.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRetry) {
-            Text("Tentar Novamente")
-        }
-    }
-}
-
-@Composable
-fun EmptyState() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Nenhum bueiro cadastrado ou disponível no momento.",
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp
-        )
-    }
-}
-
-// Utilitário para formatar a data que vem no padrão string ISO/Date-Time do servidor
-private fun formatDateTime(isoString: String): String {
-    return try {
-        // Tenta padronizar o Timestamp (pode variar de acordo com o retorno real da API)
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val date = inputFormat.parse(isoString)
-        if (date != null) outputFormat.format(date) else isoString
     } catch (e: Exception) {
-        // Se a string já vier formatada diferente, não exibe erro, passa a original
-        isoString
+        Log.e("DrainItemCard", "Falha na renderizacao do card individual", e)
     }
 }

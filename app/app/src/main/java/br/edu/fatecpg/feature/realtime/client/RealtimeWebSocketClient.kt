@@ -1,5 +1,6 @@
 package br.edu.fatecpg.feature.realtime.client
 
+import android.util.Log
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -30,45 +31,70 @@ class RealtimeWebSocketClient(
     val connectionErrorFlow: SharedFlow<String?> = _connectionErrorFlow.asSharedFlow()
 
     fun connect(token: String?) {
-        val requestBuilder = Request.Builder().url(baseUrl)
-        
-        if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
+        try {
+            val requestBuilder = Request.Builder().url(baseUrl)
+
+            if (!token.isNullOrEmpty()) {
+                requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
+
+            Log.i("RealtimeWebSocketClient", "Construindo conexao OkHttp socket para $baseUrl")
+            webSocket = okHttpClient.newWebSocket(requestBuilder.build(), DrainWebSocketListener())
+        } catch (e: Exception) {
+            Log.e("RealtimeWebSocketClient", "Nao foi possivel estabelecer fabrica conexao com backend WebSocket", e)
         }
-        
-        webSocket = okHttpClient.newWebSocket(requestBuilder.build(), DrainWebSocketListener())
     }
 
     fun disconnect() {
-        webSocket?.close(1000, "App closed")
-        webSocket = null
+        try {
+            Log.d("RealtimeWebSocketClient", "Encerrando conexao WebSocket ativamente 1000/App closed")
+            webSocket?.close(1000, "App closed")
+            webSocket = null
+        } catch (e: Exception) {
+            Log.e("RealtimeWebSocketClient", "Pânico ao fechar fluxo nativo socket okhttp", e)
+        }
     }
 
     private inner class DrainWebSocketListener : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            Log.i("DrainWebSocketListener", "Conexão aberta de Realtime ativa com servidor")
             coroutineScope.launch {
-                _connectionErrorFlow.emit(null)
+                try {
+                    _connectionErrorFlow.emit(null)
+                } catch (e: Exception) {
+                    Log.e("DrainWebSocketListener", "Falha interna ao limpar erros antigos pós reconexao no coroutine flow", e)
+                }
             }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
             try {
-                val message = gson.fromJson(text, RealtimeMessage::class.java)
+                // Log.d("DrainWebSocketListener", "Frame WebSocket de mensagem chegado: (omitindo para n travar IO)")
+                val message = gson.fromJson(text, RealtimeMessage::class.java)  
                 if (message.eventoTipo == "BUEIRO_STATUS_MUDOU" && message.dados != null) {
+                    Log.i("DrainWebSocketListener", "Frame recebido é update de bueiro! Realizando binding via GSON")
                     val status = gson.fromJson(gson.toJson(message.dados), DrainStatusDTO::class.java)
                     coroutineScope.launch {
-                        _drainStatusFlow.emit(status)
+                        try {
+                            _drainStatusFlow.emit(status)
+                        } catch (e: Exception) {
+                            Log.e("DrainWebSocketListener", "Erro de emissao do SharedFlow de novo bueiro", e)
+                        }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.w("DrainWebSocketListener", "Falha ao desserializar formato da mensagem provida via WebSocket", e)
             }
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            t.printStackTrace()
+            Log.e("DrainWebSocketListener", "Nativo OkHttp WebSocket despencou (falha). Socket code: ${response?.code ?: "N/A"}", t)
             coroutineScope.launch {
-                _connectionErrorFlow.emit("Falha na conexÃ£o de tempo real. Tentando novamente...")
+                try {
+                    _connectionErrorFlow.emit("Falha na conexão de tempo real. Tentando novamente...")
+                } catch (e: Exception) {
+                    Log.e("DrainWebSocketListener", "Falha ao emitir mensagem de aviso visual para usuario na falha de WS", e)
+                }
             }
         }
     }
