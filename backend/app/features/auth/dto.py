@@ -20,7 +20,8 @@ class TokenPayload(BaseModel):
     DTO para o conteúdo (payload) do token JWT.
     """
     sub: str | None = None # Subject (geralmente o username ou ID do usuário)
-    jti: str | None = None # JWT ID (identificador único do token)
+    jti: str | None = None
+    roles: list[str] = Field(default_factory=list) # Roles do usuario
 
 
 # =======================================================

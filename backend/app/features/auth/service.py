@@ -1,38 +1,38 @@
-from .interfaces import IAuthService, IAuthRepository
-from .dto import User
-from backend.app.core.security import verify_password, create_access_token as create_token
-from backend.app.core.blacklist import add_to_blacklist
+﻿from .interfaces import IAuthService, IAuthRepository
+from .dto import User, TokenPayload
+from app.extensions.auth import auth_extension
 
 class AuthService(IAuthService):
     """
-    Implementação do serviço de autenticação.
-    Contém a lógica de negócio para autenticar usuários e gerenciar tokens.
+    ImplementaÃ§Ã£o do serviÃ§o de autenticaÃ§Ã£o.
+    ContÃ©m a lÃ³gica de negÃ³cio para autenticar usuÃ¡rios e gerenciar tokens.
     """
     def __init__(self, repository: IAuthRepository):
         self.repository = repository
 
     async def authenticate_user(self, username: str, password: str) -> User | None:
         """
-        Verifica as credenciais do usuário.
-        1. Busca o usuário no repositório.
-        2. Se o usuário existe, verifica se a senha fornecida corresponde ao hash armazenado.
-        3. Se a senha for válida, retorna os dados do usuário.
+        Verifica as credenciais do usuÃ¡rio.
+        1. Busca o usuÃ¡rio no repositÃ³rio.
+        2. Se o usuÃ¡rio existe, verifica se a senha fornecida corresponde ao hash armazenado.
+        3. Se a senha for vÃ¡lida, retorna os dados do usuÃ¡rio.
         """
         user_in_db = await self.repository.get_user_by_username(username)
         if not user_in_db:
             return None
-        
-        if not await verify_password(password, user_in_db.hashed_password):
+
+        if not await auth_extension.verify_password(password, user_in_db.hashed_password):
             return None
-            
+
         return User(username=user_in_db.username, full_name=user_in_db.full_name, roles=user_in_db.roles)
 
     def create_access_token(self, user: User) -> str:
-        # Passamos as roles do usuário para o payload do token
-        return create_token(data={"sub": user.username, "roles": user.roles})
+        # Passamos as roles do usuÃ¡rio para o payload do token
+        payload = TokenPayload(sub=user.username, roles=user.roles)
+        return auth_extension.create_access_token(payload)
 
     async def logout(self, token_jti: str) -> None:
         """
-        Adiciona o JTI (identificador único) do token à blacklist para invalidá-lo.
+        Adiciona o JTI (identificador Ãºnico) do token Ã  blacklist para invalidÃ¡-lo.
         """
-        await add_to_blacklist(token_jti)
+        await auth_extension.add_to_blacklist(token_jti)

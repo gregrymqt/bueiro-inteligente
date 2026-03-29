@@ -13,8 +13,8 @@ class RealtimeExtension:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(RealtimeExtension, cls).__new__(cls)
-            # Lista em memÃ³ria para guardar os clientes conectados 
-            cls._instance.active_connections: List[WebSocket] = []
+            # Lista em memória para guardar os clientes conectados 
+            cls._instance.active_connections = [] 
         return cls._instance
 
     async def open(self):
@@ -55,7 +55,7 @@ class RealtimeExtension:
         if isinstance(data, BaseModel):
             message_to_send = data.model_dump(mode="json")
 
-        for connection in self.active_connections:
+        for connection in list(self.active_connections):
             try:
                 # Envia o JSON via socket 
                 await connection.send_json(message_to_send)

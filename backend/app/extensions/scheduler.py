@@ -1,4 +1,4 @@
-# app/extensions/scheduler.py
+﻿# app/extensions/scheduler.py
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core.config import settings
@@ -33,13 +33,13 @@ class SchedulerExtension:
 
         try:
             # 1. Instancia o Service do Rows com a API Key das configuraÃ§Ãµes
-            self.rows_service = RowsService(api_key=settings.ROWS_API_KEY)
+            self.rows_service = RowsService(api_key=settings.ROWS_API_KEY)      
 
             # 2. Instancia o Repository (NecessÃ¡rio para o Job ler os dados do Supabase)
-            # Usamos o cliente que jÃ¡ foi aberto na InfrastructureExtension
-            cache_service = RedisCacheService(infrastructure.redis_client)
+            # Usamos o cliente que jÃ¡ foi aberto na InfrastructureExtension  
+            cache_service = RedisCacheService(infrastructure.redis_client)      
             repository = DrainRepository(
-                db_client=infrastructure.supabase, 
+                db_client=infrastructure.supabase,
                 cache_service=cache_service
             )
 
@@ -51,18 +51,34 @@ class SchedulerExtension:
                 table_id=settings.ROWS_TABLE_ID
             )
 
-            # 4. Adiciona o Job ao agendador (Rodando a cada 60 minutos como no seu logError.md)
+            # Wrapper para garantir execuÃ§Ã£o Ãºnica via Redis Lock
+            async def execute_with_lock():
+                redis_client = infrastructure.redis_client
+                # Tenta adquirir o lock por 300 segundos (5 min). NX garante que sÃ³ adquire se nÃ£o existir
+                # Dessa forma, mÃºltiplos workers do Uvicorn nÃ£o rodam o Job silmuntaneamente
+                lock_acquired = await redis_client.set("lock:rows_sync_job", "locked", nx=True, ex=300)
+                if not lock_acquired:
+                    logger.debug("RowsSyncJob bypassado: job jÃ¡ rodando em outro worker Uvicorn.")
+                    return
+                
+                try:
+                    logger.info("Lock adquirido com sucesso. Executando sincronizaÃ§Ã£o Rows...")
+                    await sync_job.execute()
+                except Exception as e:
+                    logger.error(f"Erro durante execuÃ§Ã£o do Job de SincronizaÃ§Ã£o (Worker): {e}")
+
+            # 4. Adiciona o Job ao agendador (Rodando a cada 60 minutos)
             self.scheduler.add_job(
-                sync_job.execute, 
-                'interval', 
-                minutes=60, 
+                execute_with_lock,
+                'interval',
+                minutes=60,
                 id='sync_rows_job',
                 replace_existing=True
             )
 
             # 5. Liga o motor do agendador
             self.scheduler.start()
-            logger.info("Scheduler iniciado: Job do Rows agendado com sucesso.")
+            logger.info("Scheduler iniciado: Job do Rows agendado com sucesso e protegido por redis-lock.")
 
         except Exception as e:
             logger.error(f"Erro ao iniciar o Scheduler: {e}")

@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { NavigationItem } from '@/components/layout/types';
+import { NavigationItem } from '@/components/layout/Sidebar/types';
 
 // Importando as nossas Features
-import { RealTimeMonitor } from '@/features/monitoring/components/RealTimeMonitor';
-import { RowsEmbed } from '@/features/rows/components/RowsEmbed';
+import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
+// import { RowsEmbed } from '@/feature/rows/components/RowsEmbed'; // <--- Comentado pois a feature rows ainda não existe
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
@@ -48,7 +48,8 @@ export const Dashboard: React.FC = () => {
       label: 'Análise de Histórico',
       icon: <ChartIcon />,
       // Aqui você colocará o embedUrl gerado pela sua conta do Rows
-      component: <RowsEmbed embedUrl="https://rows.com/embed/sua-planilha-aqui" title="Histórico de Obstrução" />
+      // component: <RowsEmbed embedUrl="https://rows.com/embed/sua-planilha-aqui" title="Histórico de Obstrução" />
+      component: <div style={{ padding: '20px', textAlign: 'center' }}>Módulo de Histórico (Rows) em breve...</div>
     }
   ], []);
 

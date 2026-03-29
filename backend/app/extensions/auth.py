@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 import uuid
+from fastapi import Query
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -9,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
 from app.extensions.infrastructure import infrastructure # Usamos a infraestrutura que jÃ¡ criamos
-from app.features.auth.dto import UserTokenData
+from app.features.auth.dto import UserTokenData, TokenPayload
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,8 @@ class AuthExtension:
 
     # --- MÃ©todos de Core Auth ---
     
-    def create_access_token(self, data: dict) -> str:
-        to_encode = data.copy()
+    def create_access_token(self, payload: TokenPayload) -> str:
+        to_encode = payload.model_dump(exclude_unset=True)
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({
             "exp": expire,
@@ -98,3 +99,13 @@ async def get_current_user(token: str = Depends(auth_extension.oauth2_scheme)) -
             
     except JWTError:
         raise credentials_exception
+
+
+async def verify_hardware_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token", auto_error=False)), query_token: str = Query(None, alias="token")):
+    "\"Verifica se a request foi feita pelo hardware seguro."\"
+    from fastapi import Query
+    final_token = token or query_token
+    if final_token != settings.HARDWARE_TOKEN:
+        raise HTTPException(status_code=401, detail="Hardware inválido ou não autorizado")
+    return final_token
+
