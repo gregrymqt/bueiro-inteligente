@@ -21,7 +21,6 @@ class MonitoringRepository(private val monitoringService: MonitoringService) {
                     }
                 } else {
                     when (response.code()) {
-                        401 -> Result.failure(Exception("Sessão expirada ou token inválido. Faça login novamente."))
                         403 -> Result.failure(Exception("Acesso negado para listar os bueiros."))
                         else -> Result.failure(Exception("Erro na requisição: Código HTTP ${response.code()}"))
                     }

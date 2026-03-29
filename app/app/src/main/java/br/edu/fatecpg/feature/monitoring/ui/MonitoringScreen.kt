@@ -1,9 +1,5 @@
 package br.edu.fatecpg.feature.monitoring.ui
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,12 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,11 +31,38 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonitoringScreen(
-    viewModel: MonitoringViewModel
+    viewModel: MonitoringViewModel,
+    isLoggedIn: Boolean,
+    onNavigateToLogin: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
     val isRefreshing = uiState is MonitoringUiState.Loading
-    val context = LocalContext.current
+
+    if (showLoginDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissLoginDialog() },
+            title = {
+                Text(text = "Acesso Restrito", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(text = "Você precisa fazer login para visualizar detalhes técnicos e interagir com este bueiro.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissLoginDialog()
+                    onNavigateToLogin()
+                }) {
+                    Text("Entrar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissLoginDialog() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -84,7 +107,9 @@ fun MonitoringScreen(
                                 items(state.drains) { drain ->
                                     DrainItem(
                                         drain = drain,
-                                        onClick = { openGoogleMaps(context, drain) }
+                                        onClick = { 
+                                            viewModel.onDrainClick(isLoggedIn, drain)
+                                        }
                                     )
                                 }
                             }
@@ -93,23 +118,6 @@ fun MonitoringScreen(
                 }
             }
         }
-    }
-}
-
-private fun openGoogleMaps(context: Context, drain: DrainStatusDTO) {
-    if (drain.latitude != null && drain.longitude != null) {
-        val uri = Uri.parse("geo:${drain.latitude},${drain.longitude}?q=${drain.latitude},${drain.longitude}(Bueiro+${drain.idBueiro})")
-        val mapIntent = Intent(Intent.ACTION_VIEW, uri)
-        mapIntent.setPackage("com.google.android.apps.maps")
-        if (mapIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(mapIntent)
-        } else {
-            // Fallback para abrir no navegador se o Google Maps não estiver instalado
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com/?q=${drain.latitude},${drain.longitude}"))
-            context.startActivity(browserIntent)
-        }
-    } else {
-        Toast.makeText(context, "Localização indisponível para este bueiro", Toast.LENGTH_SHORT).show()
     }
 }
 

@@ -23,11 +23,7 @@ class AuthRepository(
                         Result.failure(Exception("Resposta do servidor vazia."))
                     }
                 } else {
-                    if (response.code() == 401) {
-                        Result.failure(Exception("Credenciais inválidas. Verifique seu e-mail e senha."))
-                    } else {
-                        Result.failure(Exception("Erro na autenticação (Código: ${response.code()})."))
-                    }
+                    Result.failure(Exception("Erro na autenticação (Código: ${response.code()})."))
                 }
             } catch (e: Exception) {
                 Result.failure(Exception("Falha de conexão. Verifique sua rede e tente novamente."))
@@ -37,5 +33,20 @@ class AuthRepository(
 
     fun isUserLoggedIn(): Boolean {
         return !tokenManager.getToken().isNullOrEmpty()
+    }
+
+    suspend fun logout(): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Tenta chamar o endpoint de logout na API
+                authService.logout()
+            } catch (e: Exception) {
+                // Ignoramos erros de rede, pois o comportamento local deve prevalecer
+            } finally {
+                // Sempre removemos o token localmente, garantindo o logout no dispositivo
+                tokenManager.clearToken()
+            }
+            Result.success(Unit)
+        }
     }
 }

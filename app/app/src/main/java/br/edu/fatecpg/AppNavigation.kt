@@ -1,61 +1,54 @@
 package br.edu.fatecpg
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import br.edu.fatecpg.core.network.TokenManager
-import br.edu.fatecpg.feature.auth.repository.AuthRepository
-import br.edu.fatecpg.feature.auth.services.AuthService
+import br.edu.fatecpg.core.di.AppContainer
+import br.edu.fatecpg.core.navigation.BottomNavRoutes
+import br.edu.fatecpg.core.navigation.MainBottomBar
 import br.edu.fatecpg.feature.auth.ui.LoginScreen
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
 import br.edu.fatecpg.feature.home.ui.HomeScreen
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
-import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
-import br.edu.fatecpg.feature.realtime.services.RealtimeService
-import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
-import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.monitoring.ui.MonitoringScreen
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
-
-sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector?) {
-    object Login : Screen("login", "Login", null)
-    object Home : Screen("home", "Home", Icons.Default.Home)
-    object Monitoring : Screen("monitoring", "Bueiros", Icons.Default.List)
-}
+import br.edu.fatecpg.feature.profile.ui.ProfileScreen
+import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
+import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModelFactory
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation(tokenManager: TokenManager, baseUrl: String) {
+fun AppNavigation(appContainer: AppContainer) {
     val navController = rememberNavController()
     
-    // Rota inicial dependendo de ter token salvo ou não
-    val startDestination = if (tokenManager.getToken().isNullOrEmpty()) {
-        Screen.Login.route
-    } else {
-        Screen.Home.route
+    val isLoggedIn by appContainer.tokenManager.isLoggedIn.collectAsStateWithLifecycle()
+    
+    // Rota inicial dependendo de ter token salvo ou não (calculada na largada)
+    val startDestination = remember {
+        if (appContainer.tokenManager.getToken().isNullOrEmpty()) BottomNavRoutes.Login.route else BottomNavRoutes.Home.route
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = navBackStackEntry?.destination?.route
 
     // Oculta bottom bar na tela de login
-    val showBottomBar = currentDestination?.route != Screen.Login.route
+    val showBottomBar = currentRoute != BottomNavRoutes.Login.route
+
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -64,9 +57,11 @@ fun AppNavigation(tokenManager: TokenManager, baseUrl: String) {
                     title = { Text(text = "Bueiro Inteligente") },
                     actions = {
                         IconButton(onClick = {
-                            tokenManager.clearToken()
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0) { inclusive = true } // Limpa a pilha de navegação
+                            coroutineScope.launch {
+                                appContainer.authRepository.logout()
+                                navController.navigate(BottomNavRoutes.Login.route) {
+                                    popUpTo(0) { inclusive = true } // Limpa a pilha de navegação
+                                }
                             }
                         }) {
                             Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Sair")
@@ -81,25 +76,7 @@ fun AppNavigation(tokenManager: TokenManager, baseUrl: String) {
         },
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
-                    val items = listOf(Screen.Home, Screen.Monitoring)
-                    items.forEach { screen ->
-                        NavigationBarItem(
-                            icon = { screen.icon?.let { Icon(it, contentDescription = screen.title) } },
-                            label = { Text(screen.title) },
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
-                }
+                MainBottomBar(navController = navController, isLoggedIn = isLoggedIn)
             }
         }
     ) { innerPadding ->
@@ -108,43 +85,70 @@ fun AppNavigation(tokenManager: TokenManager, baseUrl: String) {
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Login.route) {
-                val authService = AuthService.create()
-                val repository = AuthRepository(authService, tokenManager)
-                val viewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(repository))
+            composable(BottomNavRoutes.Login.route) {
+                val viewModel: LoginViewModel = viewModel(
+                    factory = LoginViewModelFactory(appContainer.authRepository)
+                )
                 
                 LoginScreen(
                     viewModel = viewModel,
                     onNavigateToHome = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+                        navController.navigate(BottomNavRoutes.Home.route) {
+                            popUpTo(BottomNavRoutes.Login.route) { inclusive = true }
                         }
                     }
                 )
             }
             
-            composable(Screen.Home.route) {
-                val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
-                
-                val okHttpClient = okhttp3.OkHttpClient()
-                val gson = com.google.gson.Gson()
-                val websocketClient = br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient(
-                    okHttpClient = okHttpClient,
-                    gson = gson,
-                    baseUrl = wsUrl
+            composable(BottomNavRoutes.Home.route) {
+                val viewModel: HomeViewModel = viewModel(
+                    factory = HomeViewModelFactory(appContainer.realtimeRepository, appContainer.tokenManager)
                 )
-                val realtimeService = RealtimeService(websocketClient)
-                val realtimeRepository = RealtimeRepository(realtimeService)    
-                val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(realtimeRepository, tokenManager))
-                HomeScreen(viewModel = viewModel)
+                HomeScreen(
+                    viewModel = viewModel,
+                    isLoggedIn = isLoggedIn,
+                    onNavigateToLogin = {
+                        navController.navigate(BottomNavRoutes.Login.route) {
+                            popUpTo(BottomNavRoutes.Home.route) { inclusive = true }
+                        }
+                    }
+                )
             }
             
-            composable(Screen.Monitoring.route) {
-                val monitoringService = MonitoringService.create()
-                val repository = MonitoringRepository(monitoringService)
-                val viewModel: MonitoringViewModel = viewModel(factory = MonitoringViewModelFactory(repository))
+            composable(BottomNavRoutes.Monitoring.route) {
+                val viewModel: MonitoringViewModel = viewModel(
+                    factory = MonitoringViewModelFactory(appContainer.monitoringRepository, appContainer.locationHandler)
+                )
                 
-                MonitoringScreen(viewModel = viewModel)
+                MonitoringScreen(
+                    viewModel = viewModel,
+                    isLoggedIn = isLoggedIn,
+                    onNavigateToLogin = {
+                        navController.navigate(BottomNavRoutes.Login.route) {
+                            popUpTo(BottomNavRoutes.Home.route) { saveState = true }
+                        }
+                    }
+                )
+            }
+            
+            composable(BottomNavRoutes.Profile.route) {
+                val profileScope = rememberCoroutineScope()
+                
+                val profileViewModel: ProfileViewModel = viewModel(
+                    factory = ProfileViewModelFactory(appContainer.profileRepository)
+                )
+                
+                ProfileScreen(
+                    viewModel = profileViewModel,
+                    onLogoutClick = {
+                        profileScope.launch {
+                            appContainer.authRepository.logout()
+                            navController.navigate(BottomNavRoutes.Login.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                            }
+                        }
+                    }
+                )
             }
         }
     }

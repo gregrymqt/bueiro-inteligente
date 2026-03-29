@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+﻿# 🌐 Bueiro Inteligente - Web Dashboard (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este é o aplicativo web (Dashboard) do ecossistema **Bueiro Inteligente (Smart Drain)**. Desenvolvido com **React e TypeScript**, ele oferece uma interface administrativa para monitoramento em tempo real do estado dos bueiros, visualização de estatísticas, alertas e integração com relatórios analíticos.
 
-Currently, two official plugins are available:
+## 🛠️ Stack Tecnológica
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework Principais:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Linguagem:** TypeScript
+- **Roteamento:** React Router DOM (v7)
+- **Estilização:** SCSS / CSS Modules padrão
+- **Comunicação HTTP:** Clientes mapeados via ApiClient com Service Pattern
+- **Ferramentas de Qualidade:** ESLint configurado para validação rigorosa de tipagem
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🏗️ Padrões e Arquitetura (Feature-Driven)
 
-## Expanding the ESLint configuration
+O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Feature-Driven**), visando escalabilidade e total separação de responsabilidades. Dessa forma, as lógicas de telas, de dados e serviços não ficam "misturadas".
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📂 Estrutura de Diretórios (src/)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **/core:** Utilitários essenciais e transversais do sistema.
+  - http/: Configuração de clientes HTTP (ApiClient.ts), manipulação de tokens da sessão (TokenService.ts) e interceptadores (AuthInterceptor.tsx).
+- **/feature:** O coração das regras de negócio do frontend. Cada domínio contém suas subdivisões: components, hooks, services e 	ypes.
+  - uth: Autenticação, formulário de login e serviços de validação de acesso.
+  - home: Componentes principais da página inicial, incluindo carrosséis (useHomeCarousel.ts) e cards de estatísticas.
+  - monitoring: Interface de visualização em tempo real do dispositivo, incluindo incorporações (RowsEmbed) e gerenciamento de estado das métricas (useDrainStatus.ts).
+- **/components:** Peças de UI reaproveitáveis.
+  - layout/: Elementos estruturais da página (Navbar, Sidebar, Footer, MainLayout).
+  - ui/: Blocos de construção genéricos (Cards, Carousel, StatusBadge).
+- **/pages:** Componentes de alto nível encarregados de unir componentes menores e features às rotas definitivas (ex: Home, DashBoard).
+- **/router:** Central de roteamento baseada em Router.tsx, com isolamento de acesso feito pelas pastas /middleware (ProtectedLayout.tsx, RoleMiddleware.tsx).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## ✨ Principais Funcionalidades
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- 🔒 **Roteamento Protegido:** Middlewares validam o token JWT de forma reativa e proíbem visitantes não autenticados de entrarem nas rotas de sistema.
+- 📊 **Dashboards e Embeds:** Integração limpa com plataformas externas e geração de fluxos de gráficos de alto nível como o Rows.com.
+- 🧩 **UI Responsiva e Modular:** Todo o grid e a estilização confiam amplamente em SCSS padronizado, onde cada componente porta sua própria classe de estilização em paridade (Component.tsx + Component.scss).
+- ⚡ **Abstração com Hooks:** Regras de manipulação assíncrona ficam segregadas em Hooks Customizados. As Views apenas montam os visuais e interagem declarativamente a partir dos retornos dos services.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🚀 Como Executar o Projeto
+
+**Pré-requisitos:** Node.js (v18+) e NPM (ou Yarn/PNPM) instalados.
+
+1. **Acesse o diretório do frontend via terminal:**
+   `ash
+   cd frontend
+   `
+
+2. **Instale as dependências essenciais e as de desenvolvimento:**
+   `ash
+   npm install
+   `
+
+3. **Inicie o servidor local gerido pelo Vite:**
+   `ash
+   npm run dev
+   `
+   > A aplicação estará disponível rapidamente na porta padrão 5173. Acesse no navegador em: http://localhost:5173/
+
+4. **Para gerar o build otimizado de produção:**
+   `ash
+   npm run build
+   `
+
+---
+
+## 🧹 Boas Práticas para o Desenvolvimento
+
+- **Tipagem Estrita:** Não utilize o tipo \ny\. Declare e exporte os contratos na pasta local de 	ypes/ atrelada à Feature.
+- **Responsabilidade Visual:** Os painéis visuais (.tsx) **nunca** devem chamar uma Promise HTTP diretamente. Use um Custom Hook na Feature que então orquestra as comunicações pelo Service.
+- **Importação de SCSS:** Mantenha os estilos isolados nos arquivos da árvore para evitar sobrescritas e vazamentos de regras CSS globais.

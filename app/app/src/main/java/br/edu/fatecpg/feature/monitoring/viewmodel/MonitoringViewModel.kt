@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
+import br.edu.fatecpg.core.navigation.LocationHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,10 +17,29 @@ sealed class MonitoringUiState {
     data class Error(val message: String) : MonitoringUiState()
 }
 
-class MonitoringViewModel(private val repository: MonitoringRepository) : ViewModel() {
+class MonitoringViewModel(private val repository: MonitoringRepository, private val locationHandler: LocationHandler) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MonitoringUiState>(MonitoringUiState.Loading)
     val uiState: StateFlow<MonitoringUiState> = _uiState.asStateFlow()
+
+    private val _showLoginDialog = MutableStateFlow(false)
+    val showLoginDialog: StateFlow<Boolean> = _showLoginDialog.asStateFlow()
+
+    fun onDrainClick(isLoggedIn: Boolean, drain: DrainStatusDTO) {
+        if (isLoggedIn) {
+            val lat = drain.latitude
+            val lng = drain.longitude
+            if (lat != null && lng != null) {
+                locationHandler.openLocation(lat, lng, "Bueiro ${drain.idBueiro}")
+            }
+        } else {
+            _showLoginDialog.value = true
+        }
+    }
+
+    fun dismissLoginDialog() {
+        _showLoginDialog.value = false
+    }
 
     init {
         refreshDrains()

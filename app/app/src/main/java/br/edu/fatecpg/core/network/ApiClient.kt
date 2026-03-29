@@ -21,8 +21,11 @@ object ApiClient {
 
             val authInterceptor = AuthInterceptor(tokenManager)
 
+            val tokenAuthenticator = TokenAuthenticator(tokenManager)
+
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(authInterceptor)
+                .authenticator(tokenAuthenticator)
                 .addInterceptor(loggingInterceptor) // Adicionado para debug em nível BODY
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)

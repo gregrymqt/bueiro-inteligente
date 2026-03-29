@@ -1,0 +1,18 @@
+package br.edu.fatecpg.feature.profile.services
+
+import br.edu.fatecpg.core.network.ApiClient
+import br.edu.fatecpg.feature.profile.dto.UserDTO
+import retrofit2.Response
+import retrofit2.http.GET
+
+interface ProfileService {
+
+    @GET("users/me")
+    suspend fun getUserProfile(): Response<UserDTO>
+
+    companion object {
+        fun create(): ProfileService {
+            return ApiClient.retrofit.create(ProfileService::class.java)
+        }
+    }
+}
