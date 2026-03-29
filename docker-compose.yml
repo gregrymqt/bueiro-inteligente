@@ -20,6 +20,7 @@ services:
       # As variáveis do Supabase virão do seu arquivo .env na raiz do projeto
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       # Mapeia a pasta backend para o /app local (útil para desenvolvimento/live reload da API)
       - ./backend:/app

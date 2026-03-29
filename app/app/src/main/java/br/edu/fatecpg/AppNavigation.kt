@@ -17,8 +17,11 @@ import br.edu.fatecpg.core.di.AppContainer
 import br.edu.fatecpg.core.navigation.BottomNavRoutes
 import br.edu.fatecpg.core.navigation.MainBottomBar
 import br.edu.fatecpg.feature.auth.ui.LoginScreen
+import br.edu.fatecpg.feature.auth.ui.RegisterScreen
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
+import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModel
+import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
 import br.edu.fatecpg.feature.home.ui.HomeScreen
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
@@ -45,8 +48,8 @@ fun AppNavigation(appContainer: AppContainer) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Oculta bottom bar na tela de login
-    val showBottomBar = currentRoute != BottomNavRoutes.Login.route
+    // Oculta bottom bar nas telas de autenticação
+    val showBottomBar = currentRoute != BottomNavRoutes.Login.route && currentRoute != BottomNavRoutes.Register.route
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -96,20 +99,32 @@ fun AppNavigation(appContainer: AppContainer) {
                         navController.navigate(BottomNavRoutes.Home.route) {
                             popUpTo(BottomNavRoutes.Login.route) { inclusive = true }
                         }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(BottomNavRoutes.Register.route)
                     }
                 )
             }
-            
-            composable(BottomNavRoutes.Home.route) {
-                val viewModel: HomeViewModel = viewModel(
-                    factory = HomeViewModelFactory(appContainer.realtimeRepository, appContainer.tokenManager)
+
+            composable(BottomNavRoutes.Register.route) {
+                val viewModel: RegisterViewModel = viewModel(
+                    factory = RegisterViewModelFactory(appContainer.authRepository)
                 )
-                HomeScreen(
+
+                RegisterScreen(
                     viewModel = viewModel,
-                    isLoggedIn = isLoggedIn,
+                    onNavigateBackToLogin = {
+                        navController.popBackStack()
+                    },
+                    onRegisterSuccess = {
+                        // Após sucesso no cadastro, vai para login para realizar autenticação ou Home se preferir
+                        navController.navigate(BottomNavRoutes.Login.route) {
+                            popUpTo(BottomNavRoutes.Register.route) { inclusive = true }
+                        }
                     onNavigateToLogin = {
                         navController.navigate(BottomNavRoutes.Login.route) {
                             popUpTo(BottomNavRoutes.Home.route) { inclusive = true }
+                            }
                         }
                     }
                 )

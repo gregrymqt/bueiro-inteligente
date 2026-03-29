@@ -19,7 +19,7 @@ class TokenPayload(BaseModel):
     """
     DTO para o conteúdo (payload) do token JWT.
     """
-    sub: str | None = None # Subject (geralmente o username ou ID do usuário)
+    sub: str | None = None # Subject (geralmente o email ou ID do usuÃ¡rio)  
     jti: str | None = None
     roles: list[str] = Field(default_factory=list) # Roles do usuario
 
@@ -29,7 +29,16 @@ class TokenPayload(BaseModel):
 # =======================================================
 
 class UserBase(BaseModel):
-    username: EmailStr
+    email: EmailStr
+    full_name: str | None = None
+    roles: list[str] = Field(default_factory=list)
+
+class UserCreate(BaseModel):
+    """
+    DTO para payload de cadastro/registro de um novo usuário.
+    """
+    email: EmailStr
+    password: str = Field(..., min_length=6, description="A senha deve ter no mínimo 6 caracteres")
     full_name: str | None = None
     roles: list[str] = Field(default_factory=list)
 
@@ -47,6 +56,6 @@ class UserInDB(UserBase):
     hashed_password: str
 
 class UserTokenData(BaseModel):
-    username: str
+    email: str
     roles: list[str] = []
     jti: str

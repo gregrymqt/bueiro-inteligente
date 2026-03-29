@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .dto import User, UserInDB
+from .dto import User, UserInDB, UserCreate
 
 class IAuthRepository(ABC):
     """
@@ -7,17 +7,20 @@ class IAuthRepository(ABC):
     Define os métodos para interagir com a fonte de dados dos usuários.
     """
     @abstractmethod
-    async def get_user_by_username(self, username: str) -> UserInDB | None:
-        """Busca um usuário pelo seu nome de usuário (email)."""
+    async def get_user_by_email(self, email: str) -> UserInDB | None:     
+        """Busca um usuÃ¡rio pelo seu email."""
         pass
-
+    @abstractmethod
+    async def create_user(self, user_in_db: UserInDB) -> UserInDB:
+        """Persiste um novo usuario no banco de dados."""
+        pass
 class IAuthService(ABC):
     """
-    Interface para o serviço de autenticação.
-    Define a lógica de negócio para autenticação e gerenciamento de tokens.
+    Interface para o serviÃ§o de autenticaÃ§Ã£o.
+    Define a lÃ³gica de negÃ³cio para autenticaÃ§Ã£o e gerenciamento de tokens. 
     """
     @abstractmethod
-    async def authenticate_user(self, username: str, password: str) -> User | None:
+    async def authenticate_user(self, email: str, password: str) -> User | None:
         """Autentica um usuário e, se bem-sucedido, retorna seus dados."""
         pass
 
@@ -29,4 +32,9 @@ class IAuthService(ABC):
     @abstractmethod
     async def logout(self, token_jti: str) -> None:
         """Invalida um token de acesso (logout)."""
+        pass
+
+    @abstractmethod
+    async def register_user(self, user_create: UserCreate) -> User:
+        """Registra um novo usuario e retorna seus dados base."""
         pass

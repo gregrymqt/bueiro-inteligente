@@ -26,7 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onNavigateToHome: () -> Unit
+    onNavigateToHome: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -137,6 +138,16 @@ fun LoginScreen(
                 } else {
                     Text(text = "Entrar", fontSize = 16.sp)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botão para ir para a tela de Registro
+            TextButton(
+                onClick = onNavigateToRegister,
+                enabled = uiState !is LoginUiState.Loading
+            ) {
+                Text(text = "Ainda não tem conta? Cadastre-se")
             }
         }
         }

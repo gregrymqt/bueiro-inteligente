@@ -8,6 +8,8 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Home } from '@/pages/Home/Home';
 import { Login } from '@/pages/Auth/Login'; 
 
+import { RegisterForm } from '@/feature/auth/components/RegisterForm';
+
 // Importando o novo MainLayout
 import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
 
@@ -18,6 +20,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <RegisterForm />,
   },
   
   // ==========================================

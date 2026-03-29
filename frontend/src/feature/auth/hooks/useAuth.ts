@@ -2,13 +2,29 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { tokenService } from '@/core/http/TokenService';
-import type { LoginRequestDTO, UserDTO } from '../types';
+import type { LoginRequestDTO, UserDTO, RegisterRequestDTO } from '../types';
 
 export const useAuth = () => {
   const [user, setUser] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const register = async (data: RegisterRequestDTO): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await AuthService.register(data);
+      // Redireciona para o login após o cadastro bem sucedido
+      navigate('/login', { replace: true });
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao realizar o cadastro.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (credentials: LoginRequestDTO) => {
     setLoading(true);
@@ -39,5 +55,5 @@ export const useAuth = () => {
     }
   }, [navigate]);
 
-  return { user, login, logout, loading, error };
+  return { user, register, login, logout, loading, error };
 };

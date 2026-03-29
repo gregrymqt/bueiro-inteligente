@@ -2,6 +2,8 @@ package br.edu.fatecpg.feature.auth.repository
 
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.auth.dto.LoginRequest
+import br.edu.fatecpg.feature.auth.dto.RegisterRequest
+import br.edu.fatecpg.feature.auth.dto.UserDTO
 import br.edu.fatecpg.feature.auth.services.AuthService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,6 +35,26 @@ class AuthRepository(
 
     fun isUserLoggedIn(): Boolean {
         return !tokenManager.getToken().isNullOrEmpty()
+    }
+
+    suspend fun register(request: RegisterRequest): Result<UserDTO> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = authService.register(request)
+                if (response.isSuccessful) {
+                    val userResponse = response.body()
+                    if (userResponse != null) {
+                        Result.success(userResponse)
+                    } else {
+                        Result.failure(Exception("Resposta do servidor vazia."))
+                    }
+                } else {
+                    Result.failure(Exception("Erro no cadastro (Código: ${response.code()})."))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("Falha de conexão. Verifique sua rede e tente novamente."))
+            }
+        }
     }
 
     suspend fun logout(): Result<Unit> {

@@ -1,7 +1,13 @@
 export interface UserDTO {
-  username: string;
+  email: string;
   full_name: string | null;
   roles: string[]; // ['admin', 'manutencao', 'cidadao']
+}
+
+export interface RegisterRequestDTO {
+  email: string;
+  password: string;
+  full_name?: string;
 }
 
 export interface LoginRequestDTO {

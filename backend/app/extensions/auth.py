@@ -52,6 +52,11 @@ class AuthExtension:
         import asyncio
         return await asyncio.to_thread(self.pwd_context.verify, plain_password, hashed_password)
 
+    async def get_password_hash(self, password: str) -> str:
+        """Gera o hash da senha usando bcrypt."""
+        import asyncio
+        return await asyncio.to_thread(self.pwd_context.hash, password)
+
     # --- Gerenciamento de Blacklist (JWT Revocation) ---
 
     async def add_to_blacklist(self, jti: str):
@@ -80,32 +85,31 @@ async def get_current_user(token: str = Depends(auth_extension.oauth2_scheme)) -
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
+        email: str = payload.get("sub")
         jti: str = payload.get("jti")
         roles: list[str] = payload.get("roles", [])
 
-        if username is None or jti is None:
+        if email is None or jti is None:
             raise credentials_exception
-        
-        # Verifica se o token foi revogado via logout 
+
+        # Verifica se o token foi revogado via logout
         if await auth_extension.is_blacklisted(jti):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        return UserTokenData(username=username, roles=roles, jti=jti)
+
+        return UserTokenData(email=email, roles=roles, jti=jti)
             
     except JWTError:
         raise credentials_exception
 
 
 async def verify_hardware_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token", auto_error=False)), query_token: str = Query(None, alias="token")):
-    "\"Verifica se a request foi feita pelo hardware seguro."\"
+    """Verifica se a request foi feita pelo hardware seguro."""
     from fastapi import Query
     final_token = token or query_token
     if final_token != settings.HARDWARE_TOKEN:
         raise HTTPException(status_code=401, detail="Hardware inválido ou não autorizado")
     return final_token
-

@@ -1,7 +1,14 @@
 import { apiClient } from '@/core/http/ApiClient';
-import type { LoginRequestDTO, LoginResponseDTO, UserDTO } from '../types';
+import type { LoginRequestDTO, LoginResponseDTO, UserDTO, RegisterRequestDTO } from '../types';     
 
 export class AuthService {
+  /**
+   * Realiza o cadastro de um novo usuário.
+   */
+  public static async register(data: RegisterRequestDTO): Promise<UserDTO> {
+    return apiClient.post<UserDTO, RegisterRequestDTO>('/auth/register', data);
+  }
+
   /**
    * Realiza o login e obtém o token.
    */
