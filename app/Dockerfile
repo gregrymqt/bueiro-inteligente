@@ -38,8 +38,8 @@ COPY gradle/ gradle/
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
 COPY gradle.properties .
-COPY local.properties . 
-# Nota: Remova ou ignore o local.properties no .dockerignore se houver conflito de paths da sua máquina
+# COPY local.properties . 
+# Nota: O local.properties foi desativado no build do Docker para evitar conflitos de caminhos absolutos do Windows com o Linux. O Gradle buscará a variável ANDROID_SDK_ROOT.
 
 # Dá permissão de execução ao wrapper do Gradle
 RUN chmod +x ./gradlew

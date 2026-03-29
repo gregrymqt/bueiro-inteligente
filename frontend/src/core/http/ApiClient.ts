@@ -1,4 +1,4 @@
-import { type ITokenService, tokenService } from './TokenService';
+﻿import { type ITokenService, tokenService } from './TokenService';
 
 // 1. O Contrato do nosso Wrapper
 export interface IApiClient {
@@ -8,7 +8,7 @@ export interface IApiClient {
   delete<TResponse>(url: string): Promise<TResponse>;
 }
 
-// 2. A Implementação Concreta
+// 2. A ImplementaÃ§Ã£o Concreta
 export class ApiClient implements IApiClient {
   private baseUrl: string;
   private tokenService: ITokenService;
@@ -18,7 +18,7 @@ export class ApiClient implements IApiClient {
     this.tokenService = tokenService;
   }
 
-  // Método privado para montar os cabeçalhos padrão e injetar o JWT
+  // MÃ©todo privado para montar os cabeÃ§alhos padrÃ£o e injetar o JWT
   private getHeaders(): HeadersInit {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -33,13 +33,13 @@ export class ApiClient implements IApiClient {
     return headers;
   }
 
-  // Método privado para tratar as respostas e disparar erros centralizados
+  // MÃ©todo privado para tratar as respostas e disparar erros centralizados
   private async handleResponse<TResponse>(response: Response): Promise<TResponse> {
     if (!response.ok) {
-      // Se o token for inválido/expirado, o FastAPI retornará 401
+      // Se o token for invÃ¡lido/expirado, o FastAPI retornarÃ¡ 401
       if (response.status === 401) {
         this.tokenService.removeToken();
-        // Disparar evento para forçar o usuário para a tela de Login
+        // Disparar evento para forÃ§ar o usuÃ¡rio para a tela de Login
         window.dispatchEvent(new Event('auth:unauthorized')); 
       }
       
@@ -56,7 +56,7 @@ export class ApiClient implements IApiClient {
   }
 
   // ==========================================
-  // MÉTODOS GENÉRICOS (CRUD REST)
+  // MÃ‰TODOS GENÃ‰RICOS (CRUD REST)
   // ==========================================
 
   public async get<TResponse>(url: string): Promise<TResponse> {
@@ -94,6 +94,6 @@ export class ApiClient implements IApiClient {
   }
 }
 
-// Exportamos a instância já configurada com a URL base do seu ambiente
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Exportamos a instÃ¢ncia jÃ¡ configurada com a URL base do seu ambiente
+const API_BASE_URL = 'http://localhost:8000';
 export const apiClient = new ApiClient(API_BASE_URL, tokenService);
