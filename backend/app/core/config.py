@@ -16,10 +16,6 @@ class Settings(BaseSettings):
     # Adicionado para validar as requisições que vêm da placa
     HARDWARE_TOKEN: str
 
-    # Supabase
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
-
     # Redis
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379

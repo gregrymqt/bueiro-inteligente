@@ -1,10 +1,11 @@
 ﻿# app/features/monitoring/controller.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.extensions.infrastructure import RoleChecker, get_db, get_cache
+from app.core.database import get_db
+from app.extensions.infrastructure import RoleChecker, get_cache
 from app.features.cache.service import RedisCacheService
 from app.features.monitoring.repository import DrainRepository
-from app.features.monitoring.services.bueiro_service import BueiroService
-from app.features.monitoring.services.broadcast_service import BroadcastService
+from app.features.monitoring.services.bueiro_service import BueiroService       
+from app.features.monitoring.services.broadcast_service import BroadcastService 
 from app.features.monitoring.dto import SensorPayloadDTO
 from app.extensions.auth import verify_hardware_token
 import logging
@@ -20,9 +21,9 @@ def get_monitoring_service(
 ) -> BueiroService:
     try:
         cache_service = RedisCacheService(redis_client=cache)
-        repository = DrainRepository(db_client=db, cache_service=cache_service)
+        repository = DrainRepository(db_client=db, cache_service=cache_service) 
         broadcast_service = BroadcastService()
-        return BueiroService(repository, cache_service, broadcast_service)
+        return BueiroService(repository, cache_service, broadcast_service)      
     except Exception as e:
         logger.error(f"Erro ao instanciar BueiroService: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro interno ao inicializar serviço")

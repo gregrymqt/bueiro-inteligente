@@ -8,7 +8,6 @@ pydantic-settings
 python-dotenv
 
 # Clientes de Dados
-supabase
 redis
 
 # Para fazer requisições assíncronas à API da Adafruit
@@ -27,4 +26,4 @@ passlib[bcrypt]
 # Banco de Dados e Migrations (ORM)
 sqlalchemy
 alembic
-psycopg2-binary
+psycopg2-binaryasyncpg

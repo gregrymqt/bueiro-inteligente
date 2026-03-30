@@ -50,10 +50,10 @@ class BueiroService:
                 ultima_atualizacao=datetime.now(timezone.utc)
             )
 
-            # 1. Salva o dado fresco no Redis e o histórico no Supabase 
+            # 1. Salva o dado fresco no Redis e o histórico no Banco de Dados
             await self._repository.save_sensor_data(resultado)
 
-            # 2. Busca a medição mais recente no Supabase como garantia 
+            # 2. Busca a medição mais recente no Banco de Dados como garantia
             status_confirmado_db = await self._repository.get_latest_status(payload.id_bueiro)
             
             # 3. Se encontrou no banco, dispara pelo socket para atualizar React e Kotlin

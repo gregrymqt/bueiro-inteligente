@@ -1,7 +1,6 @@
 # app/extensions/infrastructure.py
 import logging
 import redis.asyncio as redis
-from supabase import create_async_client, AsyncClient
 from app.core.config import settings
 from fastapi import Depends, HTTPException, status
 from app.extensions.auth import get_current_user
@@ -16,26 +15,22 @@ class InfrastructureExtension:
         """Implementação Singleton para garantir instância única."""
         if cls._instance is None:
             cls._instance = super(InfrastructureExtension, cls).__new__(cls)
-            # Inicializamos os atributos como None (As declarações de tipo ficam implicadas em tempo de runtime)
-            cls._instance.supabase = None 
             cls._instance.redis_client = None
         return cls._instance
 
     async def open(self):
-        """Inicializa conexões com DB e Redis."""
-        logger.info("Iniciando infraestrutura (Supabase & Redis)...")
+        """Inicializa conexões com o Redis."""
+        logger.info("Iniciando infraestrutura (Redis)...")
         
         try:
-            # 1. Configurando Supabase
-            self.supabase = create_async_client(
-                settings.SUPABASE_URL, 
-                settings.SUPABASE_KEY
-            )
+            # Configurando Redis
+            # Usando getattr para evitar erro caso a senha não exista no settings
+            redis_password = getattr(settings, "REDIS_PASSWORD", None)
             
-            # 2. Configurando Redis
-            redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
-            if settings.REDIS_PASSWORD:
-                redis_url = f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+            if redis_password:
+                redis_url = f"redis://:{redis_password}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+            else:
+                redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
             
             self.redis_client = redis.from_url(
                 redis_url, 
@@ -44,22 +39,18 @@ class InfrastructureExtension:
             
             # Teste simples de conexão (Ping)
             await self.redis_client.ping()
-            logger.info("Conexões de infraestrutura estabelecidas com sucesso.")
+            logger.info("Conexão com o Redis estabelecida com sucesso.")
             
         except Exception as e:
             logger.error(f"Falha crítica ao iniciar infraestrutura: {e}")
             raise e
 
     async def close(self):
-        """Encerra graciosamente DB e Redis."""
+        """Encerra graciosamente o Redis."""
         logger.info("Encerrando conexões de infraestrutura...")
         
         if self.redis_client:
             await self.redis_client.close()
-            
-        if self.supabase:
-            # O cliente do Supabase usa httpx por baixo, fechamos a sessão
-            await self.supabase.postgrest.aclose()
             
         logger.info("Infraestrutura encerrada.")
 
@@ -69,9 +60,6 @@ infrastructure = InfrastructureExtension()
 # ---------------------------------------------------------
 # DEPENDÊNCIAS PARA INJEÇÃO (Usadas nos Controllers/Services)
 # ---------------------------------------------------------
-async def get_db() -> AsyncClient:
-    return infrastructure.supabase
-
 async def get_cache() -> redis.Redis:
     return infrastructure.redis_client
 
