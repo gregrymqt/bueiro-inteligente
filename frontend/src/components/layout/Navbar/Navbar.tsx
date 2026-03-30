@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, X, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../../../feature/auth/hooks/useAuth';
 
 import styles from './Navbar.module.scss';
@@ -38,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
 
           <div className={styles.authSection}>
             {user ? (
-              <span className={styles.userInfo}>Olá, {user.username}</span>
+              <span className={styles.userInfo}>Olá, {user.full_name}</span>
             ) : (
               <NavLink to="/login" className={styles.loginButton}>Entrar</NavLink>
             )}

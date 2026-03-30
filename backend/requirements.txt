@@ -26,4 +26,5 @@ passlib[bcrypt]
 # Banco de Dados e Migrations (ORM)
 sqlalchemy
 alembic
-psycopg2-binaryasyncpg
+psycopg2-binary
+asyncpg

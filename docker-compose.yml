@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ==========================================
@@ -29,8 +28,8 @@ services:
     depends_on:
       - redis
       - db
-    # Comentar a linha abaixo se não quiser usar o hot-reload
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Executa o script que roda o Alembic e depois inicia o servidor
+    command: sh /app/start.sh
     restart: unless-stopped
 
   # Frontend: React SPA (Modo de Desenvolvimento Vite + HMR)

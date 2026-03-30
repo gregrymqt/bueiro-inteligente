@@ -4,8 +4,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthInterceptor } from '@/core/http/AuthInterceptor';
 import { ProtectedLayout } from './middleware/ProtectedLayout';
 import { RoleMiddleware } from './middleware/RoleMiddleware';
-import { Dashboard } from '@/pages/Dashboard';
-import { Home } from '@/pages/Home/Home';
+import { Dashboard } from '@/pages/Dashboard/Dashboard';
+import Home from '@/pages/Home/Home';
 import { Login } from '@/pages/Auth/Login'; 
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';

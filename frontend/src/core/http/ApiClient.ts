@@ -1,14 +1,15 @@
-﻿import { type ITokenService, tokenService } from './TokenService';
+import { type ITokenService, tokenService } from './TokenService';
 
 // 1. O Contrato do nosso Wrapper
 export interface IApiClient {
   get<TResponse>(url: string): Promise<TResponse>;
-  post<TResponse, TBody = unknown>(url: string, body: TBody): Promise<TResponse>;
-  put<TResponse, TBody = unknown>(url: string, body: TBody): Promise<TResponse>;
+  post<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
+  put<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
+  patch<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
   delete<TResponse>(url: string): Promise<TResponse>;
 }
 
-// 2. A ImplementaÃ§Ã£o Concreta
+// 2. A Implementação Concreta
 export class ApiClient implements IApiClient {
   private baseUrl: string;
   private tokenService: ITokenService;
@@ -18,7 +19,7 @@ export class ApiClient implements IApiClient {
     this.tokenService = tokenService;
   }
 
-  // MÃ©todo privado para montar os cabeÃ§alhos padrÃ£o e injetar o JWT
+  // Método privado para montar os cabeçalhos padrão e injetar o JWT
   private getHeaders(): HeadersInit {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -33,13 +34,13 @@ export class ApiClient implements IApiClient {
     return headers;
   }
 
-  // MÃ©todo privado para tratar as respostas e disparar erros centralizados
+  // Método privado para tratar as respostas e disparar erros centralizados
   private async handleResponse<TResponse>(response: Response): Promise<TResponse> {
     if (!response.ok) {
-      // Se o token for invÃ¡lido/expirado, o FastAPI retornarÃ¡ 401
+      // Se o token for inválido/expirado, o FastAPI retornará 401
       if (response.status === 401) {
         this.tokenService.removeToken();
-        // Disparar evento para forÃ§ar o usuÃ¡rio para a tela de Login
+        // Disparar evento para forçar o usuário para a tela de Login
         window.dispatchEvent(new Event('auth:unauthorized')); 
       }
       
@@ -56,7 +57,7 @@ export class ApiClient implements IApiClient {
   }
 
   // ==========================================
-  // MÃ‰TODOS GENÃ‰RICOS (CRUD REST)
+  // MÉTODOS GENÉRICOS (CRUD REST)
   // ==========================================
 
   public async get<TResponse>(url: string): Promise<TResponse> {
@@ -67,7 +68,7 @@ export class ApiClient implements IApiClient {
     return this.handleResponse<TResponse>(response);
   }
 
-  public async post<TResponse, TBody = unknown>(url: string, body: TBody): Promise<TResponse> {
+  public async post<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
     const response = await fetch(`${this.baseUrl}${url}`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -76,11 +77,20 @@ export class ApiClient implements IApiClient {
     return this.handleResponse<TResponse>(response);
   }
 
-  public async put<TResponse, TBody = unknown>(url: string, body: TBody): Promise<TResponse> {
+  public async put<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
     const response = await fetch(`${this.baseUrl}${url}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
+    });
+    return this.handleResponse<TResponse>(response);
+  }
+
+  public async patch<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
+    const response = await fetch(`${this.baseUrl}${url}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
     });
     return this.handleResponse<TResponse>(response);
   }
@@ -94,6 +104,6 @@ export class ApiClient implements IApiClient {
   }
 }
 
-// Exportamos a instÃ¢ncia jÃ¡ configurada com a URL base do seu ambiente
+// Exportamos a instância já configurada com a URL base do seu ambiente
 const API_BASE_URL = 'http://localhost:8000';
 export const apiClient = new ApiClient(API_BASE_URL, tokenService);

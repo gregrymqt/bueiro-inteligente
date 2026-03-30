@@ -5,6 +5,7 @@ WORKDIR /app
 # Copia o requirements.txt a partir do contexto do backend
 COPY requirements.txt .
 
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia todo o conteúdo da pasta backend para o /app
