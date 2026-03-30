@@ -10,7 +10,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
             Log.d("MainActivity", "Criando Activity Principal. Inicializando container de Injecao.")
             // Substitua pelo IP da sua maquina na rede local para testar no celular fisico
             // Exemplo: "http://192.168.1.15:8000/"
@@ -19,14 +18,7 @@ class MainActivity : ComponentActivity() {
             val appContainer = AppContainer(this, baseUrl)
 
             setContent {
-                try {
-                    AppNavigation(appContainer = appContainer)
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "Falha critica ao renderizar o NavHost e AppNavigation", e)
-                }
+                AppNavigation(appContainer = appContainer)
             }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Falha letal durante onCreate", e)
-        }
     }
 }

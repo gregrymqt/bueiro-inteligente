@@ -37,14 +37,10 @@ fun RegisterScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState) {
-        try {
-            if (uiState is RegisterUiState.Success) {
-                Log.d("RegisterScreen", "Navegando apos sucesso.")
-                onRegisterSuccess()
-                viewModel.resetState()
-            }
-        } catch (e: Exception) {
-            Log.e("RegisterScreen", "Erro ao navegar apos sucesso", e)
+        if (uiState is RegisterUiState.Success) {
+            Log.d("RegisterScreen", "Navegando apos sucesso.")
+            onRegisterSuccess()
+            viewModel.resetState()
         }
     }
 
@@ -54,14 +50,13 @@ fun RegisterScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            try {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                     Icon(
                         imageVector = Icons.Default.WaterDrop,
                         contentDescription = "Logo Bueiro Inteligente",
@@ -125,9 +120,9 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     if (uiState is RegisterUiState.Error) {
-                        Log.w("RegisterScreen", "Exibindo erro: \")
+                        Log.w("RegisterScreen", "Exibindo erro: ")
                         Text(
-                            text = (uiState as RegisterUiState.Error).message,      
+                            text = (uiState as RegisterUiState.Error).message,
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 14.sp,
                             modifier = Modifier.align(Alignment.Start)
@@ -137,12 +132,8 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { 
-                            try {
-                                viewModel.performRegister(email, password, fullName) 
-                            } catch (e: Exception) {
-                                Log.e("RegisterScreen", "Erro ao executar performRegister", e)
-                            }
+                        onClick = {
+                            viewModel.performRegister(email, password, fullName)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -164,20 +155,13 @@ fun RegisterScreen(
 
                     TextButton(
                         onClick = {
-                            try {
-                                onNavigateBackToLogin()
-                            } catch (e: Exception) {
-                                Log.e("RegisterScreen", "Erro ao navegar de volta para Login", e)
-                            }
+                            onNavigateBackToLogin()
                         },
                         enabled = uiState !is RegisterUiState.Loading
                     ) {
-                        Text(text = "Já tenho conta. Voltar para o Login")
+                        Text(text = "JÃ¡ tenho conta. Voltar para o Login")
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("RegisterScreen", "Erro critico na renderizacao da tela de Registro", e)
-            }
         }
     }
 }

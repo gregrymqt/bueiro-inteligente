@@ -31,18 +31,13 @@ fun MonitoringScreen(
     isLoggedIn: Boolean,
     onNavigateToLogin: () -> Unit
 ) {
-    try {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
 
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(onClick = {
-                    try {
-                        viewModel.refreshDrains()
-                    } catch (e: Exception) {
-                        Log.e("MonitoringScreen", "Erro ao atualizar bueiros via FAB", e)
-                    }
+                    viewModel.refreshDrains()
                 }) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "Atualizar")
                 }
@@ -75,11 +70,7 @@ fun MonitoringScreen(
                                     DrainItemCard(
                                         drain = drain,
                                         onClick = {
-                                            try {
-                                                viewModel.onDrainClick(isLoggedIn, drain)
-                                            } catch (e: Exception) {
-                                                Log.e("MonitoringScreen", "Erro no click do card de bueiro", e)
-                                            }
+                                            viewModel.onDrainClick(isLoggedIn, drain)
                                         }
                                     )
                                 }
@@ -98,11 +89,7 @@ fun MonitoringScreen(
                                 modifier = Modifier.padding(16.dp)
                             )
                             Button(onClick = {
-                                try {
-                                    viewModel.refreshDrains()
-                                } catch (e: Exception) {
-                                    Log.e("MonitoringScreen", "Erro ao atualizar bueiros pelo botao de erro", e)
-                                }
+                                viewModel.refreshDrains()
                             }) {
                                 Text("Tentar Novamente")
                             }
@@ -113,33 +100,21 @@ fun MonitoringScreen(
                 if (showLoginDialog) {
                     AlertDialog(
                         onDismissRequest = {
-                            try {
-                                viewModel.dismissLoginDialog()
-                            } catch (e: Exception) {
-                                Log.e("MonitoringScreen", "Erro ao fechar modal de login", e)
-                            }
+                            viewModel.dismissLoginDialog()
                         },
                         title = { Text("Acesso Restrito") },
-                        text = { Text("Para ver a localização exata e detalhes do bueiro, é necessário estar logado.") },
+                        text = { Text("Para ver a localizaÐ·Ð³o exata e detalhes do bueiro, Ð¹ necessÐ±rio estar logado.") },
                         confirmButton = {
                             TextButton(onClick = {
-                                try {
-                                    viewModel.dismissLoginDialog()
-                                    onNavigateToLogin()
-                                } catch (e: Exception) {
-                                    Log.e("MonitoringScreen", "Erro ao navegar para login no dialog", e)
-                                }
+                                viewModel.dismissLoginDialog()
+                                onNavigateToLogin()
                             }) {
                                 Text("Fazer Login")
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = {
-                                try {
-                                    viewModel.dismissLoginDialog()
-                                } catch (e: Exception) {
-                                    Log.e("MonitoringScreen", "Erro no botao cancelar modal login", e)
-                                }
+                                viewModel.dismissLoginDialog()
                             }) {
                                 Text("Cancelar")
                             }
@@ -148,14 +123,10 @@ fun MonitoringScreen(
                 }
             }
         }
-    } catch (e: Exception) {
-        Log.e("MonitoringScreen", "Falha global na renderizacao da MonitoringScreen", e)
-    }
 }
 
 @Composable
 fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
-    try {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -193,14 +164,11 @@ fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
                         color = Color.DarkGray
                     )
                     Text(
-                        text = "Obstrução: ${drain.nivelObstrucao.toInt()}%",
+                        text = "ObstruÐ·Ð³o: ${drain.nivelObstrucao.toInt()}%",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
                 }
             }
         }
-    } catch (e: Exception) {
-        Log.e("DrainItemCard", "Falha na renderizacao do card individual", e)
-    }
 }

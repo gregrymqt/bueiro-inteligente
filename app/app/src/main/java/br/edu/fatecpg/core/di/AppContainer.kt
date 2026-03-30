@@ -2,25 +2,31 @@ package br.edu.fatecpg.core.di
 
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import br.edu.fatecpg.core.navigation.AndroidLocationHandler
+import br.edu.fatecpg.core.navigation.LocationHandler
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import br.edu.fatecpg.feature.auth.services.AuthService
-import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository        
+import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
+import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
+import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
 import br.edu.fatecpg.feature.profile.repository.ProfileRepository
 import br.edu.fatecpg.feature.profile.services.ProfileService
+import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
 import br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import br.edu.fatecpg.feature.realtime.services.RealtimeService
-import br.edu.fatecpg.core.navigation.LocationHandler
-import br.edu.fatecpg.core.navigation.AndroidLocationHandler
 
 /**
- * Container de Injeção de Dependências manual (Service Locator).
- * Mantém instâncias globais únicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
+ * Container de Injeo de Dependncias manual (Service Locator).
+ * Mantm instncias globais nicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
  */
-class AppContainer(private val context: Context, private val baseUrl: String) { 
+class AppContainer(private val context: Context, private val baseUrl: String) {
 
     val tokenManager: TokenManager by lazy {
         try {
@@ -54,19 +60,19 @@ class AppContainer(private val context: Context, private val baseUrl: String) {
     }
 
     // --- Auth Feature ---
-    val authService: AuthService by lazy { ApiClient.createService(AuthService::class.java) }
-    val authRepository: AuthRepository by lazy { AuthRepository(authService, tokenManager) }
+    private val authService: AuthService by lazy { ApiClient.createService(AuthService::class.java) }
+    private val authRepository: AuthRepository by lazy { AuthRepository(authService, tokenManager) }
 
     // --- Monitoring Feature ---
-    val monitoringService: MonitoringService by lazy { ApiClient.createService(MonitoringService::class.java) }
-    val monitoringRepository: MonitoringRepository by lazy { MonitoringRepository(monitoringService) }
+    private val monitoringService: MonitoringService by lazy { ApiClient.createService(MonitoringService::class.java) }
+    private val monitoringRepository: MonitoringRepository by lazy { MonitoringRepository(monitoringService) }
 
     // --- Profile Feature ---
-    val profileService: ProfileService by lazy { ApiClient.createService(ProfileService::class.java) }
-    val profileRepository: ProfileRepository by lazy { ProfileRepository(profileService) }
+    private val profileService: ProfileService by lazy { ApiClient.createService(ProfileService::class.java) }
+    private val profileRepository: ProfileRepository by lazy { ProfileRepository(profileService) }
 
     // --- Realtime/Home Feature ---
-    val realtimeWebSocketClient: RealtimeWebSocketClient by lazy {
+    private val realtimeWebSocketClient: RealtimeWebSocketClient by lazy {
         try {
             val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
             Log.i("AppContainer", "Criando RealtimeWebSocketClient para url: $wsUrl")
@@ -80,6 +86,49 @@ class AppContainer(private val context: Context, private val baseUrl: String) {
             throw e
         }
     }
-    val realtimeService: RealtimeService by lazy { RealtimeService(realtimeWebSocketClient) }
-    val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }
+    private val realtimeService: RealtimeService by lazy { RealtimeService(realtimeWebSocketClient) }
+    private val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }
+
+
+    // --- ViewModel Factories ---
+
+    val authViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return LoginViewModel(authRepository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
+    val homeViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return HomeViewModel(realtimeRepository, tokenManager) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
+    val monitoringViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MonitoringViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return MonitoringViewModel(monitoringRepository, locationHandler) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
+    val profileViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return ProfileViewModel(profileRepository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
 }

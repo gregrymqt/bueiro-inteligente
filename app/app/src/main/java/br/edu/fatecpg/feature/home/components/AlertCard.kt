@@ -24,16 +24,11 @@ fun AlertCard(
 ) {
     val context = LocalContext.current
     
-    val cardColor = try {
-        val statusLower = alert.status.lowercase()
-        when (statusLower) {
-            "crítico", "critico" -> Color(0xFFFFCDD2) // Vermelho suave
-            "alerta" -> Color(0xFFFFE082) // Amarelo suave
-            else -> MaterialTheme.colorScheme.surfaceVariant
-        }
-    } catch (e: Exception) {
-        Log.e("AlertCard", "Erro ao processar cor do status", e)
-        MaterialTheme.colorScheme.surfaceVariant
+    val statusLower = alert.status.lowercase()
+    val cardColor = when (statusLower) {
+        "crÐ½tico", "critico" -> Color(0xFFFFCDD2) // Vermelho suave
+        "alerta" -> Color(0xFFFFE082) // Amarelo suave
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
     Card(
@@ -43,7 +38,6 @@ fun AlertCard(
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        try {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -61,11 +55,7 @@ fun AlertCard(
                         color = Color.Black
                     )
                     IconButton(onClick = {
-                        try {
-                            onDismiss()
-                        } catch (e: Exception) {
-                            Log.e("AlertCard", "Erro ao dispensar alerta", e)
-                        }
+                        onDismiss()
                     }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -78,7 +68,7 @@ fun AlertCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Atualizado às: ${alert.ultimaAtualizacao}",
+                    text = "Atualizado Ð°s: ${alert.ultimaAtualizacao}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.DarkGray
                 )
@@ -87,7 +77,7 @@ fun AlertCard(
 
                 val level = alert.nivelObstrucao
                 Text(
-                    text = "Obstrução: ${level.toInt()}%",
+                    text = "ObstruÐ·Ð³o: ${level.toInt()}%",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -108,17 +98,13 @@ fun AlertCard(
 
                 Button(
                     onClick = {
-                        try {
-                            Log.d("AlertCard", "Iniciando intent para Google Maps")
-                            val lat = alert.latitude ?: 0.0
-                            val lng = alert.longitude ?: 0.0
-                            val uri = "geo:$lat,$lng?q=$lat,$lng(Bueiro+${alert.idBueiro})"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-                            intent.setPackage("com.google.android.apps.maps")
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Log.e("AlertCard", "Erro ao tentar abrir mapa externo", e)
-                        }
+                        Log.d("AlertCard", "Iniciando intent para Google Maps")
+                        val lat = alert.latitude ?: 0.0
+                        val lng = alert.longitude ?: 0.0
+                        val uri = "geo:$lat,$lng?q=$lat,$lng(Bueiro+${alert.idBueiro})"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+                        intent.setPackage("com.google.android.apps.maps")
+                        context.startActivity(intent)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
@@ -128,8 +114,5 @@ fun AlertCard(
                     Text(text = "Abrir no Mapa", color = Color.White)
                 }
             }
-        } catch (e: Exception) {
-            Log.e("AlertCard", "Erro geral na renderizacao do card", e)
-        }
     }
 }

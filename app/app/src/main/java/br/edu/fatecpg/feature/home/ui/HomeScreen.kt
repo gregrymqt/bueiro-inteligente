@@ -22,7 +22,6 @@ fun HomeScreen(
     isLoggedIn: Boolean,
     onNavigateToLogin: () -> Unit
 ) {
-    try {
         val activeAlert by viewModel.activeAlert.collectAsStateWithLifecycle()
         val connectionError by viewModel.connectionError.collectAsStateWithLifecycle()
 
@@ -40,19 +39,15 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Bem-vindo ao Bueiro Inteligente! FaÁa login para ter acesso completo ao monitoramento e alertas.",
+                            text = "Bem-vindo ao Bueiro Inteligente! Fa√ßa login para ter acesso completo ao monitoramento e alertas.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(onClick = {
-                            try {
-                                Log.d("HomeScreen", "Navegando para o Login via bot„o")
-                                onNavigateToLogin()
-                            } catch (e: Exception) {
-                                Log.e("HomeScreen", "Erro ao navegar para o login", e)
-                            }
+                            Log.d("HomeScreen", "Navegando para o Login via bot√£o")
+                            onNavigateToLogin()
                         }) {
                             Text("Entrar")
                         }
@@ -72,16 +67,12 @@ fun HomeScreen(
                         AlertCard(
                             alert = activeAlert!!,
                             onDismiss = {
-                                try {
-                                    viewModel.dismissAlert()
-                                } catch (e: Exception) {
-                                    Log.e("HomeScreen", "Erro ao chamar viewmodel.dismissAlert()", e)
-                                }
+                                viewModel.dismissAlert()
                             }
                         )
                     } else if (isLoggedIn) {
                         Text(
-                            text = "Nenhum alerta crÌtico no momento.\nTudo tranquilo por aqui! \uD83C\uDF3F",
+                            text = "Nenhum alerta cr√≠tico no momento.\nTudo tranquilo por aqui! \uD83C\uDF3F",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -89,7 +80,7 @@ fun HomeScreen(
                     } else {
                         // Visitantes sem dados restritos
                         Text(
-                            text = "O monitoramento contÌnuo ajuda a prevenir enchentes urbanas.",
+                            text = "O monitoramento cont√≠nuo ajuda a prevenir enchentes urbanas.",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -107,7 +98,7 @@ fun HomeScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = connectionError ?: "Erro de conex„o com os sensores.",
+                            text = connectionError ?: "Erro de conex√£o com os sensores.",
                             modifier = Modifier.padding(16.dp),
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             style = MaterialTheme.typography.bodyMedium,
@@ -118,7 +109,4 @@ fun HomeScreen(
                 }
             }
         }
-    } catch (e: Exception) {
-        Log.e("HomeScreen", "Erro critico na renderizacao da HomeScreen", e)
-    }
 }

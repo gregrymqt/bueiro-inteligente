@@ -38,14 +38,10 @@ fun LoginScreen(
 
     // Efeito para navegar quando o login for bem-sucedido
     LaunchedEffect(uiState) {
-        try {
-            if (uiState is LoginUiState.Success) {
-                Log.d("LoginScreen", "Navegando para Home apos sucesso.")
-                onNavigateToHome()
-                viewModel.resetState()
-            }
-        } catch (e: Exception) {
-            Log.e("LoginScreen", "Erro ao navegar para Home.", e)
+        if (uiState is LoginUiState.Success) {
+            Log.d("LoginScreen", "Navegando para Home apos sucesso.")
+            onNavigateToHome()
+            viewModel.resetState()
         }
     }
 
@@ -55,14 +51,13 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            try {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                     // Logo / �cone
                     Icon(
                         imageVector = Icons.Default.WaterDrop, // Representação genérica para água/bueiro
@@ -131,12 +126,8 @@ fun LoginScreen(
 
                     // Botão de Entrar ou Indicador de Carregamento
                     Button(
-                        onClick = { 
-                            try {
-                                viewModel.performLogin(email, password) 
-                            } catch (e: Exception) {
-                                Log.e("LoginScreen", "Erro ao executar performLogin", e)
-                            }
+                        onClick = {
+                            viewModel.performLogin(email, password)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -159,20 +150,13 @@ fun LoginScreen(
                     // Botão para ir para a tela de Registro
                     TextButton(
                         onClick = {
-                            try {
-                                onNavigateToRegister()
-                            } catch (e: Exception) {
-                                Log.e("LoginScreen", "Erro ao navegar para Register.", e)
-                            }
+                            onNavigateToRegister()
                         },
                         enabled = uiState !is LoginUiState.Loading
                     ) {
                         Text(text = "Ainda não tem conta? Cadastre-se")
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("LoginScreen", "Erro critico na renderizacao da tela de Login", e)
-            }
         }
     }
 }

@@ -21,16 +21,11 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onLogoutClick: () -> Unit
 ) {
-    try {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         LaunchedEffect(Unit) {
-            try {
-                Log.d("ProfileScreen", "Iniciando recomposicao com efeito lancavel, requisitando load de log de Profile.")
-                viewModel.loadProfile()
-            } catch (e: Exception) {
-                Log.e("ProfileScreen", "Erro severo ao lancar recomposicao da UI de Profile Screen", e)
-            }
+            Log.d("ProfileScreen", "Iniciando recomposicao com efeito lancavel, requisitando load de log de Profile.")
+            viewModel.loadProfile()
         }
 
         Scaffold { paddingValues ->
@@ -55,13 +50,9 @@ fun ProfileScreen(
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
-                            Button(onClick = { 
-                                try {
-                                    Log.d("ProfileScreen", "Clique para recarregar perfil efetuado pelo usuario em fallback Screen.")
-                                    viewModel.loadProfile() 
-                                } catch (e: Exception) {
-                                    Log.e("ProfileScreen", "Acao recarregar UI causou falha no escopo grafico", e)
-                                }
+                            Button(onClick = {
+                                Log.d("ProfileScreen", "Clique para recarregar perfil efetuado pelo usuario em fallback Screen.")
+                                viewModel.loadProfile()
                             }) {
                                 Text("Tentar Novamente")
                             }
@@ -130,12 +121,8 @@ fun ProfileScreen(
 
                             Button(
                                 onClick = {
-                                    try {
-                                        Log.d("ProfileScreen", "Clique de Logout processado com sucesso")
-                                        onLogoutClick()
-                                    } catch (e: Exception) {
-                                        Log.e("ProfileScreen", "Falha critica sobre logica de transicao externa por Logout", e)
-                                    }
+                                    Log.d("ProfileScreen", "Clique de Logout processado com sucesso")
+                                    onLogoutClick()
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error
@@ -151,7 +138,4 @@ fun ProfileScreen(
                 }
             }
         }
-    } catch (e: Exception) {
-        Log.e("ProfileScreen", "Falha abismal no layout base de ProfileScreen", e)
-    }
 }

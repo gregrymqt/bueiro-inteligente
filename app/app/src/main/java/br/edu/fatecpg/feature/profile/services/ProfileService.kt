@@ -14,10 +14,10 @@ interface ProfileService {
     companion object {
         fun create(): ProfileService {
             return try {
-                Log.d("ProfileService", "Criando inst‚ncia do ProfileService via ApiClient")
-                ApiClient.retrofit.create(ProfileService::class.java)
+                Log.d("ProfileService", "Criando inst√¢ncia do ProfileService via ApiClient")
+                ApiClient.createService(ProfileService::class.java)
             } catch (e: Exception) {
-                Log.e("ProfileService", "Erro ao criar inst‚ncia de ProfileService", e)
+                Log.e("ProfileService", "Erro ao criar inst√¢ncia de ProfileService", e)
                 throw e
             }
         }
