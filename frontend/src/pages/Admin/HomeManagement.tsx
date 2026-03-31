@@ -10,6 +10,7 @@ export const HomeManagement: React.FC = () => {
     carousels,
     stats,
     loading,
+    refreshData,
     removeBanner,
     removeStatCard
   } = useHomeAdmin();
@@ -75,6 +76,7 @@ export const HomeManagement: React.FC = () => {
                 onSuccess={() => {
                   setActiveCarouselForm(null);
                   showNotification(activeCarouselForm.isEditing ? 'Banner atualizado!' : 'Banner criado!');
+                  refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveCarouselForm(null)}
               />
@@ -129,6 +131,7 @@ export const HomeManagement: React.FC = () => {
                 onSuccess={() => {
                   setActiveStatCardForm(null);
                   showNotification(activeStatCardForm.isEditing ? 'Estatística atualizada!' : 'Estatística criada!');
+                  refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveStatCardForm(null)}
               />

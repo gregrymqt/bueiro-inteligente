@@ -14,7 +14,7 @@ class HomeRepository:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def get_all_content(self) -> Dict[Tuple[CarouselModel], Tuple[StatCardModel]]:
+    async def get_all_content(self) -> Dict[str, Any]:
         """Busca todos os carousels e stats ordenados."""
         carousels_stmt = select(CarouselModel).order_by(CarouselModel.order)
         stats_stmt = select(StatCardModel).order_by(StatCardModel.order)
