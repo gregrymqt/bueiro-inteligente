@@ -7,7 +7,7 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 ### Backend (Python)
 - **Framework Principal:** FastAPI (com Uvicorn)
 - **Linguagem:** Python 3.x
-- **Bancos de Dados/Cache:** Supabase e Redis
+- **Bancos de Dados/Cache:** PostgreSQL (SQLAlchemy + Alembic) e Redis
 - **Autenticação:** JWT (python-jose, passlib)
 - **Validação de Dados:** Pydantic / Pydantic Settings
 - **Agendamento (Jobs/Workers):** APScheduler
@@ -51,7 +51,7 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 - `/features`: Módulos de negócio isolados. Cada feature (como `auth`, `monitoring`, `rows`, `cache`, `realtime`) pode conter:
   - `controller.py`: Endpoints do FastAPI (Rotas).
   - `service.py` ou pasta `/services/`: Regras de negócio da aplicação (quando complexa, a feature divide serviços em arquivos, ex: `broadcast_service.py` em `monitoring`).
-  - `repository.py`: Interação direta com a camada de dados (Supabase/Redis).
+  - `repository.py`: Interação direta com a camada de dados (PostgreSQL/Redis).
   - `interfaces.py`: Classes abstratas / Tipagens para injeção de dependência.
   - `dto.py` / `dtos.py`: Modelos Pydantic para validação de entrada/saída (Schemas).
 - `/routes`: Pasta destinada à agregação e registro das rotas dos controllers.

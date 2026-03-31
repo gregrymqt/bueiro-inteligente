@@ -18,7 +18,7 @@ O sistema foi desenhado para evitar enchentes e otimizar rotas de manutenção u
 
 ## 🛠️ Stack Tecnológica
 
-- **Backend:** Python 3.x, FastAPI (Uvicorn), Supabase, Redis, APScheduler, WebSockets, HTTPX.
+- **Backend:** Python 3.x, FastAPI (Uvicorn), PostgreSQL (com SQLAlchemy e Alembic), Redis, APScheduler, WebSockets, HTTPX.
 - **Frontend Web:** React 19, Vite, TypeScript, UI componetizada (SCSS Modules).
 - **Mobile:** Android Nativo (Kotlin, Min SDK 24, MVVM, Clean Architecture).
 - **IoT / Hardware:** ESP32/ESP8266, C++, ArduinoIDE, ArduinoJson.
@@ -34,15 +34,14 @@ Nós utilizamos o **Docker Compose** para orquestrar todos os serviços localmen
 
 ### 1. Pré-Requisitos
 - [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/) instalados na sua máquina.
-- Uma conta no [Supabase](https://supabase.com/).
+- Um banco de dados PostgreSQL rodando (local ou na nuvem).
 
 ### 2. Configuração do Ambiente (.env)
-Na raiz do projeto, crie um arquivo chamado `.env` e preencha com as suas credenciais do banco de dados (nós usamos o Supabase em Cloud para poupar recursos locais):
+Na raiz do projeto, crie um arquivo chamado `.env` e preencha com as suas credenciais do banco de dados PostgreSQL:
 
 ```env
-# Requisito Obrigatório: Conexão com o Banco de Dados
-SUPABASE_URL=https://<SUA-URL-AQUI>.supabase.co
-SUPABASE_KEY=eyJhbg...<SUA-ANON-OU-SERVICE-KEY>...
+# Requisito Obrigatório: Conexão com o Banco de Dados PostgreSQL
+DATABASE_URL=postgresql://usuario:senha@localhost:5432/nome_do_banco
 
 # Outras variáveis (Opcionais / Defaults)
 HOST=0.0.0.0

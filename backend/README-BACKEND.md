@@ -6,7 +6,7 @@ Este é o backend do projeto **Bueiro Inteligente**, responsável por fornecer a
 
 - **[FastAPI](https://fastapi.tiangolo.com/)**: Framework web moderno e rápido para construção de APIs com Python 3.7+ baseado em standard Python type hints.
 - **[Uvicorn](https://www.uvicorn.org/)**: Servidor ASGI leve e rápido.
-- **[Supabase](https://supabase.com/)**: Alternativa Open Source ao Firebase, utilizado como banco de dados principal.
+- **[PostgreSQL](https://www.postgresql.org/)**: Sistema gerenciador de banco de dados relacional (utilizado com **SQLAlchemy** e **Alembic** para migrações).
 - **[Redis](https://redis.io/)**: Banco de dados em memória, utilizado para cache, otimização de performance e Blacklist de JWT.
 - **Autenticação e Segurança (JWT & RBAC)**: Autenticação baseada em tokens (via `python-jose`), controle de acesso por papéis e criptografia de senhas com `passlib`.
 - **Background Jobs (APScheduler)**: Execução de rotinas assíncronas em background (como sincronização de planilhas ETL).
@@ -21,14 +21,19 @@ O projeto segue uma arquitetura baseada em features/módulos para facilitar a ma
 
 ```
 backend/
+├── alembic/                    # Arquivos e versões de migração do banco (Alembic)
 ├── app/
 │   ├── main.py                 # Ponto de entrada da aplicação FastAPI e ciclo de vida
-│   ├── core/                   # Configs, DB, cache, segurança (JWT/RBAC), websockets e scheduler
+│   ├── core/                   # Configurações globais, banco de dados (database.py) e variáveis
+│   ├── extensions/             # Configurações de infraestrutura (auth, realtime, scheduler, etc.)
+│   ├── routes/                 # Registro centralizado de rotas (controllers)
 │   └── features/               # Módulos específicos da aplicação (domínios)
-│       ├── auth/               # Autenticação de usuários, login e logout (blacklist com Redis)
-│       ├── cache/              # Serviços e interfaces para manipulação do Redis
-│       ├── monitoring/         # Lógica IoT de bueiros, regras de negócio e rotas de WebSocket
+│       ├── auth/               # Autenticação de usuários, login e logout
+│       ├── cache/              # Serviços para manipulação do Redis
+│       ├── monitoring/         # Lógica IoT de bueiros, regras de negócio gerais
+│       ├── realtime/           # Gerenciamento de WebSockets
 │       └── rows/               # Classes e rotinas de ETL para sincronização de dados via Rows API
+├── alembic.ini                 # Configuração do Alembic
 ├── Dockerfile                  # Instruções para conteinerização da aplicação
 └── requirements.txt            # Dependências em Python do projeto
 ```
@@ -62,7 +67,7 @@ backend/
    ```
 
 4. **Configuração de Variáveis de Ambiente:**
-   - Crie um arquivo `.env` na raiz da pasta `backend/` com base nas configurações esperadas (ex: credenciais do Supabase, URL do Redis, tokens da Adafruit).
+   - Crie um arquivo `.env` na raiz da pasta `backend/` com base nas configurações esperadas (ex: credenciais do PostgreSQL/Database URL, URL do Redis, tokens da Adafruit).
 
 5. **Inicie o servidor de desenvolvimento:**
    ```bash

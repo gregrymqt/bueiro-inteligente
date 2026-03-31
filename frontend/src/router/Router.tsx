@@ -7,6 +7,7 @@ import { RoleMiddleware } from './middleware/RoleMiddleware';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 import Home from '@/pages/Home/Home';
 import { Login } from '@/pages/Auth/Login'; 
+import { HomeManagement } from '@/pages/Admin/HomeManagement'; 
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
                   {
                     path: '/configuracoes',
                     element: <h1>Página de Configurações (Apenas Admin e Manutenção)</h1>,
+                  },
+                  {
+                    path: '/admin/home',
+                    element: <HomeManagement />,
                   }
                 ]
               }

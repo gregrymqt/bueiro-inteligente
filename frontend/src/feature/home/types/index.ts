@@ -1,4 +1,3 @@
-import type { JSX } from "react";
 
 export type CarouselSection = 'hero' | 'alerts' | 'stats';
 
@@ -6,23 +5,30 @@ export interface CarouselContent {
   id: string;
   title: string;
   subtitle?: string;
-  imageUrl: string;
-  actionUrl?: string; // Link para onde o slide redireciona
+  image_url: string;
+  action_url?: string; 
   order: number;
+  section: CarouselSection; 
 }
 
-// Interface para facilitar o gerenciamento por seção no Dashboard
-export interface HomeCarouselState {
-  section: CarouselSection;
-  items: CarouselContent[];
-}
+export type CarouselCreatePayload = Omit<CarouselContent, 'id'>;
+export type CarouselUpdatePayload = Partial<CarouselCreatePayload>;
 
 export interface StatCardContent {
   id: string;
   title: string;
-  value: string; // Ex: "85%", "12 Criticos"
+  value: string; 
   description: string;
-  icon: JSX.Element; // Ícone do Lucide-React
-  color: 'success' | 'warning' | 'danger'; // Cor do Design Token
+  icon_name: string; 
+  color: 'success' | 'warning' | 'danger'; 
   order: number;
+}
+
+export type StatCardCreatePayload = Omit<StatCardContent, 'id'>;
+export type StatCardUpdatePayload = Partial<StatCardCreatePayload>;
+
+// Resposta unificada que o seu GET /home deve retornar
+export interface HomeDataResponse {
+  carousels: CarouselContent[];
+  stats: StatCardContent[];
 }

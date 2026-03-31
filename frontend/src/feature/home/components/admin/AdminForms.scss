@@ -1,0 +1,85 @@
+@use '../../../../styles/default.scss' as *;
+
+.admin-form-container {
+  background-color: #ffffff;
+  padding: $spacing-md;
+  border-radius: 8px;
+  border: 1px solid $color-border;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: $spacing-lg;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+
+  .form-header {
+    margin-bottom: $spacing-md;
+    h3 {
+      margin: 0 0 $spacing-sm;
+      font-family: $font-stack;
+      color: $color-text-main;
+      font-size: 1.25rem;
+    }
+  }
+
+  .form-error-message {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+    margin-bottom: $spacing-md;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid rgba($color-danger, 0.3);
+    border-radius: 6px;
+    font-family: $font-stack;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    margin-top: 0; // Removido espaço pois o GenericForm já insere gap
+
+    @include respond-to('sm') {
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    button {
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      font-family: $font-stack;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      width: 100%;
+
+      @include respond-to('sm') {
+        width: auto;
+      }
+
+      &.btn-cancel {
+        background-color: transparent;
+        color: $color-text-main;
+        border: 1px solid $color-border;
+        
+        &:hover:not(:disabled) {
+          background-color: $color-bg-light;
+          border-color: darken($color-border, 10%);
+        }
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

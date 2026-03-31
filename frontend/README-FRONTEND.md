@@ -21,15 +21,17 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
 
 - **/core:** Utilitários essenciais e transversais do sistema.
   - http/: Configuração de clientes HTTP (ApiClient.ts), manipulação de tokens da sessão (TokenService.ts) e interceptadores (AuthInterceptor.tsx).
-- **/feature:** O coração das regras de negócio do frontend. Cada domínio contém suas subdivisões: components, hooks, services e 	ypes.
-  - uth: Autenticação, formulário de login e serviços de validação de acesso.
+- **/feature:** O coração das regras de negócio do frontend. Cada domínio contém suas subdivisões: components, hooks, services e types.
+  - auth: Autenticação, formulário de login e serviços de validação de acesso.
   - home: Componentes principais da página inicial, incluindo carrosséis (useHomeCarousel.ts) e cards de estatísticas.
   - monitoring: Interface de visualização em tempo real do dispositivo, incluindo incorporações (RowsEmbed) e gerenciamento de estado das métricas (useDrainStatus.ts).
 - **/components:** Peças de UI reaproveitáveis.
   - layout/: Elementos estruturais da página (Navbar, Sidebar, Footer, MainLayout).
   - ui/: Blocos de construção genéricos (Cards, Carousel, StatusBadge).
-- **/pages:** Componentes de alto nível encarregados de unir componentes menores e features às rotas definitivas (ex: Home, DashBoard).
+- **/pages:** Componentes de alto nível encarregados de unir componentes menores e features às rotas definitivas (ex: Home, Dashboard, Auth).
 - **/router:** Central de roteamento baseada em Router.tsx, com isolamento de acesso feito pelas pastas /middleware (ProtectedLayout.tsx, RoleMiddleware.tsx).
+- **/styles:** Estilos globais (.scss).
+- **/assets:** Arquivos estáticos (imagens, ícones, etc).
 
 ---
 
@@ -47,30 +49,30 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
 **Pré-requisitos:** Node.js (v18+) e NPM (ou Yarn/PNPM) instalados.
 
 1. **Acesse o diretório do frontend via terminal:**
-   `ash
+   ```bash
    cd frontend
-   `
+   ```
 
 2. **Instale as dependências essenciais e as de desenvolvimento:**
-   `ash
+   ```bash
    npm install
-   `
+   ```
 
 3. **Inicie o servidor local gerido pelo Vite:**
-   `ash
+   ```bash
    npm run dev
-   `
+   ```
    > A aplicação estará disponível rapidamente na porta padrão 5173. Acesse no navegador em: http://localhost:5173/
 
 4. **Para gerar o build otimizado de produção:**
-   `ash
+   ```bash
    npm run build
-   `
+   ```
 
 ---
 
 ## 🧹 Boas Práticas para o Desenvolvimento
 
-- **Tipagem Estrita:** Não utilize o tipo \ny\. Declare e exporte os contratos na pasta local de 	ypes/ atrelada à Feature.
+- **Tipagem Estrita:** Não utilize o tipo `any`. Declare e exporte os contratos na pasta local de types/ atrelada à Feature.
 - **Responsabilidade Visual:** Os painéis visuais (.tsx) **nunca** devem chamar uma Promise HTTP diretamente. Use um Custom Hook na Feature que então orquestra as comunicações pelo Service.
 - **Importação de SCSS:** Mantenha os estilos isolados nos arquivos da árvore para evitar sobrescritas e vazamentos de regras CSS globais.
