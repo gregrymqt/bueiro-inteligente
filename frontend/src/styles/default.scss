@@ -18,6 +18,8 @@ $spacing-sm: 0.5rem;
 $spacing-md: 1rem;
 $spacing-lg: 1.5rem;
 
+@use "sass:map";
+
 // ==========================================
 // MIXINS: MOBILE-FIRST RESPONSIVIDADE
 // ==========================================
@@ -32,8 +34,8 @@ $breakpoints: (
 );
 
 @mixin respond-to($size) {
-  @if map-has-key($breakpoints, $size) {
-    @media (min-width: map-get($breakpoints, $size)) {
+  @if map.has-key($breakpoints, $size) {
+    @media (min-width: map.get($breakpoints, $size)) {
       @content;
     }
   } @else {

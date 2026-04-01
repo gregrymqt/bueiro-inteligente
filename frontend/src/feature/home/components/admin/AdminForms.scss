@@ -1,4 +1,4 @@
-@use '../../../../styles/default.scss' as *;
+@use "sass:color";
 
 .admin-form-container {
   background-color: #ffffff;
@@ -72,7 +72,7 @@
         
         &:hover:not(:disabled) {
           background-color: $color-bg-light;
-          border-color: darken($color-border, 10%);
+          border-color: color.adjust($color-border, $lightness: -10%);
         }
       }
 

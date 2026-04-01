@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
         scss: {
           // Injeta esse arquivo no topo de todos os seus arquivos .scss automaticamente.
           // Dica: Use @use em vez de @import (que será descontinuado pelo Sass).
-          additionalData: `@use "@/styles/default.scss" as *;`,
+          additionalData: `@use "@/styles/default.scss" as *;\n`,
         },
       },
     },

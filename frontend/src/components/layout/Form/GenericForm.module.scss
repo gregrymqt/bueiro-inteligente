@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .form {
   width: 100%;
   display: flex;
@@ -10,7 +12,7 @@
   grid-template-columns: 1fr;
   gap: 1.25rem;
 
-  @include desktop {
+  @include respond-to('lg') {
     grid-template-columns: repeat(12, 1fr);
   }
 }
@@ -21,7 +23,7 @@
   gap: 0.5rem;
   grid-column: span 1;
 
-  @include desktop {
+  @include respond-to('lg') {
     &.colSpan12 { grid-column: span 12; }
     &.colSpan6  { grid-column: span 6; }
     &.colSpan4  { grid-column: span 4; }
@@ -30,12 +32,12 @@
 
   label {
     font-weight: 600;
-    color: $text-dark;
+    color: $color-text-main;
     font-size: 0.9rem;
   }
 
   .required {
-    color: #dc3545;
+    color: $color-danger;
     margin-left: 4px;
   }
 
@@ -44,21 +46,21 @@
   textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid $border-color;
+    border: 1px solid $color-border;
     border-radius: 8px;
     font-size: 1rem;
-    background-color: $bg-light;
-    transition: border-color $transition-speed, box-shadow $transition-speed;
+    background-color: $color-bg-light;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
     &:focus {
       outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+      border-color: $color-success;
+      box-shadow: 0 0 0 3px rgba($color-success, 0.1);
     }
 
     &.error {
-      border-color: #dc3545;
-      background-color: #fff8f8;
+      border-color: $color-danger;
+      background-color: rgba($color-danger, 0.05);
     }
     
     &:disabled {
@@ -80,7 +82,7 @@
     input[type="checkbox"] {
       width: 20px;
       height: 20px;
-      accent-color: $primary-color;
+      accent-color: $color-success;
     }
     
     label { 
@@ -90,7 +92,7 @@
   }
 
   .errorMsg {
-    color: #dc3545;
+    color: $color-danger;
     font-size: 0.85rem;
     animation: fadeIn 0.3s ease;
   }
@@ -101,23 +103,23 @@
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid $border-color;
+  border-top: 1px solid $color-border;
   grid-column: 1 / -1;
 }
 
 .submitBtn {
   padding: 0.75rem 2rem;
-  background-color: $primary-color;
+  background-color: $color-success;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color $transition-speed;
+  transition: background-color 0.2s ease;
 
   &:hover:not(:disabled) {
-    background-color: $primary-hover;
+    background-color: color.adjust($color-success, $lightness: -10%);
   }
 
   &:disabled {

@@ -30,7 +30,13 @@ export const StatCardCarousel: React.FC<StatCardCarouselProps> = ({ items }) => 
       >
         {items.map((item) => (
           <SwiperSlide key={item.id}>
-            <StatCard {...item} />
+            <StatCard 
+              iconName={item.icon_name}
+              title={item.title}
+              value={item.value}
+              description={item.description}
+              color={item.color as any}
+            />
           </SwiperSlide>
         ))}
       </Swiper>

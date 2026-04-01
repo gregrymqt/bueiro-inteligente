@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Overlay escuro só aparece no mobile
 .sidebar-overlay {
   position: fixed;
@@ -108,7 +110,7 @@
 
     &--active {
       background-color: rgba($color-success, 0.1); // Usando a cor de sucesso do nosso token
-      color: darken($color-success, 10%);
+      color: color.adjust($color-success, $lightness: -10%);
       font-weight: 600;
 
       &:hover {

@@ -70,7 +70,7 @@
     justify-content: space-between;
     width: auto;
     flex: 1;
-    margin-left: map-get($breakpoints, 'md') * 0.05; /* espaçamento relativo orgânico para empurrar os links */
+    // margin-left: map.get($breakpoints, 'md') * 0.05; /* espaçamento relativo orgânico para empurrar os links */
     padding: 0;
     border-bottom: none;
     box-shadow: none;
