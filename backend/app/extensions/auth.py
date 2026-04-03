@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class AuthExtension:
     _instance = None
+    pwd_context: CryptContext
+    oauth2_scheme: OAuth2PasswordBearer
+    blacklist_ttl: float
 
     def __new__(cls):
         if cls._instance is None:
@@ -85,9 +88,9 @@ async def get_current_user(token: str = Depends(auth_extension.oauth2_scheme)) -
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        jti: str = payload.get("jti")
-        roles: list[str] = payload.get("roles", [])
+        email = payload.get("sub")
+        jti = payload.get("jti")
+        roles = payload.get("roles", [])
 
         if email is None or jti is None:
             raise credentials_exception

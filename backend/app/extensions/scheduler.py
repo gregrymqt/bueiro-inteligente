@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 class SchedulerExtension:
     _instance = None
+    scheduler: AsyncIOScheduler
+    rows_service: RowsService | None
 
     def __new__(cls):
         if cls._instance is None:
@@ -53,6 +55,10 @@ class SchedulerExtension:
                             cache_service=cache_service
                         )
                         
+                        if not self.rows_service:
+                            logger.error("RowsService não está disponível.")
+                            return
+                            
                         sync_job = RowsSyncJob(
                             repository=repository,
                             rows_service=self.rows_service,

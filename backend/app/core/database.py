@@ -2,24 +2,29 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool 
 
-# Carrega as variáveis do arquivo .env
 load_dotenv()
 
-# Lê a URL do banco de dados das variáveis de ambiente
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DATABASE_URL:
+if not DATABASE_URL:        
     raise ValueError("A variável de ambiente DATABASE_URL não está definida.")
 
-# Garante o driver async
+# Garante o driver assíncrono para o SQLAlchemy
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-# Cria a engine de conexão com o banco de dados
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Cria a engine com as configurações para nuvem (Supabase/Render)
+engine = create_async_engine(
+    DATABASE_URL, 
+    echo=True,
+    # O NullPool é obrigatório ao usar o Transaction Pooler (porta 6543) do Supabase
+    poolclass=NullPool, 
+    # SSL é obrigatório para conexões seguras com o Supabase
+    connect_args={"ssl": True} 
+)
 
-# Cria a fábrica de sessões (SessionLocal)
 SessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -28,10 +33,9 @@ SessionLocal = async_sessionmaker(
     autoflush=False
 )
 
-# Base declarativa para criação dos models
 Base = declarative_base()
 
-# Função de dependência para injetar a sessão do banco de dados nas rotas do FastAPI
 async def get_db():
+    """Injeção de dependência para as rotas do FastAPI"""
     async with SessionLocal() as db:
         yield db

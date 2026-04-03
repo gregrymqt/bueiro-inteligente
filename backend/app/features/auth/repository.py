@@ -8,16 +8,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AuthRepository(IAuthRepository):
-    "\""
+    """
     Repositório de autenticação que se comunica com o banco usando SQLAlchemy assíncrono.
-    "\""
+    """
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_user_by_email(self, email: str) -> UserInDB | None:
-        "\""
+        """
         Busca um usuário no banco de dados pelo seu email.
-        "\""
+        """
         try:
             logger.debug(f"Buscando usuário por email no banco de dados: {email}")
             stmt = select(User).where(User.email == email)
@@ -39,9 +39,9 @@ class AuthRepository(IAuthRepository):
             raise
 
     async def create_user(self, user_in_db: UserInDB) -> UserInDB:
-        "\""
+        """
         Salva um novo usuário no banco de dados.
-        "\""
+        """
         try:
             logger.info(f"Persistindo novo usuário no banco de dados: {user_in_db.email}")
             db_user = User(

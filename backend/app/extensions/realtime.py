@@ -1,6 +1,6 @@
 # app/extensions/realtime.py
 import logging
-from typing import List, Any, TypeVar
+from typing import Any, TypeVar
 from fastapi import WebSocket
 from pydantic import BaseModel
 
@@ -9,6 +9,7 @@ T = TypeVar('T')
 
 class RealtimeExtension:
     _instance = None
+    active_connections: list[WebSocket]
 
     def __new__(cls):
         if cls._instance is None:
