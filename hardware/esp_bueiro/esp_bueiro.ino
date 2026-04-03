@@ -12,10 +12,10 @@ const String ID_BUEIRO = "B-01-CENTRO";
 int const trig = 4;
 int const echo = 2;
 
-cons float alturaTotal = 100.0;
+const float alturaTotal = 100.0;
 
-usingned long intervalo = 500;
-const usingned long intervaloMax = 3000.0;
+unsigned long intervalo = 500;
+const unsigned long intervaloMax = 3000.0;
 
 float ultimaDistancia = 0;
 float leiturasIguais = 0;
@@ -46,8 +46,8 @@ float distanciaFiltrada() {
   }
 
   //bubble sort ordenando os dados de forma crescente
-  for (int i = 0; i <= 5; i++) {
-    for (int i = 0; i <= 5; i++) {
+  for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       if (leitura[j] > leitura[leitura[j] + 1]) {
         float t = leitura[j];
         leitura[j] = leitura[j + 1];
