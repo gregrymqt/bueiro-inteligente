@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from app.extensions.auth import get_current_user
 from app.features.auth.dto import UserTokenData
 from app.core.database import engine, SessionLocal
+from backend.app.features.auth.models import Role
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class InfrastructureExtension:
             )
             
             # Teste simples de conexão (Ping)
-            await self.redis_client.ping()
+            await self.redis_client.ping() # type: ignore
             logger.info("Conexão com o Redis estabelecida com sucesso.")
             
             # Teste de conexão com o PostgreSQL
@@ -90,11 +91,11 @@ class RoleChecker:
     """
     Dependência que verifica se o usuário logado possui uma das roles permitidas.
     """
-    def __init__(self, allowed_roles: list[str]):
+    def __init__(self, allowed_roles: list[Role]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: UserTokenData = Depends(get_current_user)):
-        if not any(role in user.roles for role in self.allowed_roles):
+        if not any(role in user.role for role in self.allowed_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para acessar este recurso."

@@ -28,7 +28,7 @@ class AuthService(IAuthService):
                 return None
 
             logger.info(f"Usuário autenticado com sucesso: {email}")
-            return User(email=user_in_db.email, full_name=user_in_db.full_name, roles=user_in_db.roles)
+            return User(email=user_in_db.email, full_name=user_in_db.full_name, role=user_in_db.role)
         except Exception as e:
             logger.error(f"Erro inesperado ao autenticar usuário {email}: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail="Erro interno durante a autenticação")
@@ -36,7 +36,7 @@ class AuthService(IAuthService):
     def create_access_token(self, user: User) -> str:
         try:
             logger.info(f"Gerando token de acesso para o usuário: {user.email}")
-            payload = TokenPayload(sub=user.email, roles=user.roles)
+            payload = TokenPayload(sub=user.email, role=user.role)
             return auth_extension.create_access_token(payload)
         except Exception as e:
             logger.error(f"Erro ao gerar token de acesso para o usuário {user.email}: {str(e)}", exc_info=True)
@@ -69,7 +69,7 @@ class AuthService(IAuthService):
             user_in_db = UserInDB(
                 email=user_create.email,
                 full_name=user_create.full_name,
-                roles=user_create.roles,
+                role=user_create.role,
                 hashed_password=hashed_password
             )
 
@@ -81,7 +81,7 @@ class AuthService(IAuthService):
             return User(
                 email=saved_user.email,
                 full_name=saved_user.full_name,
-                roles=saved_user.roles
+                role=saved_user.role
             )
         except HTTPException:
             raise

@@ -90,7 +90,7 @@ async def get_current_user(token: str = Depends(auth_extension.oauth2_scheme)) -
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email = payload.get("sub")
         jti = payload.get("jti")
-        roles = payload.get("roles", [])
+        role = payload.get("role", "User") # Extraímos a string, default "User"
 
         if email is None or jti is None:
             raise credentials_exception
@@ -103,16 +103,62 @@ async def get_current_user(token: str = Depends(auth_extension.oauth2_scheme)) -
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return UserTokenData(email=email, roles=roles, jti=jti)
+        return UserTokenData(email=email, role=role, jti=jti)
             
     except JWTError:
         raise credentials_exception
 
 
-async def verify_hardware_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token", auto_error=False)), query_token: str = Query(None, alias="token")):
+async def verify_hardware_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token", auto_error=False)),
+                                query_token: str = Query(None, alias="token")):
     """Verifica se a request foi feita pelo hardware seguro."""
-    from fastapi import Query
     final_token = token or query_token
     if final_token != settings.HARDWARE_TOKEN:
         raise HTTPException(status_code=401, detail="Hardware inválido ou não autorizado")
     return final_token
+
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+from app.core.database import get_db
+from app.features.auth.models import User
+
+class RoleChecker:
+    """
+    Verifica se a role do usuário (via Token JWT ou via BD) tem permissão de acessar a rota.
+    Simula o comportamento do [Authorize(Roles="RoleName")] do ASP.NET Identity.
+    """
+    def __init__(self, allowed_roles: list[str], strict_db_check: bool = False):
+        self.allowed_roles = allowed_roles
+        self.strict_db_check = strict_db_check
+
+    async def __call__(
+        self, 
+        current_user: UserTokenData = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+    ) -> UserTokenData:
+        # Por padrão, confiamos no Claim contido no Payload do JWT de forma imediata
+        user_role = current_user.role
+
+        # Validação Opcional: Vai até o banco ver se a Role foi alterada ou revogada (Segurança Crítica)
+        if self.strict_db_check:
+            stmt = select(User).options(joinedload(User.role)).where(User.email == current_user.email)
+            result = await db.execute(stmt)
+            db_user = result.scalar_one_or_none()
+            
+            if not db_user or not db_user.role:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário ou role não encontrados no sistema.")
+                
+            user_role = db_user.role.name
+            current_user.role = user_role # Atualiza o DTO com a role fresca
+
+        # Verifica se o Role do usuário está na lista permitida
+        if user_role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Acesso negado: Esse recurso exige uma das roles {self.allowed_roles}, mas você possui a role '{user_role}'."
+            )
+            
+        return current_user
+

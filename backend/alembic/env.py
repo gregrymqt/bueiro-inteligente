@@ -25,12 +25,13 @@ sys.path.insert(0, BASE_DIR)
 # Carrega var de ambientes e a nossa Base central
 load_dotenv()
 from app.core.base import Base
+from app.core.config import settings
 
 target_metadata = Base.metadata
 
 # Força o Alembic a pegar a URL do banco do arquivo .env ou do ambiente,
 # sobrescrevendo a string que vem vazia/default no alembic.ini
-database_url = os.getenv("DATABASE_URL")
+database_url = settings.DATABASE_URL
 
 if database_url and "asyncpg" in database_url:
     database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")

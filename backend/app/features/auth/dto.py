@@ -21,7 +21,7 @@ class TokenPayload(BaseModel):
     """
     sub: str | None = None # Subject (geralmente o email ou ID do usuÃ¡rio)  
     jti: str | None = None
-    roles: list[str] = Field(default_factory=list) # Roles do usuario
+    role: str = Field(default="User") # Role do usuario (Claim JWT)
 
 
 # =======================================================
@@ -31,7 +31,7 @@ class TokenPayload(BaseModel):
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str | None = None
-    roles: list[str] = Field(default_factory=list)
+    role: str = Field(default="User")
 
 class UserCreate(BaseModel):
     """
@@ -40,7 +40,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, description="A senha deve ter no mínimo 6 caracteres")
     full_name: str | None = None
-    roles: list[str] = Field(default_factory=list)
+    role: str = Field(default="User", description="Pode ser passado na criação (Admin, Manager, User)")
 
 class User(UserBase):
     """
@@ -57,5 +57,5 @@ class UserInDB(UserBase):
 
 class UserTokenData(BaseModel):
     email: str
-    roles: list[str] = []
+    role: str = "User"
     jti: str

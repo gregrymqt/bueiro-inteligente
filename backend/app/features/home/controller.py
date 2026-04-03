@@ -5,7 +5,7 @@ import uuid
 from app.core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.extensions.auth import get_current_user
+from app.extensions.auth import RoleChecker
 from app.features.auth.dto import UserTokenData
 
 from app.features.cache.service import RedisCacheService
@@ -31,15 +31,6 @@ def get_home_service(db: AsyncSession = Depends(get_db)) -> HomeService:
     cache_service = RedisCacheService(infrastructure.redis_client) 
     return HomeService(repository, cache_service)
 
-def require_admin(current_user: UserTokenData = Depends(get_current_user)):
-    """Dependência para verificar se o usuário logado possui a role 'admin'."""
-    if "admin" not in current_user.roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operação permitida apenas para administradores."
-        )
-    return current_user
-
 # ==========================================
 # Endpoints Públicos
 # ==========================================
@@ -60,7 +51,7 @@ async def get_home_page(service: HomeService = Depends(get_home_service)):
     "/carousel", 
     response_model=CarouselDTO, 
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def create_carousel_item(
     payload: CarouselCreateDTO,
@@ -75,7 +66,7 @@ async def create_carousel_item(
 @router.patch(
     "/carousel/{item_id}", 
     response_model=CarouselDTO,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def update_carousel_item(
     item_id: uuid.UUID,
@@ -93,7 +84,7 @@ async def update_carousel_item(
 @router.delete(
     "/carousel/{item_id}", 
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def delete_carousel_item(
     item_id: uuid.UUID,
@@ -115,7 +106,7 @@ async def delete_carousel_item(
     "/stats", 
     response_model=StatCardDTO, 
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def create_stat_card(
     payload: StatCardCreateDTO,
@@ -129,7 +120,7 @@ async def create_stat_card(
 @router.patch(
     "/stats/{card_id}", 
     response_model=StatCardDTO,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def update_stat_card(
     card_id: uuid.UUID,
@@ -147,7 +138,7 @@ async def update_stat_card(
 @router.delete(
     "/stats/{card_id}", 
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)]
+    dependencies=[Depends(RoleChecker(['Admin']))]
 )
 async def delete_stat_card(
     card_id: uuid.UUID,

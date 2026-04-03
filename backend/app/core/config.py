@@ -1,5 +1,9 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+# Define a raiz da pasta backend (3 níveis acima do config.py)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     # Configurações Gerais
@@ -21,6 +25,9 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
     REDIS_PASSWORD: str | None = None
+    
+    # Configurações do Supabase (PostgreSQL)
+    DATABASE_URL: str = ""
 
     # ROWS (Planilhas / Scheduler)
     # Adicionado para o SchedulerExtension conseguir sincronizar os dados
@@ -28,7 +35,7 @@ class Settings(BaseSettings):
     ROWS_SPREADSHEET_ID: str = ""
     ROWS_TABLE_ID: str = ""
 
-    # Carrega do arquivo .env
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Carrega do arquivo .env absoluto com base na pasta backend
+    model_config = SettingsConfigDict(env_file=str(BASE_DIR / ".env"), extra="ignore")
 
 settings = Settings()

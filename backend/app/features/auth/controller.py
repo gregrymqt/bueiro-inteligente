@@ -1,7 +1,7 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException, status
 from .dto import Token, User, LoginRequest, UserTokenData, UserCreate
 from .service import AuthService, get_auth_service
-from app.extensions.auth import get_current_user
+from app.extensions.auth import RoleChecker
 import logging
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ async def register(
 
 @router.post("/logout", summary="Revogar Token (Logout)")
 async def logout(
-    current_user: UserTokenData = Depends(get_current_user),
+    current_user: UserTokenData = Depends(RoleChecker(['Admin', 'Manager', 'User'])),
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
@@ -81,7 +81,7 @@ async def logout(
 
 @router.get("/users/me", response_model=User, summary="Obter informações do usuário atual")
 async def read_users_me(
-    current_user: UserTokenData = Depends(get_current_user),
+    current_user: UserTokenData = Depends(RoleChecker(['Admin', 'Manager', 'User'])),
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
