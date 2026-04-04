@@ -3,10 +3,11 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool 
+from app.core.config import settings
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = settings.DATABASE_URL.split('?')[0] # Remove query params da URL
 
 if not DATABASE_URL:        
     raise ValueError("A variável de ambiente DATABASE_URL não está definida.")
