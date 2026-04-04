@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from backend.app.features.rows.dtos import RowsAppendRequest, RowsCreateTableRequest, RowsCreateTableResponse
+from app.features.rows.dtos import RowsAppendRequest, RowsCreateTableRequest, RowsCreateTableResponse
 
 class IRowsService(ABC):
     
