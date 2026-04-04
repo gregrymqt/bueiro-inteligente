@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = ""
     REDIS_EXTERNAL_URL: str = "" 
     REDIS_LOCAL: bool = False
+    REDIS_SSL: bool = False
     
     # Configurações do Supabase (PostgreSQL)
     DATABASE_URL: str = ""

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool 
 from app.core.config import settings
+import ssl
 
 load_dotenv()
 
@@ -18,6 +19,10 @@ if DATABASE_URL.startswith("postgresql://"):
 elif DATABASE_URL.startswith("postgresql+psycopg2://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
 # Cria a engine com as configurações para nuvem (Supabase/Render)
 engine = create_async_engine(
     DATABASE_URL, 
@@ -25,7 +30,7 @@ engine = create_async_engine(
     # O NullPool é obrigatório ao usar o Transaction Pooler (porta 6543) do Supabase
     poolclass=NullPool, 
     # SSL deve ser 'ssl': True para conexões seguras do asyncpg com o Supabase
-    connect_args={"ssl": True} 
+    connect_args={"ssl": ctx} 
 )
 
 SessionLocal = async_sessionmaker(

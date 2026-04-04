@@ -3,7 +3,6 @@ import logging
 import redis.asyncio as redis
 from sqlalchemy import text
 from app.core.config import settings
-from fastapi import Depends, HTTPException, status
 from app.core.database import engine, SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -48,19 +47,30 @@ class InfrastructureExtension:
                 redis_host = getattr(settings, "REDIS_HOST", "localhost")
                 redis_port = getattr(settings, "REDIS_PORT", "6379")
                 redis_db = getattr(settings, "REDIS_DB", "0")
+                redis_ssl = getattr(settings, "REDIS_SSL", False)
+                
+                protocol = "rediss" if redis_ssl else "redis"
                 
                 if redis_password:
-                    redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
+                    redis_url = f"{protocol}://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
                 else:
-                    redis_url = f"redis://{redis_host}:{redis_port}/{redis_db}"
+                    redis_url = f"{protocol}://{redis_host}:{redis_port}/{redis_db}"
                     
                 connection_type = "Local/Fallback Manual"
 
             logger.info(f"Iniciando conexão com o Redis. Estratégia de rede: {connection_type}")
             
+            # Opções de conexão do Redis
+            from typing import Any
+            redis_options: dict[str, Any] = {"decode_responses": True}
+            
+            # Adiciona ssl_cert_reqs=None se for uma conexão segura ou usar rediss://
+            if redis_url.startswith("rediss://") or getattr(settings, "REDIS_SSL", False):
+                redis_options["ssl_cert_reqs"] = None
+
             self.redis_client = redis.from_url(
                 redis_url, 
-                decode_responses=True
+                **redis_options
             )
             
             # Teste simples de conexão (Ping) garante a integridade após a escolha
