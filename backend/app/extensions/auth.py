@@ -9,7 +9,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
-from app.extensions.infrastructure import infrastructure # Usamos a infraestrutura que jÃ¡ criamos
 from app.features.auth.dto import UserTokenData, TokenPayload
 
 logger = logging.getLogger(__name__)
@@ -64,12 +63,14 @@ class AuthExtension:
 
     async def add_to_blacklist(self, jti: str):
         """Adiciona o ID do token Ã  blacklist no Redis para invalidar o logout."""
+        from app.extensions.infrastructure import infrastructure
         redis = infrastructure.redis_client
         key = f"blacklist:{jti}"
         await redis.setex(name=key, time=int(self.blacklist_ttl), value="revoked")
         logger.info(f"Token {jti} adicionado Ã  blacklist (Logout realizado).")
 
     async def is_blacklisted(self, jti: str) -> bool:
+        from app.extensions.infrastructure import infrastructure
         redis = infrastructure.redis_client
         if not redis:
             return False

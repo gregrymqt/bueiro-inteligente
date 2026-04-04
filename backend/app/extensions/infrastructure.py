@@ -4,8 +4,6 @@ import redis.asyncio as redis
 from sqlalchemy import text
 from app.core.config import settings
 from fastapi import Depends, HTTPException, status
-from app.extensions.auth import get_current_user
-from app.features.auth.dto import UserTokenData
 from app.core.database import engine, SessionLocal
 from backend.app.features.auth.models import Role
 
@@ -86,18 +84,3 @@ async def get_db():
 
 async def get_cache() -> redis.Redis:
     return infrastructure.redis_client
-
-class RoleChecker:
-    """
-    Dependência que verifica se o usuário logado possui uma das roles permitidas.
-    """
-    def __init__(self, allowed_roles: list[Role]):
-        self.allowed_roles = allowed_roles
-
-    def __call__(self, user: UserTokenData = Depends(get_current_user)):
-        if not any(role in user.role for role in self.allowed_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não tem permissão para acessar este recurso."
-            )
-        return user
