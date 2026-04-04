@@ -122,7 +122,7 @@ async def verify_hardware_token(token: str = Depends(OAuth2PasswordBearer(tokenU
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
-from app.core.database import get_db
+from app.extensions.infrastructure import get_db
 from app.features.auth.models import User
 
 class RoleChecker:

@@ -5,7 +5,6 @@ from sqlalchemy import text
 from app.core.config import settings
 from fastapi import Depends, HTTPException, status
 from app.core.database import engine, SessionLocal
-from backend.app.features.auth.models import Role
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +25,15 @@ class InfrastructureExtension:
         
         try:
             # Configurando Redis
-            # Usando getattr para evitar erro caso a senha não exista no settings
-            redis_password = getattr(settings, "REDIS_PASSWORD", None)
+            redis_url = getattr(settings, "REDIS_URL", None)
             
-            if redis_password:
-                redis_url = f"redis://:{redis_password}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
-            else:
-                redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+            if not redis_url:
+                # Usando getattr para evitar erro caso a senha não exista no settings
+                redis_password = getattr(settings, "REDIS_PASSWORD", None)
+                if redis_password:
+                    redis_url = f"redis://:{redis_password}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+                else:
+                    redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
             
             self.redis_client = redis.from_url(
                 redis_url, 
