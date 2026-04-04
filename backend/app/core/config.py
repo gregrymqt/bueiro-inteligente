@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     
     # Configurações do Supabase (PostgreSQL)
     DATABASE_URL: str = ""
+    MIGRATIONS_URL: str = "" # URL específica para as migrações (pode ser a mesma do DATABASE_URL ou diferente)
 
     # ROWS (Planilhas / Scheduler)
     # Adicionado para o SchedulerExtension conseguir sincronizar os dados

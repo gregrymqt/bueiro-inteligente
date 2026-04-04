@@ -31,12 +31,12 @@ target_metadata = Base.metadata
 
 # Força o Alembic a pegar a URL do banco do arquivo .env ou do ambiente,
 # sobrescrevendo a string que vem vazia/default no alembic.ini
-database_url = settings.DATABASE_URL
+migrations_url = settings.MIGRATIONS_URL
 
-if database_url and "asyncpg" in database_url:
-    database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+if migrations_url and "asyncpg" in migrations_url:
+    migrations_url = migrations_url.replace("postgresql+asyncpg://", "postgresql://")
 
-config.set_main_option("sqlalchemy.url", database_url)
+config.set_main_option("sqlalchemy.url", migrations_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
