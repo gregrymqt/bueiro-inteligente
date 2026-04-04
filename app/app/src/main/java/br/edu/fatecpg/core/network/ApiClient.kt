@@ -11,7 +11,7 @@ object ApiClient {
     private var retrofit: Retrofit? = null
 
     /**
-     * Inicializa a instância Singleton do Retrofit.
+     * Inicializa a instï¿½ncia Singleton do Retrofit.
      * Deve ser chamado idealmente no Application ou na Activity inicial.       
      */
     fun init(tokenManager: TokenManager, baseUrl: String) {
@@ -26,13 +26,15 @@ object ApiClient {
                 val authInterceptor = AuthInterceptor(tokenManager)
 
                 val tokenAuthenticator = TokenAuthenticator(tokenManager)
+                val rateLimitInterceptor = RateLimitInterceptor()
 
                 val okHttpClient = OkHttpClient.Builder()
                     .addInterceptor(authInterceptor)
+                    .addInterceptor(rateLimitInterceptor)
                     .authenticator(tokenAuthenticator)
-                    .addInterceptor(loggingInterceptor) // Adicionado para debug em nível BODY
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
+                    .addInterceptor(loggingInterceptor) // Adicionado para debug em nvel BODY
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
                     .build()
 
                 retrofit = Retrofit.Builder()
@@ -50,7 +52,7 @@ object ApiClient {
     }
 
     /**
-     * Cria e retorna uma interface de serviço usando a instância atual do Retrofit.
+     * Cria e retorna uma interface de serviï¿½o usando a instï¿½ncia atual do Retrofit.
      */
     fun <T> createService(serviceClass: Class<T>): T {
         try {

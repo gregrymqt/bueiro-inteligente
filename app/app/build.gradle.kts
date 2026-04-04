@@ -28,6 +28,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "BASE_URL", "\"https://bueiro-inteligente.onrender.com\"")
+        }
+        debug {
+            buildConfigField("String", "BASE_URL", "\"\"") // Ele fará o fallback automático para seu Localhost
         }
     }
     

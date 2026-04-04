@@ -61,4 +61,5 @@ out/
 # Logs de crash da JVM
 hs_err_pid*
 
-ajuda.md
+# .env do C++
+config.h

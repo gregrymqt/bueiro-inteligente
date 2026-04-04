@@ -11,9 +11,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
             Log.d("MainActivity", "Criando Activity Principal. Inicializando container de Injecao.")
-            // Substitua pelo IP da sua maquina na rede local para testar no celular fisico
-            // Exemplo: "http://192.168.1.15:8000/"
-            val baseUrl = "http://192.168.x.x:8000/"
+            // Para usar o Rendere a rede local de forma dinâmica, configure sua BASE_URL no build.gradle.kts
+            // Exemplo: buildConfigField("String", "BASE_URL", "\"https://bueiro-inteligente-back.onrender.com/\"")
+            val baseUrl = br.edu.fatecpg.BuildConfig.BASE_URL.takeIf { it.isNotEmpty() } ?: "http://10.0.2.2:8000/"
 
             val appContainer = AppContainer(this, baseUrl)
 

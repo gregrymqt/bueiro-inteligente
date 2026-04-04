@@ -1,11 +1,12 @@
 #include <Wifi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "config.h"
 
-const char* ssid = "";
-const char* senha = "";
-
-const char* urlApi = "";
+const char* ssid = WIFI_SSID;
+const char* senha = WIFI_PASS;
+const char* hardwareToken = HARDWARE_TOKEN;
+const char* urlApi = API_URL;
 
 const String ID_BUEIRO = "B-01-CENTRO";
 
@@ -66,16 +67,18 @@ float distanciaFiltrada() {
 }
 
 void bueiroJson(float distancia, float nivel){
-  if (Wifi.status() == WL_CONNECTED){
+  if (WiFi.status() == WL_CONNECTED){
     HTTPClient http;
-    http.begin(urlApi);
+    String urlFinal = String(urlApi) + "?token=" + String(hardwareToken);
+    http.begin(urlFinal);
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<200> jsonDoc;
 
     jsonDoc["id_bueiro"] = ID_BUEIRO;
     jsonDoc["distancia_cm"] = distancia;
-    jsonDoc["nivel_percentual"] = nivel;
+    jsonDoc["latitude"] = 0.0;
+    jsonDoc["longitude"] = 0.0;
 
     String payload;
     serializeJson(jsonDoc, payload);

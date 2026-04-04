@@ -29,7 +29,7 @@ def get_monitoring_service(
         logger.error(f"Erro ao instanciar BueiroService: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro interno ao inicializar serviço")
 
-@router.post("/medicoes", status_code=status.HTTP_200_OK, dependencies=[Depends(RoleChecker(['Admin', 'Manager'])), Depends(RateLimiter(times=5, seconds=10))])
+@router.post("/medicoes", status_code=status.HTTP_200_OK, dependencies=[Depends(RateLimiter(times=5, seconds=10))])
 async def receber_dados_sensor(
     payload: SensorPayloadDTO,
     _ = Depends(verify_hardware_token), # Controller não vaza mais regra de token
