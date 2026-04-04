@@ -5,6 +5,7 @@ uvicorn[standard]
 # Validação e Configurações (Essencial para seu ETL)
 pydantic
 pydantic-settings
+email-validator
 python-dotenv
 
 # Clientes de Dados

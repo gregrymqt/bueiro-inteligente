@@ -19,21 +19,23 @@ Este é o backend do projeto **Bueiro Inteligente**, responsável por fornecer a
 
 O projeto segue uma arquitetura baseada em features/módulos para facilitar a manutenção e escalabilidade:
 
-```
+```text
 backend/
 ├── alembic/                    # Arquivos e versões de migração do banco (Alembic)
 ├── app/
 │   ├── main.py                 # Ponto de entrada da aplicação FastAPI e ciclo de vida
 │   ├── core/                   # Configurações globais, banco de dados (database.py) e variáveis
-│   ├── extensions/             # Configurações de infraestrutura (auth, realtime, scheduler, etc.)
-│   ├── routes/                 # Registro centralizado de rotas (controllers)
-│   └── features/               # Módulos específicos da aplicação (domínios)
-│       ├── auth/               # Autenticação de usuários, login e logout
-│       ├── cache/              # Serviços para manipulação do Redis
-│       ├── monitoring/         # Lógica IoT de bueiros, regras de negócio gerais
+│   ├── extensions/             # Configurações de infraestrutura e serviços core (auth, infrastructure, realtime, scheduler)
+│   ├── routes/                 # Registro centralizado de rotas (agregação de controllers)
+│   └── features/               # Módulos específicos de negócio (features)
+│       ├── auth/               # Autenticação de usuários, roles e gestão de JWT
+│       ├── cache/              # Serviços centralizados para manipulação do Redis
+│       ├── home/               # Lógica para o Dashboard inicial
+│       ├── monitoring/         # Lógica IoT de bueiros, alertas, validações e status
 │       ├── realtime/           # Gerenciamento de WebSockets
-│       └── rows/               # Classes e rotinas de ETL para sincronização de dados via Rows API
+│       └── rows/               # Componentes de Job/Services de planilhas ETL integradas
 ├── alembic.ini                 # Configuração do Alembic
+├── entrypoint.sh               # Script de execução em containers (roda as migrações no boot)
 ├── Dockerfile                  # Instruções para conteinerização da aplicação
 └── requirements.txt            # Dependências em Python do projeto
 ```
@@ -63,13 +65,20 @@ backend/
 
 3. **Instale as dependências:**
    ```bash
+   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
 4. **Configuração de Variáveis de Ambiente:**
-   - Crie um arquivo `.env` na raiz da pasta `backend/` com base nas configurações esperadas (ex: credenciais do PostgreSQL/Database URL, URL do Redis, tokens da Adafruit).
+   - Crie um arquivo `.env` na raiz do diretório `backend`, não esquecendo das configurações principais de Banco (PostgreSQL - Supabase), Instância Redis e os tokens e segredos (como da placa e Rows.com). A porta local padrão do Uvicorn se configurará aos scripts de *run*.
+   - A configuração já suporta fallbacks para *Redis* local, e para ambientes de *Deploy* em Nuvem ele utilizará as flags passadas (`REDIS_LOCAL=False`).
 
-5. **Inicie o servidor de desenvolvimento:**
+5. **Execute as Migrações do Banco:**
+   ```bash
+   alembic upgrade head
+   ```
+
+6. **Inicie o servidor de desenvolvimento:**
    ```bash
    uvicorn app.main:app --reload
    ```
