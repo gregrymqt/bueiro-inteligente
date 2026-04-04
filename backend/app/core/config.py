@@ -38,16 +38,14 @@ class Settings(BaseSettings):
     ROWS_TABLE_ID: str = ""
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["*"]
+    ALLOWED_ORIGINS: list[str] = ["*"]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[str, List[str]]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
-        if isinstance(v, (list, str)):
-            return v
-        raise ValueError(v)
+        return v
 
     # Carrega do arquivo .env absoluto com base na pasta backend
     model_config = SettingsConfigDict(env_file=str(BASE_DIR / ".env"), extra="ignore")
