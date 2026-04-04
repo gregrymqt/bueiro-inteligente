@@ -8,4 +8,4 @@ alembic upgrade head
 
 echo "✅ Migrações concluídas. Subindo a API..."
 # Aqui você coloca o comando que já estava no seu CMD do Dockerfile
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT 
