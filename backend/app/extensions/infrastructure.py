@@ -25,24 +25,47 @@ class InfrastructureExtension:
         
         try:
             # Configurando Redis
-            redis_url = getattr(settings, "REDIS_URL", None)
+            is_local = getattr(settings, "REDIS_LOCAL", False)
+            redis_url = None
+            connection_type = ""
+
+            if is_local:
+                # Ambiente Local/Deving: prioriza a REDIS_EXTERNAL_URL para acesso externo
+                redis_external = getattr(settings, "REDIS_EXTERNAL_URL", None)
+                if redis_external:
+                    redis_url = redis_external
+                    connection_type = "Externa/Nuvem (Dev Local)"
+            else:
+                # Ambiente de Produção/Render: prioriza a REDIS_URL enviada pelas variáveis de ambiente do Render
+                redis_internal = getattr(settings, "REDIS_URL", None)
+                if redis_internal:
+                    redis_url = redis_internal
+                    connection_type = "Interna/Render (Produção)"
             
+            # Fallback de segurança se nenhuma URL completa for detectada
             if not redis_url:
-                # Usando getattr para evitar erro caso a senha não exista no settings
                 redis_password = getattr(settings, "REDIS_PASSWORD", None)
+                redis_host = getattr(settings, "REDIS_HOST", "localhost")
+                redis_port = getattr(settings, "REDIS_PORT", "6379")
+                redis_db = getattr(settings, "REDIS_DB", "0")
+                
                 if redis_password:
-                    redis_url = f"redis://:{redis_password}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+                    redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
                 else:
-                    redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+                    redis_url = f"redis://{redis_host}:{redis_port}/{redis_db}"
+                    
+                connection_type = "Local/Fallback Manual"
+
+            logger.info(f"Iniciando conexão com o Redis. Estratégia de rede: {connection_type}")
             
             self.redis_client = redis.from_url(
                 redis_url, 
                 decode_responses=True
             )
             
-            # Teste simples de conexão (Ping)
+            # Teste simples de conexão (Ping) garante a integridade após a escolha
             await self.redis_client.ping() # type: ignore
-            logger.info("Conexão com o Redis estabelecida com sucesso.")
+            logger.info(f"Conexão com o Redis ({connection_type}) estabelecida com sucesso.")
             
             # Teste de conexão com o PostgreSQL
             async with engine.connect() as conn:
