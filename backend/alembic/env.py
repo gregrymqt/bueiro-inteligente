@@ -31,7 +31,7 @@ target_metadata = Base.metadata
 
 # Força o Alembic a pegar a URL do banco do arquivo .env ou do ambiente,
 # sobrescrevendo a string que vem vazia/default no alembic.ini
-migrations_url = settings.MIGRATIONS_URL
+migrations_url = settings.MIGRATIONS_URL or settings.DATABASE_URL
 
 if migrations_url and "asyncpg" in migrations_url:
     migrations_url = migrations_url.replace("postgresql+asyncpg://", "postgresql://")
@@ -79,6 +79,7 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"sslmode": "require"}
     )
 
     with connectable.connect() as connection:
