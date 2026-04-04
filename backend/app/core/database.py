@@ -23,8 +23,8 @@ engine = create_async_engine(
     echo=True,
     # O NullPool é obrigatório ao usar o Transaction Pooler (porta 6543) do Supabase
     poolclass=NullPool, 
-    # SSL é obrigatório para conexões seguras com o Supabase
-    connect_args={"sslmode": "require"} 
+    # SSL deve ser 'ssl': True para conexões seguras do asyncpg com o Supabase
+    connect_args={"ssl": True} 
 )
 
 SessionLocal = async_sessionmaker(
