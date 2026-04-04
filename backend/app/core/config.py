@@ -1,5 +1,7 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from typing import List, Union
 from pathlib import Path
 
 # Define a raiz da pasta backend (3 níveis acima do config.py)
@@ -34,6 +36,18 @@ class Settings(BaseSettings):
     ROWS_API_KEY: str = ""
     ROWS_SPREADSHEET_ID: str = ""
     ROWS_TABLE_ID: str = ""
+
+    # CORS
+    ALLOWED_ORIGINS: List[str] = ["*"]
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[str, List[str]]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        if isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
 
     # Carrega do arquivo .env absoluto com base na pasta backend
     model_config = SettingsConfigDict(env_file=str(BASE_DIR / ".env"), extra="ignore")

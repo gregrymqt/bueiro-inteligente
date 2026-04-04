@@ -7,6 +7,7 @@ from app.extensions.infrastructure import infrastructure
 from app.extensions.auth import auth_extension
 from app.extensions.realtime import realtime_extension
 from app.extensions.scheduler import scheduler_extension
+from app.core.config import settings
 
 # Importamos o agregador de rotas
 from app.routes import api_router
@@ -29,7 +30,7 @@ app = FastAPI(title="Bueiro Inteligente API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
