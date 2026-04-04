@@ -2,6 +2,7 @@
 from .dto import Token, User, LoginRequest, UserTokenData, UserCreate
 from .service import AuthService, get_auth_service
 from app.extensions.auth import RoleChecker
+from app.core.security import RateLimiter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["Autenticação"])
 # =======================================================
 # Endpoints de Autenticação
 # =======================================================
-@router.post("/login", response_model=Token, summary="Obter Token de Acesso")   
+@router.post("/login", response_model=Token, summary="Obter Token de Acesso", dependencies=[Depends(RateLimiter(times=5, seconds=10))])   
 async def login_for_access_token(
     credentials: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service)
@@ -39,7 +40,7 @@ async def login_for_access_token(
         raise HTTPException(status_code=500, detail="Erro interno no servidor")
 
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED, summary="Cadastrar novo usuário")
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED, summary="Cadastrar novo usuário", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def register(
     user_in: UserCreate,
     auth_service: AuthService = Depends(get_auth_service)
@@ -59,7 +60,7 @@ async def register(
         raise HTTPException(status_code=500, detail="Erro interno no servidor")
 
 
-@router.post("/logout", summary="Revogar Token (Logout)")
+@router.post("/logout", summary="Revogar Token (Logout)", dependencies=[Depends(RateLimiter(times=5, seconds=10))])
 async def logout(
     current_user: UserTokenData = Depends(RoleChecker(['Admin', 'Manager', 'User'])),
     auth_service: AuthService = Depends(get_auth_service)
@@ -79,7 +80,7 @@ async def logout(
         raise HTTPException(status_code=500, detail="Erro interno no servidor")
 
 
-@router.get("/users/me", response_model=User, summary="Obter informações do usuário atual")
+@router.get("/users/me", response_model=User, summary="Obter informações do usuário atual", dependencies=[Depends(RateLimiter(times=10, seconds=10))])
 async def read_users_me(
     current_user: UserTokenData = Depends(RoleChecker(['Admin', 'Manager', 'User'])),
     auth_service: AuthService = Depends(get_auth_service)

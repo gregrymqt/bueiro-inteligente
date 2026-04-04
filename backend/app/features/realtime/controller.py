@@ -1,13 +1,14 @@
 # app/features/realtime/controller.py
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.extensions.realtime import realtime_extension
+from app.core.security import WebSocketRateLimiter
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/realtime", tags=["Realtime"])
 
-@router.websocket("/ws")
+@router.websocket("/ws", dependencies=[Depends(WebSocketRateLimiter(times=3, seconds=10))])
 async def websocket_endpoint(websocket: WebSocket):
     try:
         logger.info("Iniciando nova conexão WebSocket...")

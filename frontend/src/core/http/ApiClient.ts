@@ -43,6 +43,11 @@ export class ApiClient implements IApiClient {
         // Disparar evento para forçar o usuário para a tela de Login
         window.dispatchEvent(new Event('auth:unauthorized')); 
       }
+
+      if (response.status === 429) {
+        window.dispatchEvent(new Event('api:rate-limit'));
+        throw new Error("Muitas requisições. Por favor, aguarde um momento antes de tentar novamente.");
+      }
       
       const errorData = await response.json().catch(() => null);
       throw new Error(errorData?.detail || `Erro HTTP: ${response.status}`);
@@ -105,5 +110,5 @@ export class ApiClient implements IApiClient {
 }
 
 // Exportamos a instância já configurada com a URL base do seu ambiente
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 export const apiClient = new ApiClient(API_BASE_URL, tokenService);

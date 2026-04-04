@@ -55,8 +55,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Qualquer requisição que comece com /api será redirecionada
         '/api': {
-          // A URL de destino é lida da sua variável de ambiente VITE_API_URL
-          target: env.VITE_API_URL,
+          // A URL de destino é lida da sua variável de ambiente VITE_BACKEND_URL ou fallback
+          target: env.VITE_BACKEND_URL || 'http://localhost:8000',
           // Necessário para que o backend receba o Host correto da requisição
           changeOrigin: true,
           // Remove o prefixo /api ao redirecionar a chamada para o backend

@@ -10,6 +10,7 @@ from app.features.auth.dto import UserTokenData
 
 from app.features.cache.service import RedisCacheService
 from app.extensions.infrastructure import infrastructure
+from app.core.security import RateLimiter
 
 from app.features.home.dto import (
     HomeResponse,
@@ -35,7 +36,7 @@ def get_home_service(db: AsyncSession = Depends(get_db)) -> HomeService:
 # Endpoints Públicos
 # ==========================================
 
-@router.get("", response_model=HomeResponse)
+@router.get("", response_model=HomeResponse, dependencies=[Depends(RateLimiter(times=10, seconds=10))])
 async def get_home_page(service: HomeService = Depends(get_home_service)):
     """
     Retorna o conteúdo público da página home: Carousels (Hero, alertas)
@@ -51,7 +52,7 @@ async def get_home_page(service: HomeService = Depends(get_home_service)):
     "/carousel", 
     response_model=CarouselDTO, 
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def create_carousel_item(
     payload: CarouselCreateDTO,
@@ -66,7 +67,7 @@ async def create_carousel_item(
 @router.patch(
     "/carousel/{item_id}", 
     response_model=CarouselDTO,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def update_carousel_item(
     item_id: uuid.UUID,
@@ -84,7 +85,7 @@ async def update_carousel_item(
 @router.delete(
     "/carousel/{item_id}", 
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def delete_carousel_item(
     item_id: uuid.UUID,
@@ -106,7 +107,7 @@ async def delete_carousel_item(
     "/stats", 
     response_model=StatCardDTO, 
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def create_stat_card(
     payload: StatCardCreateDTO,
@@ -120,7 +121,7 @@ async def create_stat_card(
 @router.patch(
     "/stats/{card_id}", 
     response_model=StatCardDTO,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def update_stat_card(
     card_id: uuid.UUID,
@@ -138,7 +139,7 @@ async def update_stat_card(
 @router.delete(
     "/stats/{card_id}", 
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(['Admin']))]
+    dependencies=[Depends(RoleChecker(['Admin'])), Depends(RateLimiter(times=5, seconds=10))]
 )
 async def delete_stat_card(
     card_id: uuid.UUID,
