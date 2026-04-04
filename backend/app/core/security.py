@@ -13,8 +13,12 @@ class RateLimiter:
         self.seconds = seconds
 
     async def __call__(self, request: Request):
-        # Obtém o IP do cliente. 
-        client_ip = request.client.host if request.client else "127.0.0.1"
+        # Obtém o IP do cliente (Suporte a Proxy/Render via X-Forwarded-For). 
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "127.0.0.1"
         
         # Caso o sistema de autenticação injete o user no request.state, usamos ele priorizando o IP.
         user_id = getattr(request.state, "user_id", getattr(request.state, "user", None))
@@ -62,7 +66,12 @@ class WebSocketRateLimiter:
         self.seconds = seconds
 
     async def __call__(self, websocket: WebSocket):
-        client_ip = websocket.client.host if websocket.client else "127.0.0.1"
+        # Obtém o IP do cliente (Suporte a Proxy/Render via X-Forwarded-For). 
+        forwarded = websocket.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        else:
+            client_ip = websocket.client.host if websocket.client else "127.0.0.1"
         
         # Assim como nas requests HTTP, tentamos buscar o user no state interligado
         user_id = getattr(websocket.state, "user_id", getattr(websocket.state, "user", None))

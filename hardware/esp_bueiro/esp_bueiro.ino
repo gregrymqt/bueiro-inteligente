@@ -1,7 +1,7 @@
 #include <Wifi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "config.h"
+#include "secrets.h"
 
 const char* ssid = WIFI_SSID;
 const char* senha = WIFI_PASS;

@@ -62,4 +62,4 @@ out/
 hs_err_pid*
 
 # .env do C++
-config.h
+secrets.h

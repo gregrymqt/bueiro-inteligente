@@ -26,7 +26,7 @@ import br.edu.fatecpg.feature.realtime.services.RealtimeService
  * Container de Injeo de Dependncias manual (Service Locator).
  * Mantm instncias globais nicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
  */
-class AppContainer(private val context: Context, private val baseUrl: String) {
+class AppContainer(private val context: Context, private val baseUrl: String, private val wsUrl: String) {
 
     val tokenManager: TokenManager by lazy {
         try {
@@ -74,10 +74,9 @@ class AppContainer(private val context: Context, private val baseUrl: String) {
     // --- Realtime/Home Feature ---
     private val realtimeWebSocketClient: RealtimeWebSocketClient by lazy {
         try {
-            val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://") + "realtime/ws"
-            Log.i("AppContainer", "Criando RealtimeWebSocketClient para url: $wsUrl")
+            Log.i("AppContainer", "Criando RealtimeWebSocketClient para url: $wsUrl usando OkHttpClient compartilhado")
             RealtimeWebSocketClient(
-                okHttpClient = okhttp3.OkHttpClient(),
+                okHttpClient = ApiClient.httpClient,
                 gson = com.google.gson.Gson(),
                 baseUrl = wsUrl
             )

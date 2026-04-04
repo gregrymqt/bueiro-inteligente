@@ -8,8 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private var retrofit: Retrofit? = null
-
+    private var retrofit: Retrofit? = null    lateinit var httpClient: OkHttpClient
+        private set
     /**
      * Inicializa a inst�ncia Singleton do Retrofit.
      * Deve ser chamado idealmente no Application ou na Activity inicial.       
@@ -35,7 +35,10 @@ object ApiClient {
                     .addInterceptor(loggingInterceptor) // Adicionado para debug em nvel BODY
                     .connectTimeout(60, TimeUnit.SECONDS)
                     .readTimeout(60, TimeUnit.SECONDS)
+                    .pingInterval(15, TimeUnit.SECONDS) // Ping de WebSocket nativo para o Render Free
                     .build()
+                
+                this.httpClient = okHttpClient
 
                 retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)

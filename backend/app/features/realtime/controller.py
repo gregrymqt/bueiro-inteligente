@@ -21,8 +21,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            # Mantém o túnel vivo
-            await websocket.receive_text()
+            # Mantém o túnel vivo recebendo mensagens
+            data = await websocket.receive_text()
+            
+            # Tratamento do ping customizado para manter o WebSocket vivo no Render Free
+            if data == "ping":
+                await websocket.send_text("pong")
+                continue
+                
     except WebSocketDisconnect:
         logger.info("Cliente WebSocket desconectado normalmente (WebSocketDisconnect).")
         realtime_extension.disconnect(websocket)

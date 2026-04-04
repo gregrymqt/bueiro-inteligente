@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -38,10 +40,10 @@ class RealtimeWebSocketClient(
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
 
-            Log.i("RealtimeWebSocketClient", "Construindo conexao OkHttp socket para $baseUrl")
+            Log.i("RealtimeWebSocketClient", "Construindo conexao OkHttp socket para (WSS/WS) url final: $baseUrl")
             webSocket = okHttpClient.newWebSocket(requestBuilder.build(), DrainWebSocketListener())
         } catch (e: Exception) {
-            Log.e("RealtimeWebSocketClient", "Nao foi possivel estabelecer fabrica conexao com backend WebSocket", e)
+            Log.e("RealtimeWebSocketClient", "Nao foi possivel estabelecer fabrica conexao com backend WebSocket na URL: $baseUrl", e)
         }
     }
 
@@ -51,18 +53,30 @@ class RealtimeWebSocketClient(
             webSocket?.close(1000, "App closed")
             webSocket = null
         } catch (e: Exception) {
-            Log.e("RealtimeWebSocketClient", "Pânico ao fechar fluxo nativo socket okhttp", e)
+            Log.e("RealtimeWebSocketClient", "Pï¿½nico ao fechar fluxo nativo socket okhttp", e)
         }
     }
 
     private inner class DrainWebSocketListener : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            Log.i("DrainWebSocketListener", "Conexão aberta de Realtime ativa com servidor")
+            Log.i("DrainWebSocketListener", "Conexï¿½o aberta de Realtime ativa com servidor")            
+            // Inicia o Ping para o Render Free (evitar idle timeout de 30-55s)
+            coroutineScope.launch {
+                while (isActive) {
+                    delay(15000)
+                    try {
+                        webSocket.send("ping")
+                    } catch (e: Exception) {
+                        Log.e("RealtimeWebSocketClient", "Erro ao enviar ping", e)
+                        break
+                    }
+                }
+            }
             coroutineScope.launch {
                 try {
                     _connectionErrorFlow.emit(null)
                 } catch (e: Exception) {
-                    Log.e("DrainWebSocketListener", "Falha interna ao limpar erros antigos pós reconexao no coroutine flow", e)
+                    Log.e("DrainWebSocketListener", "Falha interna ao limpar erros antigos pï¿½s reconexao no coroutine flow", e)
                 }
             }
         }
@@ -72,7 +86,7 @@ class RealtimeWebSocketClient(
                 // Log.d("DrainWebSocketListener", "Frame WebSocket de mensagem chegado: (omitindo para n travar IO)")
                 val message = gson.fromJson(text, RealtimeMessage::class.java)  
                 if (message.eventoTipo == "BUEIRO_STATUS_MUDOU" && message.dados != null) {
-                    Log.i("DrainWebSocketListener", "Frame recebido é update de bueiro! Realizando binding via GSON")
+                    Log.i("DrainWebSocketListener", "Frame recebido ï¿½ update de bueiro! Realizando binding via GSON")
                     val status = gson.fromJson(gson.toJson(message.dados), DrainStatusDTO::class.java)
                     coroutineScope.launch {
                         try {
@@ -91,7 +105,7 @@ class RealtimeWebSocketClient(
             Log.e("DrainWebSocketListener", "Nativo OkHttp WebSocket despencou (falha). Socket code: ${response?.code ?: "N/A"}", t)
             coroutineScope.launch {
                 try {
-                    _connectionErrorFlow.emit("Falha na conexão de tempo real. Tentando novamente...")
+                    _connectionErrorFlow.emit("Falha na conexï¿½o de tempo real. Tentando novamente...")
                 } catch (e: Exception) {
                     Log.e("DrainWebSocketListener", "Falha ao emitir mensagem de aviso visual para usuario na falha de WS", e)
                 }
