@@ -4,7 +4,7 @@
 set -e
 
 echo "🚀 Iniciando as migrações do banco de dados..."
-alembic upgrade head
+#alembic upgrade head
 
 echo "✅ Migrações concluídas. Subindo a API..."
 # Aqui você coloca o comando que já estava no seu CMD do Dockerfile

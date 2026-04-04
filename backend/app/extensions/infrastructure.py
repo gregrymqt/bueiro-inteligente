@@ -64,9 +64,15 @@ class InfrastructureExtension:
             from typing import Any
             redis_options: dict[str, Any] = {"decode_responses": True}
             
-            # Adiciona ssl_cert_reqs=None se for uma conexão segura ou usar rediss://
+            protocol_used = "rediss://" if redis_url.startswith("rediss://") else "redis://"
+            logger.info(f"Conectando ao Redis utilizando o protocolo: {protocol_used}")
+            
+            # Configurando SSL para conexões seguras
             if redis_url.startswith("rediss://") or getattr(settings, "REDIS_SSL", False):
-                redis_options["ssl_cert_reqs"] = None
+                redis_options.update({
+                    "ssl": True,
+                    "ssl_cert_validation": "none"
+                })
 
             self.redis_client = redis.from_url(
                 redis_url, 
