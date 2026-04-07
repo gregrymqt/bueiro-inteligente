@@ -120,3 +120,45 @@ async def test_process_sensor_data_normal(mock_repository, mock_cache_service, m
 
     # It still broadcasts if normal but found in DB according to the code (unless BroadcastService logic filters it internally)
     mock_broadcast_service.enviar_atualizacao_bueiro.assert_awaited_once_with(status_db)
+
+@pytest.mark.asyncio
+async def test_process_sensor_data_extreme_negative(mock_repository, mock_cache_service, mock_broadcast_service):
+    service = BueiroService(repository=mock_repository, cache_service=mock_cache_service, broadcast_service=mock_broadcast_service)
+
+    # Negative distance should be capped at 0.0 by max(0.0, ...)
+    payload = SensorPayloadDTO(
+        id_bueiro="bueiro-01",
+        distancia_cm=-50.0,
+        latitude=-23.0,
+        longitude=-46.0
+    )
+
+    mock_repository.get_latest_status.return_value = None
+
+    result = await service.process_sensor_data(payload)
+
+    # Distance capped at 0.0 -> 120cm obstructed -> 100% obstruction -> Crítico
+    assert result.distancia_cm == 0.0
+    assert result.nivel_obstrucao == 100.0
+    assert result.status == "Crítico"
+
+@pytest.mark.asyncio
+async def test_process_sensor_data_extreme_large(mock_repository, mock_cache_service, mock_broadcast_service):
+    service = BueiroService(repository=mock_repository, cache_service=mock_cache_service, broadcast_service=mock_broadcast_service)
+
+    # Distance greater than MAX_BUCKET_DEPTH_CM should be capped by min(..., 120.0)
+    payload = SensorPayloadDTO(
+        id_bueiro="bueiro-01",
+        distancia_cm=200.0,
+        latitude=-23.0,
+        longitude=-46.0
+    )
+
+    mock_repository.get_latest_status.return_value = None
+
+    result = await service.process_sensor_data(payload)
+
+    # Distance capped at 120.0 -> 0cm obstructed -> 0% obstruction -> Normal
+    assert result.distancia_cm == 120.0
+    assert result.nivel_obstrucao == 0.0
+    assert result.status == "Normal"

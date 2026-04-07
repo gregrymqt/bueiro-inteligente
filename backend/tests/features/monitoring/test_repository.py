@@ -67,3 +67,28 @@ async def test_save_sensor_data_db_error(mock_db_session, mock_cache_service):
         await repo.save_sensor_data(data)
 
     mock_db_session.rollback.assert_awaited_once()
+
+@pytest.mark.asyncio
+async def test_save_sensor_data_cache_error(mock_db_session, mock_cache_service):
+    repo = DrainRepository(db_client=mock_db_session, cache_service=mock_cache_service)
+
+    data = DrainStatusDTO(
+        id_bueiro="bueiro-01",
+        distancia_cm=10.0,
+        nivel_obstrucao=50.0,
+        status="Alerta",
+        latitude=-23.0,
+        longitude=-46.0,
+        ultima_atualizacao=datetime.now(timezone.utc)
+    )
+
+    # Simulate Cache error
+    mock_cache_service.set.side_effect = Exception("Redis connection lost")
+
+    # It should not raise exception but log and insert into DB
+    await repo.save_sensor_data(data)
+
+    # Verify DB calls despite cache error
+    mock_db_session.add.assert_called_once()
+    mock_db_session.commit.assert_awaited_once()
+    mock_db_session.refresh.assert_awaited_once()

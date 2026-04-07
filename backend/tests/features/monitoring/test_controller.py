@@ -59,3 +59,44 @@ async def test_medicoes_endpoint(test_client: AsyncClient, mocker):
 
     app.dependency_overrides.pop(get_monitoring_service, None)
     app.dependency_overrides.pop(verify_hardware_token, None)
+
+@pytest.mark.asyncio
+async def test_medicoes_endpoint_invalid_data(test_client: AsyncClient):
+    # Envia string em vez de float para causar erro 422
+    payload = {
+        "id_bueiro": "bueiro-01",
+        "distancia_cm": "invalid_string",
+        "latitude": -23.0,
+        "longitude": -46.0
+    }
+
+    # Vamos manter o mock de auth para isolar o erro de DTO
+    from app.main import app
+    from app.extensions.auth import verify_hardware_token
+    async def mock_verify():
+        return True
+    app.dependency_overrides[verify_hardware_token] = mock_verify
+
+    response = await test_client.post("/monitoring/medicoes", json=payload)
+
+    assert response.status_code == 422
+
+    app.dependency_overrides.pop(verify_hardware_token, None)
+
+@pytest.mark.asyncio
+async def test_medicoes_endpoint_unauthorized(test_client: AsyncClient):
+    # Envia payload válido, mas com auth falhando
+    payload = {
+        "id_bueiro": "bueiro-01",
+        "distancia_cm": 20.0,
+        "latitude": -23.0,
+        "longitude": -46.0
+    }
+
+    # Aqui não substituímos o verify_hardware_token, deixamos a implementação real falhar
+    # Pois não passaremos token válido
+
+    response = await test_client.post("/monitoring/medicoes", json=payload)
+
+    # Sem token -> 401 Unauthorized
+    assert response.status_code == 401
