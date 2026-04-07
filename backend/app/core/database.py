@@ -1,4 +1,4 @@
-import os
+﻿import os
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
@@ -11,26 +11,21 @@ load_dotenv()
 DATABASE_URL = settings.DATABASE_URL.split('?')[0] # Remove query params da URL
 
 if not DATABASE_URL:        
-    raise ValueError("A variável de ambiente DATABASE_URL não está definida.")
+    raise ValueError("A variavel de ambiente DATABASE_URL não esta definida.")
 
-# Garante o driver assíncrono para o SQLAlchemy
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-elif DATABASE_URL.startswith("postgresql+psycopg2://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+connect_args = {}
+if not getattr(settings, "DB_LOCAL", False):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    connect_args["ssl"] = ctx
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
-
-# Cria a engine com as configurações para nuvem (Supabase/Render)
+# Cria a engine com as configuracoes para nuvem (Supabase/Render)
 engine = create_async_engine(
     DATABASE_URL, 
     echo=True,
-    # O NullPool é obrigatório ao usar o Transaction Pooler (porta 6543) do Supabase
     poolclass=NullPool, 
-    # SSL deve ser 'ssl': True para conexões seguras do asyncpg com o Supabase
-    connect_args={"ssl": ctx} 
+    connect_args=connect_args
 )
 
 SessionLocal = async_sessionmaker(
@@ -43,7 +38,3 @@ SessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
-async def get_db():
-    """Injeção de dependência para as rotas do FastAPI"""
-    async with SessionLocal() as db:
-        yield db

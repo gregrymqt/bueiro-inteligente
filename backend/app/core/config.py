@@ -24,13 +24,18 @@ class Settings(BaseSettings):
 
     # Redis
     REDIS_URL: str = ""
-    REDIS_EXTERNAL_URL: str = "" 
-    REDIS_LOCAL: bool = False
-    REDIS_SSL: bool = False
+    REDIS_LOCAL: bool = True
     
     # Configurações do Supabase (PostgreSQL)
+    DB_LOCAL: bool = True
+    DATABASE_URL_CLOUD: str = ""
+    DATABASE_URL_LOCAL: str = ""
     DATABASE_URL: str = ""
     MIGRATIONS_URL: str = "" # URL específica para as migrações (pode ser a mesma do DATABASE_URL ou diferente)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.DATABASE_URL = self.DATABASE_URL_LOCAL if self.DB_LOCAL else self.DATABASE_URL_CLOUD
 
     # ROWS (Planilhas / Scheduler)
     # Adicionado para o SchedulerExtension conseguir sincronizar os dados

@@ -4,7 +4,7 @@ from .interfaces import IAuthService, IAuthRepository
 from .repository import AuthRepository
 from .dto import User, TokenPayload, UserCreate, UserInDB
 from app.extensions.auth import auth_extension
-from app.core.database import get_db
+from app.extensions.infrastructure import get_db
 import logging
 
 logger = logging.getLogger(__name__)

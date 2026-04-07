@@ -1,6 +1,6 @@
 ﻿# app/features/monitoring/controller.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.core.database import get_db
+from app.extensions.infrastructure import get_db
 from app.extensions.infrastructure import get_cache
 from app.features.cache.service import RedisCacheService
 from app.features.monitoring.repository import DrainRepository

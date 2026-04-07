@@ -1,4 +1,4 @@
-# app/extensions/infrastructure.py
+﻿# app/extensions/infrastructure.py
 import logging
 import redis.asyncio as redis
 from sqlalchemy import text
@@ -11,7 +11,7 @@ class InfrastructureExtension:
     _instance = None
 
     def __new__(cls):
-        """Implementação Singleton para garantir instância única."""
+        """Implementacao Singleton para garantir instancia unica."""
         if cls._instance is None:
             cls._instance = super(InfrastructureExtension, cls).__new__(cls)
             cls._instance.redis_client = None
@@ -19,30 +19,32 @@ class InfrastructureExtension:
         return cls._instance
 
     async def open(self):
-        """Inicializa conexões com o Redis e Banco de Dados."""
+        """Inicializa conexoes com o Redis e Banco de Dados."""
         logger.info("Iniciando infraestrutura (Redis e Banco de Dados)...")
         
         try:
             # Configurando Redis (simplificado)
-            is_local = getattr(settings, "REDIS_LOCAL", False)
+            is_local = getattr(settings, "REDIS_LOCAL", True)
             
             if is_local:
-                redis_url = getattr(settings, "REDIS_EXTERNAL_URL", "redis://localhost:6379")
-                connection_type = "Externa/Nuvem (Dev Local)"
+                redis_url = "redis://redis:6379/0"
+                connection_type = "Local (Dev)"
             else:
-                redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379")
-                connection_type = "Interna/Render (Produção)"
+                redis_url = getattr(settings, "REDIS_URL", "")
+                if redis_url and redis_url.startswith("redis://"):
+                    redis_url = redis_url.replace("redis://", "rediss://", 1)
+                connection_type = "Externa/Nuvem"
 
-            logger.info(f"Iniciando conexão com o Redis. Estratégia de rede: {connection_type}")
+            logger.info(f"Iniciando conexao com o Redis. Estrategia de rede: {connection_type}")
             
-            # Opções de conexão do Redis
+            # Opcoes de conexao do Redis
             from typing import Any
             redis_options: dict[str, Any] = {"decode_responses": True}
             
             protocol_used = "rediss://" if redis_url.startswith("rediss://") else "redis://"
             logger.info(f"Conectando ao Redis utilizando o protocolo: {protocol_used}")
             
-            # Configurando validação do certificado em conexões seguras
+            # Configurando validacao do certificado em conexoes seguras
             if redis_url.startswith("rediss://"):
                 redis_options["ssl_cert_validation"] = "none"
 
@@ -52,40 +54,40 @@ class InfrastructureExtension:
             )
             
             try:
-                # Teste simples de conexão (Ping) garante a integridade após a escolha
+                # Teste simples de conexao (Ping) garante a integridade apos a escolha
                 await self.redis_client.ping() # type: ignore
-                logger.info(f"Conexão com o Redis ({connection_type}) estabelecida com sucesso.")
+                logger.info(f"Conexao com o Redis ({connection_type}) estabelecida com sucesso.")
             except redis.RedisError as e:
                 logger.error(f"Falha ao conectar com o Redis ({connection_type}): {e}")
                 raise e
             
             try:
-                # Teste de conexão com o PostgreSQL
+                # Teste de conexao com o PostgreSQL
                 async with engine.connect() as conn:
                     await conn.execute(text("SELECT 1"))
             except Exception as e:
                 logger.error(f"Falha ao conectar com o PostgreSQL: {e}")
                 raise e        
             
-            # Atribuindo a fábrica de sessões
+            # Atribuindo a fabrica de sessoes
             self.session_factory = SessionLocal
-            logger.info("Conexão com o PostgreSQL estabelecida com sucesso.")
+            logger.info("Conexao com o PostgreSQL estabelecida com sucesso.")
             
         except Exception as e:
-            logger.error(f"Falha crítica ao iniciar infraestrutura: {e}")
+            logger.error(f"Falha critica ao iniciar infraestrutura: {e}")
             raise e
 
     async def close(self):
         """Encerra graciosamente o Redis e Banco de Dados."""
-        logger.info("Encerrando conexões de infraestrutura...")
+        logger.info("Encerrando conexoes de infraestrutura...")
         
         if self.redis_client:
             await self.redis_client.close()
-            logger.info("Conexão com o Redis encerrada.")
+            logger.info("Conexao com o Redis encerrada.")
             
         # Encerramento do engine do SQLAlchemy
         await engine.dispose()
-        logger.info("Conexão com o PostgreSQL encerrada.")
+        logger.info("Conexao com o PostgreSQL encerrada.")
             
         logger.info("Infraestrutura encerrada.")
 
@@ -93,12 +95,12 @@ class InfrastructureExtension:
 infrastructure = InfrastructureExtension()
 
 # ---------------------------------------------------------
-# DEPENDÊNCIAS PARA INJEÇÃO (Usadas nos Controllers/Services)
+# DEPENDENCIAS PARA INJECAO (Usadas nos Controllers/Services)
 # ---------------------------------------------------------
 async def get_db():
-    """Injeção de dependência para banco de dados."""
+    """Injecao de dependencia para banco de dados."""
     if not infrastructure.session_factory:
-        raise RuntimeError("Banco de dados não finalizou a inicialização. Session factory indísponivel.")
+        raise RuntimeError("Banco de dados nao finalizou a inicializacao. Session factory indisponivel.")
     async with infrastructure.session_factory() as db:
         yield db
 

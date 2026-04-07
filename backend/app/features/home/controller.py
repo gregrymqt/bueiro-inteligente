@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 import uuid
 
-from app.core.database import get_db
+from app.extensions.infrastructure import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.extensions.auth import RoleChecker
