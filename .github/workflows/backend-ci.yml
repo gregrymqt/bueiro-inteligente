@@ -1,0 +1,61 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testes:
+    name: Testes Unitários
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.11-slim
+    
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências do sistema
+        run: apt-get update && apt-get install -y gcc libpq-dev
+
+      - name: Atualizar PIP e instalar requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Executar Pytest
+        run: pytest
+
+  build:
+    name: Docker Build (Verificação)
+    needs: testes
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Realizar o Build da Imagem
+        run: docker build -t bueiro-inteligente-backend:latest .
+
+  deploy:
+    name: Solicitar Deploy no Render
+    needs: build # Só roda se o build passar
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # Só faz deploy se for na branch main
+
+    steps:
+      - name: Disparar Hook de Deploy
+        run: |
+          curl -f ${{ secrets.RENDER_DEPLOY_HOOK_URL }}      
