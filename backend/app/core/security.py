@@ -46,11 +46,9 @@ class RateLimiter:
                 )
             
             # Incrementa atômicamente no pipeline, aplicando o TTL apenas na primeira requisição
-            pipe = redis_client.pipeline()
-            await pipe.incr(redis_key)
+            await redis_client.incr(redis_key)
             if not current_count:
-                await pipe.expire(redis_key, self.seconds)
-            await pipe.execute()
+                await redis_client.expire(redis_key, self.seconds)
             
         except HTTPException:
             raise
@@ -95,11 +93,9 @@ class WebSocketRateLimiter:
                 # 1008 = Policy Violation
                 raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason="Rate Limit Exceeded")
             
-            pipe = redis_client.pipeline()
-            await pipe.incr(redis_key)
+            await redis_client.incr(redis_key)
             if not current_count:
-                await pipe.expire(redis_key, self.seconds)
-            await pipe.execute()
+                await redis_client.expire(redis_key, self.seconds)
             
         except WebSocketException:
             raise
