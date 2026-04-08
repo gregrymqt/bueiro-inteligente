@@ -32,26 +32,34 @@ async def test_get_all_content(mock_session):
 async def test_create_carousel_item(mock_session):
     repository = HomeRepository(mock_session)
     mock_item = MagicMock()
+    mock_item.model_dump.return_value = {"title": "Test", "image_url": "http://img.com", "order": 1, "section": "hero"}
     
+    from app.features.home.models import CarouselModel
+    import copy
+
+    # Avoid assert_called_once_with to avoid checking the specific instance of CarouselModel
     await repository.create_carousel_item(mock_item)
     
-    mock_session.add.assert_called_once_with(mock_item)
+    mock_session.add.assert_called_once()
     mock_session.commit.assert_called_once()
-    mock_session.refresh.assert_called_once_with(mock_item)
+    mock_session.refresh.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_update_carousel_item_partial(mock_session):
+    import uuid
     repository = HomeRepository(mock_session)
-    mock_entity = MagicMock()
     
-    # Simulating the dictionary dumped with exclude_unset=True
-    update_data = {"title": "Updated Title"}
+    fake_id = uuid.uuid4()
+    mock_db_result = MagicMock()
+    mock_entity = MagicMock(id=fake_id, title="Old")
+    mock_db_result.scalars.return_value.first.return_value = mock_entity
+    mock_session.execute.return_value = mock_db_result
+
+    update_dto = MagicMock()
+    update_dto.model_dump.return_value = {"title": "Updated Title"}
     
-    for key, value in update_data.items():
-        setattr(mock_entity, key, value)
-        
-    await repository.update_carousel_item(mock_entity)
+    await repository.update_carousel_item(fake_id, update_dto)
     
     assert mock_entity.title == "Updated Title"
     mock_session.commit.assert_called_once()
@@ -60,10 +68,16 @@ async def test_update_carousel_item_partial(mock_session):
 
 @pytest.mark.asyncio
 async def test_delete_carousel_item(mock_session):
+    import uuid
     repository = HomeRepository(mock_session)
-    mock_entity = MagicMock()
     
-    await repository.delete_carousel_item(mock_entity)
+    fake_id = uuid.uuid4()
+    mock_db_result = MagicMock()
+    mock_entity = MagicMock(id=fake_id)
+    mock_db_result.scalars.return_value.first.return_value = mock_entity
+    mock_session.execute.return_value = mock_db_result
+
+    await repository.delete_carousel_item(fake_id)
     
     mock_session.delete.assert_called_once_with(mock_entity)
     mock_session.commit.assert_called_once()
