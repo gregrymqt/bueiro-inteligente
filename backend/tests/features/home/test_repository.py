@@ -32,26 +32,29 @@ async def test_get_all_content(mock_session):
 async def test_create_carousel_item(mock_session):
     repository = HomeRepository(mock_session)
     mock_item = MagicMock()
+    mock_item.model_dump.return_value = {"title": "Test"}
     
+    from unittest.mock import ANY
     await repository.create_carousel_item(mock_item)
     
-    mock_session.add.assert_called_once_with(mock_item)
+    mock_session.add.assert_called_once_with(ANY)
     mock_session.commit.assert_called_once()
-    mock_session.refresh.assert_called_once_with(mock_item)
+    mock_session.refresh.assert_called_once_with(ANY)
 
 
 @pytest.mark.asyncio
 async def test_update_carousel_item_partial(mock_session):
     repository = HomeRepository(mock_session)
     mock_entity = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.first.return_value = mock_entity
+    mock_session.execute.return_value = mock_result
     
-    # Simulating the dictionary dumped with exclude_unset=True
-    update_data = {"title": "Updated Title"}
+    mock_data = MagicMock()
+    mock_data.model_dump.return_value = {"title": "Updated Title"}
     
-    for key, value in update_data.items():
-        setattr(mock_entity, key, value)
-        
-    await repository.update_carousel_item(mock_entity)
+    from uuid import uuid4
+    await repository.update_carousel_item(uuid4(), mock_data)
     
     assert mock_entity.title == "Updated Title"
     mock_session.commit.assert_called_once()
@@ -62,8 +65,12 @@ async def test_update_carousel_item_partial(mock_session):
 async def test_delete_carousel_item(mock_session):
     repository = HomeRepository(mock_session)
     mock_entity = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.first.return_value = mock_entity
+    mock_session.execute.return_value = mock_result
     
-    await repository.delete_carousel_item(mock_entity)
+    from uuid import uuid4
+    await repository.delete_carousel_item(uuid4())
     
     mock_session.delete.assert_called_once_with(mock_entity)
     mock_session.commit.assert_called_once()
