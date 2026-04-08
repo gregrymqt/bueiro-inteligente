@@ -46,7 +46,7 @@ class InfrastructureExtension:
             
             # Configurando validacao do certificado em conexoes seguras
             if redis_url.startswith("rediss://"):
-                redis_options["ssl_cert_validation"] = "none"
+                redis_options["ssl_cert_reqs"] = "none"
 
             self.redis_client = redis.from_url(
                 redis_url, 
