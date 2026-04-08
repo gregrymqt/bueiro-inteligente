@@ -31,8 +31,6 @@ class InfrastructureExtension:
                 connection_type = "Local (Dev)"
             else:
                 redis_url = getattr(settings, "REDIS_URL", "")
-                if redis_url and redis_url.startswith("redis://"):
-                    redis_url = redis_url.replace("redis://", "rediss://", 1)
                 connection_type = "Externa/Nuvem"
 
             logger.info(f"Iniciando conexao com o Redis. Estrategia de rede: {connection_type}")
