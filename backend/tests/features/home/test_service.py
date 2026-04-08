@@ -53,7 +53,7 @@ async def test_create_carousel_invalidates_cache(home_service):
     home_service._invalidate_cache.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_update_stat_invalidates_cache(home_service):
+async def test_update_stat_card_item_invalidates_cache(home_service):
     home_service._invalidate_cache = AsyncMock()
     mock_entity = MagicMock(id="uuid", key="users", value="200")
     home_service.repository.get_stat_card_item_by_id.return_value = mock_entity

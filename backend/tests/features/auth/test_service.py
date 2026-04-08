@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch, ANY
 from fastapi import HTTPException
 from app.features.auth.service import AuthService
-from app.features.auth.dto import UserCreate, UserLogin
+from app.features.auth.dto import UserCreate, LoginRequest
 from app.features.auth.models import User, Role
 
 
@@ -48,7 +48,7 @@ async def test_authenticate_user_success(mock_verify_password, auth_service):
     # Setup
     user = User(id=1, email="test@test.com", hashed_password="hashed_password", role=Role.USER)
     auth_service.repository.get_user_by_email.return_value = user
-    user_dto = UserLogin(email="test@test.com", password="password123")
+    user_dto = LoginRequest(email="test@test.com", password="password123")
     mock_verify_password.return_value = True
 
     # Execute
@@ -64,7 +64,7 @@ async def test_authenticate_user_success(mock_verify_password, auth_service):
 async def test_authenticate_user_fail(mock_verify_password, auth_service):
     # Setup
     auth_service.repository.get_user_by_email.return_value = None
-    user_dto = UserLogin(email="notfound@test.com", password="password123")
+    user_dto = LoginRequest(email="notfound@test.com", password="password123")
 
     # Execute and Assert
     with pytest.raises(HTTPException) as exc_info:

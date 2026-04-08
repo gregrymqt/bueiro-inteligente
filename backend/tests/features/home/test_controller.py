@@ -67,12 +67,11 @@ async def test_create_carousel_admin_success(test_client: AsyncClient, mocker):
 
 
 @pytest.mark.asyncio
-async def test_update_stat_not_found(test_client: AsyncClient, mocker):
+async def test_update_stat_card_item_not_found(test_client: AsyncClient, mocker):
     mock_admin = MagicMock(role="ADMIN")
     mocker.patch("app.extensions.auth.get_current_user", return_value=mock_admin)
     
-    from fastapi import HTTPException
-    mocker.patch("app.features.home.service.HomeService.update_stat_card_item", side_effect=HTTPException(status_code=404, detail="Stat not found"))
+    mocker.patch("app.features.home.service.HomeService.update_stat_card", return_value=None)
     
     fake_uuid = "123e4567-e89b-12d3-a456-426614174000"
     response = await test_client.patch(
