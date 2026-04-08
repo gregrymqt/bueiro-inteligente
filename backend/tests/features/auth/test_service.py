@@ -2,22 +2,24 @@ import pytest
 from unittest.mock import AsyncMock, patch, ANY
 from fastapi import HTTPException
 from app.features.auth.service import AuthService
-from app.features.auth.dto import UserCreate, UserLogin
+from app.features.auth.dto import UserCreate, LoginRequest
 from app.features.auth.models import User, Role
 
 
 @pytest.fixture
 def auth_service():
     repository = AsyncMock()
-    cache = AsyncMock()
-    return AuthService(repository, cache)
+    return AuthService(repository)
 
 
 @pytest.mark.asyncio
-async def test_register_user_success(auth_service):
+@patch("app.extensions.auth.AuthExtension.get_password_hash", new_callable=AsyncMock)
+async def test_register_user_success(mock_get_password_hash, auth_service):
     # Setup
+    from app.features.auth.dto import User as UserDTO
     auth_service.repository.get_user_by_email.return_value = None
-    auth_service.repository.create_user.return_value = User(id=1, email="test@test.com", role=Role.USER)
+    auth_service.repository.create_user.return_value = UserDTO(email="test@test.com", full_name="Test User", role="User")
+    mock_get_password_hash.return_value = "hashed"
     user_dto = UserCreate(email="test@test.com", password="password123")
 
     # Execute
@@ -32,7 +34,8 @@ async def test_register_user_success(auth_service):
 @pytest.mark.asyncio
 async def test_register_user_fail_email_exists(auth_service):
     # Setup
-    auth_service.repository.get_user_by_email.return_value = User(id=1, email="exist@test.com", role=Role.USER)
+    from app.features.auth.dto import User as UserDTO
+    auth_service.repository.get_user_by_email.return_value = UserDTO(email="exist@test.com", full_name="Exists", role="User")
     user_dto = UserCreate(email="exist@test.com", password="password123")
 
     # Execute and Assert
@@ -43,16 +46,16 @@ async def test_register_user_fail_email_exists(auth_service):
 
 
 @pytest.mark.asyncio
-@patch("app.extensions.auth.verify_password")
+@patch("app.extensions.auth.AuthExtension.verify_password", new_callable=AsyncMock)
 async def test_authenticate_user_success(mock_verify_password, auth_service):
     # Setup
-    user = User(id=1, email="test@test.com", hashed_password="hashed_password", role=Role.USER)
+    from app.features.auth.dto import UserInDB
+    user = UserInDB(email="test@test.com", full_name="Test", role="User", hashed_password="hashed_password")
     auth_service.repository.get_user_by_email.return_value = user
-    user_dto = UserLogin(email="test@test.com", password="password123")
     mock_verify_password.return_value = True
 
-    # Execute
-    result_user = await auth_service.authenticate_user(user_dto)
+    # Execute (authenticate_user expects email and password as separate args)
+    result_user = await auth_service.authenticate_user("test@test.com", "password123")
 
     # Assert
     assert result_user is not None
@@ -60,23 +63,22 @@ async def test_authenticate_user_success(mock_verify_password, auth_service):
 
 
 @pytest.mark.asyncio
-@patch("app.extensions.auth.verify_password")
+@patch("app.extensions.auth.AuthExtension.verify_password", new_callable=AsyncMock)
 async def test_authenticate_user_fail(mock_verify_password, auth_service):
     # Setup
     auth_service.repository.get_user_by_email.return_value = None
-    user_dto = UserLogin(email="notfound@test.com", password="password123")
 
     # Execute and Assert
-    with pytest.raises(HTTPException) as exc_info:
-        await auth_service.authenticate_user(user_dto)
-    assert exc_info.value.status_code == 401
+    result = await auth_service.authenticate_user("notfound@test.com", "password123")
+    assert result is None
 
 
 @pytest.mark.asyncio
-@patch("app.extensions.auth.create_access_token")
+@patch("app.extensions.auth.AuthExtension.create_access_token")
 async def test_create_access_token_call(mock_create_access_token, auth_service):
     # Setup
-    user = User(id=1, email="test@test.com", role=Role.USER)
+    from app.features.auth.dto import User as UserDTO
+    user = UserDTO(email="test@test.com", full_name="Test", role="User")
     mock_create_access_token.return_value = "token123"
 
     # Execute
@@ -88,19 +90,13 @@ async def test_create_access_token_call(mock_create_access_token, auth_service):
 
 
 @pytest.mark.asyncio
-@patch("app.extensions.auth.decode_access_token")
-async def test_logout(mock_decode, auth_service):
+@patch("app.extensions.auth.AuthExtension.add_to_blacklist", new_callable=AsyncMock)
+async def test_logout(mock_blacklist, auth_service):
     # Setup
-    mock_decode.return_value = {"jti": "jti123"}
-    auth_service.cache.set.return_value = None
+    jti = "jti123"
 
     # Execute
-    await auth_service.logout("valid_token")
+    await auth_service.logout(jti)
 
     # Assert
-    mock_decode.assert_called_once_with("valid_token")
-    
-    # Valida apenas se foi chamado com a chave começando com a blacklist
-    args, kwargs = auth_service.cache.set.call_args
-    assert args[0].startswith("blacklist:")
-    assert args[1] == "true"
+    mock_blacklist.assert_called_once_with(jti)

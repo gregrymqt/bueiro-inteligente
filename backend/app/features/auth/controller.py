@@ -96,7 +96,7 @@ async def read_users_me(
             return User(
                 email=user_in_db.email,
                 full_name=user_in_db.full_name,
-                roles=user_in_db.roles
+                role=user_in_db.role
             )
 
         logger.warning(f"Usuário não encontrado na base para o token: {current_user.email}")
