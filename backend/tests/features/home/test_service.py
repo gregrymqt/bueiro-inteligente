@@ -58,11 +58,12 @@ async def test_update_stat_card_item_invalidates_cache(home_service):
     home_service._invalidate_cache = AsyncMock()
     fake_id = uuid.uuid4()
     mock_entity = MagicMock(id=fake_id, title="users", value="200", description="desc", icon_name="icon", color="success", order=1)
-    home_service.repository.update_stat_card.return_value = mock_entity
+    home_service.repository.update_stat_card = AsyncMock(return_value=mock_entity)
     update_data = MagicMock()
     update_data.model_dump.return_value = {"value": "500"}
     
-    await home_service.update_stat_card(fake_id, update_data)
+    home_service.update_stat_card_item = home_service.update_stat_card
+    await home_service.update_stat_card_item(fake_id, update_data)
     
     home_service.repository.update_stat_card.assert_called_once()
     home_service._invalidate_cache.assert_called_once()
@@ -72,6 +73,7 @@ async def test_delete_carousel_invalidates_cache(home_service):
     home_service._invalidate_cache = AsyncMock()
     home_service.repository.delete_carousel_item.return_value = True
     
+    home_service.get_carousel_item_by_id = AsyncMock()
     await home_service.delete_carousel_item("uuid")
     
     home_service.repository.delete_carousel_item.assert_called_once_with("uuid")
