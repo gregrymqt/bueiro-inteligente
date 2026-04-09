@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useHomeAdmin } from '@/feature/home/hooks/useHomeAdmin';
 import { CarouselForm } from '@/feature/home/components/admin/CarouselForm';
 import { StatCardForm } from '@/feature/home/components/admin/StatCardForm';
+import { AlertService } from '@/core/alert/AlertService';
 import type { CarouselContent, StatCardContent } from '@/feature/home/types';
 import './HomeManagement.scss';
 
@@ -15,29 +16,38 @@ export const HomeManagement: React.FC = () => {
     removeStatCard
   } = useHomeAdmin();
 
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
   // Estados de formulário (null = fechado, undefined/objeto vazio ou completo = aberto)
   const [activeCarouselForm, setActiveCarouselForm] = useState<{ isEditing: boolean, data?: CarouselContent } | null>(null);
   const [activeStatCardForm, setActiveStatCardForm] = useState<{ isEditing: boolean, data?: StatCardContent } | null>(null);
 
-  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   const handleDeleteCarousel = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este banner?')) return;
-    const success = await removeBanner(id);
-    if (success) showNotification('Banner excluído com sucesso!');
-    else showNotification('Erro ao excluir o banner.', 'error');
+    await AlertService.confirm({
+      title: 'Confirmar Exclusão',
+      text: 'Tem certeza que deseja excluir este banner?',
+      onConfirm: async () => {
+        const success = await removeBanner(id);
+        if (success) {
+          AlertService.success('Banner excluído com sucesso!');
+        } else {
+          AlertService.error('Erro', 'Erro ao excluir o banner.');
+        }
+      }
+    });
   };
 
   const handleDeleteStatCard = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta estatística?')) return;
-    const success = await removeStatCard(id);
-    if (success) showNotification('Estatística excluída com sucesso!');
-    else showNotification('Erro ao excluir estatística.', 'error');
+    await AlertService.confirm({
+      title: 'Confirmar Exclusão',
+      text: 'Tem certeza que deseja excluir esta estatística?',
+      onConfirm: async () => {
+        const success = await removeStatCard(id);
+        if (success) {
+          AlertService.success('Estatística excluída com sucesso!');
+        } else {
+          AlertService.error('Erro', 'Erro ao excluir a estatística.');
+        }
+      }
+    });
   };
 
   return (
@@ -45,12 +55,6 @@ export const HomeManagement: React.FC = () => {
       <div className="page-header">
         <h1>Gerenciamento da Home</h1>
       </div>
-
-      {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
-        </div>
-      )}
 
       {loading ? (
         <div className="loading-container">Carregando dados...</div>
@@ -75,7 +79,7 @@ export const HomeManagement: React.FC = () => {
                 initialData={activeCarouselForm.data} 
                 onSuccess={() => {
                   setActiveCarouselForm(null);
-                  showNotification(activeCarouselForm.isEditing ? 'Banner atualizado!' : 'Banner criado!');
+                  AlertService.success(activeCarouselForm.isEditing ? 'Banner atualizado!' : 'Banner criado!');
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveCarouselForm(null)}
@@ -130,7 +134,7 @@ export const HomeManagement: React.FC = () => {
                 initialData={activeStatCardForm.data}
                 onSuccess={() => {
                   setActiveStatCardForm(null);
-                  showNotification(activeStatCardForm.isEditing ? 'Estatística atualizada!' : 'Estatística criada!');
+                  AlertService.success(activeStatCardForm.isEditing ? 'Estatística atualizada!' : 'Estatística criada!');
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveStatCardForm(null)}
