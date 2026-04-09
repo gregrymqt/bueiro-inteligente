@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { tokenService } from '@/core/http/TokenService';
+import { AlertService } from '@/core/alert/AlertService';
 import type { LoginRequestDTO, UserDTO, RegisterRequestDTO } from '../types';
 
 export const useAuth = () => {
@@ -15,11 +16,12 @@ export const useAuth = () => {
     setError(null);
     try {
       await AuthService.register(data);
+      AlertService.success('Cadastro realizado com sucesso!');
       // Redireciona para o login após o cadastro bem sucedido
       navigate('/login', { replace: true });
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao realizar o cadastro.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Falha ao realizar o cadastro.');
       return false;
     } finally {
       setLoading(false);
@@ -39,7 +41,7 @@ export const useAuth = () => {
 
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha na autenticação.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Falha na autenticação.');
     } finally {
       setLoading(false);
     }
