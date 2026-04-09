@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
 import  { HomeService } from '../../services/HomeService';
 import type { StatCardContent, StatCardCreatePayload } from '../../types';import './AdminForms.scss';
+import { AlertService } from '@/core/alert/AlertService';
+
 interface StatCardFormProps {
   initialData?: StatCardContent;
   onSuccess?: () => void;
@@ -10,7 +12,6 @@ interface StatCardFormProps {
 
 export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSuccess, onCancel }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isEditing = !!initialData?.id;
 
@@ -70,7 +71,6 @@ export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSucce
 
   const handleSubmit = async (data: StatCardCreatePayload) => {
     setIsLoading(true);
-    setErrorMsg(null);
 
     // Garante que o tipo seja castado devidamente para update
     const payload = {
@@ -88,9 +88,8 @@ export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSucce
       if (onSuccess) {
         onSuccess();
       }
-    } catch (error) {
-      console.error('Erro ao salvar estatística:', error);
-      setErrorMsg('Falha ao salvar os dados. Tente novamente.');
+    } catch {
+      AlertService.error('Erro', 'Falha ao salvar os dados. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -117,11 +116,6 @@ export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSucce
       <div className="form-header">
         <h3>{isEditing ? 'Editar Estatística' : 'Nova Estatística'}</h3>
       </div>
-      {errorMsg && (
-        <div className="form-error-message">
-          {errorMsg}
-        </div>
-      )}
       <GenericForm<StatCardCreatePayload>
         fields={fields}
         onSubmit={handleSubmit}
