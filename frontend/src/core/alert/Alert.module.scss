@@ -1,0 +1,60 @@
+@use "../../styles/default.scss" as *;
+
+.popup {
+  border-radius: $spacing-md;
+  font-family: $font-stack;
+  color: $color-text-main;
+}
+
+.title {
+  color: $color-text-main;
+  font-weight: 600;
+}
+
+.confirmButton {
+  background-color: $color-success !important;
+  color: white !important;
+  border-radius: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.cancelButton {
+  background-color: $color-border !important;
+  color: $color-text-main !important;
+  border-radius: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: 500;
+
+  &:hover {
+    background-color: darken($color-border, 10%) !important;
+  }
+}
+
+.errorButton {
+  background-color: $color-danger !important;
+  color: white !important;
+  border-radius: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.warningButton {
+  background-color: $color-warning !important;
+  color: white !important;
+  border-radius: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
