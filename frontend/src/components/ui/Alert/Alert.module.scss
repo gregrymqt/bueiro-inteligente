@@ -1,0 +1,69 @@
+@use "sass:color";
+@use '@/styles/default.scss' as *;
+
+.alertPopup {
+  border-radius: $spacing-md !important;
+  font-family: $font-stack !important;
+  background-color: $color-bg-light !important;
+  color: $color-text-main !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.alertTitle {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: $color-text-main !important;
+}
+
+.alertConfirmButton {
+  border-radius: $spacing-sm !important;
+  padding: $spacing-sm $spacing-md !important;
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  box-shadow: none !important;
+
+  background-color: #3b82f6 !important; // Tailwind blue-500 default
+  color: white !important;
+
+  &:hover {
+    background-color: #2563eb !important; // Tailwind blue-600 hover
+  }
+}
+
+.alertCancelButton {
+  border-radius: $spacing-sm !important;
+  padding: $spacing-sm $spacing-md !important;
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  background-color: #f3f4f6 !important; // Tailwind gray-100
+  color: $color-text-main !important;
+  border: 1px solid $color-border !important;
+
+  &:hover {
+    background-color: #e5e7eb !important; // Tailwind gray-200
+  }
+}
+
+.alertButtonSuccess {
+  background-color: $color-success !important;
+  color: white !important;
+  &:hover {
+    background-color: color.adjust($color-success, $lightness: -10%) !important;
+  }
+}
+
+.alertButtonError {
+  background-color: $color-danger !important;
+  color: white !important;
+  &:hover {
+    background-color: color.adjust($color-danger, $lightness: -10%) !important;
+  }
+}
+
+.alertButtonWarning {
+  background-color: $color-warning !important;
+  color: white !important;
+  &:hover {
+    background-color: color.adjust($color-warning, $lightness: -10%) !important;
+  }
+}

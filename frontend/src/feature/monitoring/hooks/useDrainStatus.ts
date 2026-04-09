@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MonitoringService } from '../services/MonitoringService';
 import type { DrainStatus } from '../types';
+import { AlertService } from '@/components/ui/Alert/AlertService';
 
 export const useDrainStatus = (bueiroId: string) => {
   const [data, setData] = useState<DrainStatus | null>(null);
@@ -14,7 +15,9 @@ export const useDrainStatus = (bueiroId: string) => {
       const response = await MonitoringService.getInitialStatus(bueiroId);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados iniciais');
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados iniciais';
+      setError(errorMessage);
+      AlertService.error('Erro de Comunicação', errorMessage);
     } finally {
       setLoading(false);
     }
