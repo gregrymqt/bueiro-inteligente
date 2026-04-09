@@ -21,22 +21,6 @@
     }
   }
 
-  // Toast / Notification
-  .notification {
-    background-color: $color-success;
-    color: white;
-    padding: $spacing-md;
-    border-radius: 6px;
-    margin-bottom: $spacing-md;
-    font-family: $font-stack;
-    text-align: center;
-    animation: fadeIn 0.3s ease-in-out;
-
-    &.error {
-      background-color: $color-danger;
-    }
-  }
-
   .admin-section {
     background: white;
     border-radius: 8px;
