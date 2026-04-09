@@ -101,6 +101,10 @@ Quando solicitarem código para este projeto, você deve SEMPRE seguir estas reg
 6. **Injeção de Dependências:** Respeite as interfaces (`interfaces.py`) existentes no backend. Quando mockar algo para testes, crie a dependência injetada ao longo da raiz da funcionalidade.
 7. **Hardware C++:** No código do ESP32 (`/hardware`), não sobrecarregue a memória com alocações dinâmicas exageradas; use `StaticJsonDocument` definindo um tamanho limpo (ex: `<200>`) para envios pequenos via HTTP. Lembre-se: O hardware autentica via Query Token na API, não via JWT.
 8. **Mobile Android:** O diretório `/app` concentra código nativo. Sempre verifique e respeite as configurações do gradle (`minSdk 24`) e o namespace do pacote `br.edu.fatecpg`.
+9. **Mobile Compose e Estado:** Em telas Compose, consuma `StateFlow` exclusivamente com `collectAsStateWithLifecycle()`. Mantenha navegação, intents e abertura de mapas fora dos Composables; use a abstração `LocationHandler` e o fluxo `MainActivity -> AppContainer -> AppNavigation`.
+10. **Testes do Backend:** Quando criar lógica complexa em `services.py`, `repository.py` ou integrações de `rows`, adicione testes em `backend/tests/features/<feature>/`. Use `pytest`, `AsyncClient`, overrides de dependência e mocks de repositório; nunca acople teste ao banco real quando existir fixture equivalente.
+11. **Hardware e Credenciais:** Ao sugerir alterações em `esp_bueiro.ino`, mantenha credenciais em `secrets.h` e preserve a autenticação por query token `?token=` na API. Evite JWT no firmware e prefira `StaticJsonDocument` para payloads pequenos.
+12. **Frontend HTTP e Alertas:** Nunca use `fetch`, `axios` ou chamadas HTTP diretas em componentes e páginas. Todo acesso à API deve passar por `src/core/http/ApiClient.ts` e pelos services da feature; feedback visual deve usar `src/core/alert/AlertService.ts`, e não `window.alert`.
 
 ## 🚀 Comandos Úteis (Para Referência)
 - **Backend:** `uvicorn app.main:app --reload` (Para desenvolvimento local a partir de `/backend`).

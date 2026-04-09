@@ -28,6 +28,17 @@ O sistema foi desenhado para evitar enchentes e otimizar rotas de manutenção u
 
 ---
 
+## 🧭 Arquitetura e Integração
+
+O ecossistema é centrado no backend FastAPI. Cada frente conversa com ele por contratos específicos:
+
+1. **Hardware (ESP32/ESP8266)** envia leituras para `POST /monitoring/medicoes?token=...` com payload JSON contendo `id_bueiro`, `distancia_cm`, `latitude` e `longitude`.
+2. **Backend (Python)** valida o hardware token, persiste a medição no PostgreSQL, atualiza o Redis, emite eventos em tempo real via WebSocket em `/realtime/ws` e agenda a sincronização ETL com Rows.
+3. **Frontend Web (React)** consome `GET /home`, `GET /auth/users/me`, `GET /monitoring/{id}/status` e o WebSocket de realtime; a comunicação HTTP passa pelo `ApiClient` e os alertas visuais passam pelo `AlertService`.
+4. **Mobile (Kotlin)** consome os mesmos contratos REST e o canal de realtime, mantendo estado de interface via `StateFlow` e `collectAsStateWithLifecycle()`.
+
+---
+
 ## 🚀 Como Rodar o Projeto Localmente
 
 Nós utilizamos o **Docker Compose** para orquestrar todos os serviços localmente, garantindo que tudo rode de maneira contínua e sem poluir o seu sistema.
@@ -37,18 +48,31 @@ Nós utilizamos o **Docker Compose** para orquestrar todos os serviços localmen
 - Um banco de dados PostgreSQL rodando (local ou na nuvem).
 
 ### 2. Configuração do Ambiente (.env)
-Na raiz do projeto, crie um arquivo chamado `.env` e preencha com as suas credenciais do banco de dados PostgreSQL:
+Na raiz do projeto, crie um arquivo chamado `.env` e preencha as variáveis usadas pelo backend e pelo Docker Compose:
 
 ```env
-# Requisito Obrigatório: Conexão com o Banco de Dados PostgreSQL
-DATABASE_URL=postgresql://usuario:senha@localhost:5432/nome_do_banco
+# Backend / Banco / Redis
+DATABASE_URL_LOCAL=postgresql+asyncpg://bueiro_user:bueiro_password@db:5432/bueiro_db
+DATABASE_URL_CLOUD=
+DB_LOCAL=true
+REDIS_URL=redis://redis:6379/0
+REDIS_LOCAL=true
 
-# Outras variáveis (Opcionais / Defaults)
+# Segurança e integrações
+SECRET_KEY=troque-esta-chave
+HARDWARE_TOKEN=token-do-esp32
+ROWS_API_KEY=
+ROWS_SPREADSHEET_ID=
+ROWS_TABLE_ID=
+
+# Executável local do Uvicorn (opcional)
 HOST=0.0.0.0
 PORT=8000
 ```
 
-### 3. Iniciar os Serviços Web (API + Portal Web + Banco Redis)
+Se você for executar o backend diretamente fora do Docker Compose, replique as mesmas chaves em `backend/.env`, porque o serviço também carrega esse arquivo por padrão.
+
+### 3. Iniciar os Serviços Web (API + Portal Web + PostgreSQL + Redis)
 Basta rodar o comando no terminal a partir da raiz do projeto:
 
 ```bash
@@ -56,7 +80,8 @@ docker compose up -d --build
 ```
 Isso iniciará:
 - **Backend (FastAPI):** Acessível em `http://localhost:8000` (Acesse `http://localhost:8000/docs` para ver o Swagger). O Hot-reload de desenvolvimento está ativado por padrão.
-- **Frontend (React/Nginx):** Acessível em `http://localhost:8080`.
+- **Frontend (React/Vite):** Acessível em `http://localhost:5173`.
+- **PostgreSQL:** Banco relacional exposto na porta `5432`.
 - **Cache (Redis):** Integrado e isolado na porta `6379`.
 
 ### 4. Usar Ferramentas de Build (Mobile e IoT)
@@ -73,6 +98,7 @@ Não precisa instalar o Android Studio ou o Arduino CLI nativamente apenas para 
   ```bash
   docker compose --profile tools run --rm hardware
   ```
+  O sketch usa `secrets.h` para credenciais locais e autentica com query token na rota do backend.
 
 ---
 
@@ -81,7 +107,7 @@ Não precisa instalar o Android Studio ou o Arduino CLI nativamente apenas para 
 - `/backend/`: Lógica da API, separada na arquitetura de Features (Controllers, Services, Repositories).
 - `/frontend/`: Portal gestor (Dashboard) em React SPA.
 - `/app/`: Aplicativo nativo Android que os agentes levam para a rua.
-- `/hardware/esp_bueiro/`: O código embarcado compilável rodando em loop nos pontos físicos de monitoramento.
+- `/hardware/esp_bueiro/`: O código embarcado compilável rodando em loop nos pontos físicos de monitoramento. A documentação específica fica em [`hardware/README-HARDWARE.md`](hardware/README-HARDWARE.md).
 
 ---
 

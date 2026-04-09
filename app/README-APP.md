@@ -2,6 +2,8 @@
 
 Este é o aplicativo móvel nativo do ecossistema **Bueiro Inteligente (Smart Drain)**, desenvolvido em Kotlin. A aplicação permite o monitoramento em tempo real do estado de bueiros inteligentes espalhados pela cidade, exibindo alertas, nível de bloqueio, e dados de manutenção de forma rápida e responsiva.
 
+O ponto de entrada real é `MainActivity -> AppContainer -> AppNavigation`, que centraliza a injeção manual de dependências, o roteamento por telas Compose e a configuração de rede.
+
 ## 🛠️ Stack Tecnológica e Ferramentas
 
 - **Linguagem:** Kotlin, rodando na JVM (Java 11)
@@ -43,6 +45,8 @@ Para garantir manutenibilidade e escalabilidade, o código segue uma divisão ri
     ├── profile/              # Perfil do usuário e funções de Logout (limpeza de backstack)
     └── realtime/             # Sincronização via WebSockets
 ```
+
+A navegação usa `MainBottomBar`, e todas as telas Compose observam `StateFlow` com `collectAsStateWithLifecycle()`.
 
 ---
 
