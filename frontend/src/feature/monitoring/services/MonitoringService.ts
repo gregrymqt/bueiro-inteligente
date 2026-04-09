@@ -1,5 +1,6 @@
 import { apiClient } from '@/core/http/ApiClient';
 import { TokenService } from '@/core/http/TokenService';
+import { AlertService } from '@/core/alert/AlertService';
 import type { DrainStatus, WSPayload } from '../types';
 
 export class MonitoringService {
@@ -43,6 +44,7 @@ export class MonitoringService {
         onMessage(payload);
       } catch (err) {
         console.error("Erro no parse do WebSocket:", err);
+        AlertService.error('Erro de Conexão', 'Falha ao processar os dados em tempo real.');
       }
     };
 
