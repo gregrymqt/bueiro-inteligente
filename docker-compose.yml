@@ -12,25 +12,33 @@ services:
     container_name: bueiro_backend
     ports:
       - "8000:8000"
-    env_file:                  # <-- ADICIONE ESTA LINHA
+    env_file:                 
       - .env  
     environment:
       - HOST=0.0.0.0
       - PORT=8000
       - REDIS_URL=redis://redis:6379/0
-      # Conexão direta com o container do Postgres
       - DATABASE_URL=postgresql+asyncpg://bueiro_user:bueiro_password@db:5432/bueiro_db
     volumes:
-      # Mapeia a pasta backend para o /app local (útil para desenvolvimento/live reload da API)
       - ./backend:/app
     networks:
       - bueiro_net
     depends_on:
       - redis
       - db
-    # Executa o script que roda o Alembic e depois inicia o servidor
     command: sh /app/start.sh
     restart: unless-stopped
+
+  backend-test:
+    build:
+      context: ./backend
+    profiles: 
+      - tools
+    env_file:
+      - .env
+    command: ["pytest", "tests/", "-v"]
+    networks:
+      - bueiro_net  
 
   # Frontend: React SPA (Modo de Desenvolvimento Vite + HMR)
   frontend:
