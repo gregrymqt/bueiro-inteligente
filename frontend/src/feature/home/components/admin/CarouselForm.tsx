@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
 import  { HomeService } from '../../services/HomeService';
 import type { CarouselContent, CarouselCreatePayload } from '../../types';import './AdminForms.scss';
+import { AlertService } from '@/core/alert/AlertService';
+
 interface CarouselFormProps {
   initialData?: CarouselContent;
   onSuccess?: () => void;
@@ -10,7 +12,6 @@ interface CarouselFormProps {
 
 export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSuccess, onCancel }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isEditing = !!initialData?.id;
 
@@ -67,7 +68,6 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
 
   const handleSubmit = async (data: CarouselCreatePayload) => {
     setIsLoading(true);
-    setErrorMsg(null);
 
     // Converte order para número caso chegue como string
     const payload = {
@@ -85,9 +85,8 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       if (onSuccess) {
         onSuccess();
       }
-    } catch (error) {
-      console.error('Erro ao salvar carousel:', error);
-      setErrorMsg('Falha ao salvar os dados. Tente novamente.');
+    } catch {
+      AlertService.error('Erro', 'Falha ao salvar os dados. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -114,11 +113,6 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       <div className="form-header">
         <h3>{isEditing ? 'Editar Banner' : 'Novo Banner'}</h3>
       </div>
-      {errorMsg && (
-        <div className="form-error-message">
-          {errorMsg}
-        </div>
-      )}
       <GenericForm<CarouselCreatePayload>
         fields={fields}
         onSubmit={handleSubmit}

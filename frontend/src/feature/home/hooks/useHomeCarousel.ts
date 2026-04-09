@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HomeService } from '../services/HomeService';
+import { AlertService } from '@/core/alert/AlertService';
 
 export function useHomeCarousel(section: 'hero' | 'stats') {
   const [items, setItems] = useState<any[]>([]);
@@ -15,8 +16,8 @@ export function useHomeCarousel(section: 'hero' | 'stats') {
         const statsCarousels = data.carousels?.filter(c => c.section === 'stats') || [];
         setItems(statsCarousels.sort((a, b) => a.order - b.order));
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      AlertService.error('Erro', 'Erro ao carregar banners da seção.');
       setItems([]);
     } finally {
       setLoading(false);

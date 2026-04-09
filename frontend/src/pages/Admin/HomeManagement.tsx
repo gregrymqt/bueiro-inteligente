@@ -25,12 +25,7 @@ export const HomeManagement: React.FC = () => {
       title: 'Confirmar Exclusão',
       text: 'Tem certeza que deseja excluir este banner?',
       onConfirm: async () => {
-        const success = await removeBanner(id);
-        if (success) {
-          AlertService.success('Banner excluído com sucesso!');
-        } else {
-          AlertService.error('Erro', 'Erro ao excluir o banner.');
-        }
+        await removeBanner(id);
       }
     });
   };
@@ -40,12 +35,7 @@ export const HomeManagement: React.FC = () => {
       title: 'Confirmar Exclusão',
       text: 'Tem certeza que deseja excluir esta estatística?',
       onConfirm: async () => {
-        const success = await removeStatCard(id);
-        if (success) {
-          AlertService.success('Estatística excluída com sucesso!');
-        } else {
-          AlertService.error('Erro', 'Erro ao excluir a estatística.');
-        }
+        await removeStatCard(id);
       }
     });
   };
@@ -79,7 +69,6 @@ export const HomeManagement: React.FC = () => {
                 initialData={activeCarouselForm.data} 
                 onSuccess={() => {
                   setActiveCarouselForm(null);
-                  AlertService.success(activeCarouselForm.isEditing ? 'Banner atualizado!' : 'Banner criado!');
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveCarouselForm(null)}
@@ -134,7 +123,6 @@ export const HomeManagement: React.FC = () => {
                 initialData={activeStatCardForm.data}
                 onSuccess={() => {
                   setActiveStatCardForm(null);
-                  AlertService.success(activeStatCardForm.isEditing ? 'Estatística atualizada!' : 'Estatística criada!');
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form
                 }}
                 onCancel={() => setActiveStatCardForm(null)}
