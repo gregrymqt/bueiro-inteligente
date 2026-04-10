@@ -1,64 +1,112 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import './RegisterForm.scss';
-import { useAuth } from '../hooks/useAuth';
-import { GenericForm, type FormField } from '@/components/layout/Form/GenericForm';
-import { type RegisterRequestDTO } from '../types';
+import { Check, Circle } from 'lucide-react';
+import styles from './RegisterForm.module.scss';
+import { useAuthForm } from '../hooks/useAuthForm';
 
 export const RegisterForm: React.FC = () => {
-  const { register, loading, error } = useAuth();
-
-  const fields: FormField<RegisterRequestDTO>[] = [
-    {
-      name: 'full_name',
-      label: 'Nome Completo',
-      type: 'text',
-      placeholder: 'Seu nome',
-      validation: { required: 'Nome é obrigatório' }
-    },
-    {
-      name: 'email',
-      label: 'E-mail',
-      type: 'email',
-      placeholder: 'seu@email.com',
-      validation: { required: 'E-mail é obrigatório' }
-    },
-    {
-      name: 'password',
-      label: 'Senha',
-      type: 'password',
-      placeholder: 'Mínimo de 6 caracteres',
-      validation: { 
-        required: 'Senha é obrigatória',
-        minLength: { value: 6, message: 'Mínimo de 6 caracteres' }
-      }
-    }
-  ];
-
-  const onSubmit = async (data: RegisterRequestDTO) => {
-    await register(data);
-  };
+  const {
+    formData,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    isEmailValid,
+    passwordCriteria,
+    isFormValid,
+    touched,
+    loading
+  } = useAuthForm();
 
   return (
-    <div className="register-container">
-      <div className="register-form">
-        <h1 className="register-form__title">Crie sua Conta</h1>
-        <p className="register-form__subtitle">Inscreva-se para monitorar os bueiros em tempo real.</p>
+    <div className={styles.registerContainer}>
+      <form className={styles.registerForm} onSubmit={handleSubmit}>
+        <h1 className={styles.registerFormTitle}>Crie sua Conta</h1>
+        <p className={styles.registerFormSubtitle}>Inscreva-se para monitorar os bueiros em tempo real.</p>
 
-        {error && <div className="register-form__error">{error}</div>}
+        <div className={styles.registerFormField}>
+          <label htmlFor="full_name">Nome Completo</label>
+          <input
+            id="full_name"
+            name="full_name"
+            type="text"
+            placeholder="Seu nome"
+            value={formData.full_name}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </div>
 
-        <GenericForm<RegisterRequestDTO>
-          fields={fields}
-          onSubmit={onSubmit}
-          isLoading={loading}
-          submitText="Cadastrar"
-        >
-          <div className="register-form__login-link">
-            <span>Já possui conta?</span> <Link to="/login">Faça login</Link>
+        <div className={styles.registerFormField}>
+          <label htmlFor="email">E-mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="seu@email.com"
+            value={formData.email}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            disabled={loading}
+            className={touched.email && !isEmailValid ? styles.error : ''}
+          />
+        </div>
+
+        <div className={styles.registerFormField}>
+          <label htmlFor="password">Senha</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Sua senha"
+            value={formData.password}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </div>
+
+        {/* Real-time Password Feedback */}
+        <div className={styles.registerFormCriteriaContainer}>
+          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.minLen ? styles.met : ''}`}>
+            {passwordCriteria.minLen ? <Check /> : <Circle />} Mínimo 8 caracteres
           </div>
-        </GenericForm>
-      </div>
+          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasUpper ? styles.met : ''}`}>
+            {passwordCriteria.hasUpper ? <Check /> : <Circle />} Letra maiúscula
+          </div>
+          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasNumber ? styles.met : ''}`}>
+            {passwordCriteria.hasNumber ? <Check /> : <Circle />} Um número
+          </div>
+          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasSpecial ? styles.met : ''}`}>
+            {passwordCriteria.hasSpecial ? <Check /> : <Circle />} Caractere especial
+          </div>
+        </div>
+
+        <div className={styles.registerFormField}>
+          <label htmlFor="confirmPassword">Confirmar Senha</label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirme sua senha"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            disabled={loading}
+            className={touched.confirmPassword && formData.password !== formData.confirmPassword ? styles.error : ''}
+          />
+        </div>
+
+        <button
+          type="submit"
+          className={styles.registerFormButton}
+          disabled={!isFormValid || loading}
+        >
+          {loading ? 'Processando...' : 'Cadastrar'}
+        </button>
+
+        <div className={styles.registerFormLoginLink}>
+          <span>Já possui conta?</span> <Link to="/login">Faça login</Link>
+        </div>
+      </form>
     </div>
   );
 };
-

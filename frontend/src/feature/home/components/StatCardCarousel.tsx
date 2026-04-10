@@ -35,7 +35,7 @@ export const StatCardCarousel: React.FC<StatCardCarouselProps> = ({ items }) => 
               title={item.title}
               value={item.value}
               description={item.description}
-              color={item.color as any}
+              color={item.color as "primary" | "success" | "warning" | "danger" | undefined}
             />
           </SwiperSlide>
         ))}

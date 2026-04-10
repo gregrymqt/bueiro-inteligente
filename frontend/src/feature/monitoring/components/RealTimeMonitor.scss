@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .monitor-card {
   // Mobile-first
   display: flex;
@@ -20,6 +22,28 @@
     align-items: flex-start;
     border-bottom: 1px solid $color-border;
     padding-bottom: $spacing-md;
+  }
+
+  .btn-refresh {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+
+    &:hover {
+      color: $color-text-main;
+      background-color: $color-border;
+    }
+  }
+
+  .spin-animation {
+    animation: spin 1s linear infinite;
   }
 
   &__info {
@@ -92,7 +116,7 @@
   }
 
   &--error {
-    color: $color-danger;
+    color: color.adjust($color-danger, $lightness: -20%);
     border-color: rgba($color-danger, 0.3);
     background-color: rgba($color-danger, 0.05);
 
