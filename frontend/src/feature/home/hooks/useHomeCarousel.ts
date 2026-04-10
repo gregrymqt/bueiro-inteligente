@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
+import type { CarouselContent } from '../types';
 
 export function useHomeCarousel(section: 'hero' | 'stats') {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<CarouselContent[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {

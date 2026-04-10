@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../../styles/default.scss" as *;
 
 .popup {
@@ -31,7 +32,7 @@
   font-weight: 500;
 
   &:hover {
-    background-color: darken($color-border, 10%) !important;
+    background-color: color.adjust($color-border, $lightness: -10%) !important;
   }
 }
 

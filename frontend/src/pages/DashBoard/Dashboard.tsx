@@ -55,6 +55,17 @@ export const Dashboard: React.FC = () => {
   // Encontra qual componente deve ser renderizado com base no ID ativo
   const activeItem = navItems.find(item => item.id === activeTabId) || navItems[0];
 
+  if (!navItems || navItems.length === 0 || !activeItem) {
+    return (
+      <div className="dashboard-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+          <ActivityIcon />
+          <p style={{ margin: 0, fontSize: '1.1rem' }}>Nenhum módulo disponível no momento.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-layout">
       {/* 1. A nossa Sidebar orientada a dados */}

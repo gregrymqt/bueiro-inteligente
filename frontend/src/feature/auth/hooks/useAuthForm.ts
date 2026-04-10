@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from './useAuth';
-import { AlertService } from '@/core/alert/AlertService';
 import type { RegisterRequestDTO } from '../types';
 
 interface PasswordCriteria {
