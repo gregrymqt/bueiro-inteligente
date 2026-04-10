@@ -47,8 +47,11 @@ export function Form<T extends FieldValues>({
   className = '',
   formMethods
 }: FormProps<T>) {
-  // Usa formMethods externo se fornecido, senão cria um interno
-  const methods = formMethods || useForm<T>({ defaultValues });
+  // Cria hooks internos de forma incondicional
+  const internalMethods = useForm<T>({ defaultValues });
+
+  // Usa formMethods externo se fornecido, senão usa o interno
+  const methods = formMethods || internalMethods;
 
   return (
     <FormProvider {...methods}>

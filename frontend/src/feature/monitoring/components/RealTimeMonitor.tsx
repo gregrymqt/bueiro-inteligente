@@ -37,7 +37,18 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           <span className="monitor-card__id">ID: {data?.id_bueiro}</span>
         </div>
         {/* Passa o status vindo direto do Pydantic (NORMAL, ALERTA, CRITICO) */}
-        <StatusBadge status={data?.status || 'DESCONHECIDO'} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={refetch}
+            className="btn-refresh"
+            aria-label="Atualizar dados manualmente"
+          >
+            <svg className={loading ? "spin-animation" : ""} width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <StatusBadge status={data?.status || 'DESCONHECIDO'} />
+        </div>
       </header>
 
       <div className="monitor-card__metrics">
