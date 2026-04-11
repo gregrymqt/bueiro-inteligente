@@ -118,9 +118,9 @@ export const FormActions = ({ children, className = '' }: FormActionsProps) => {
   return <div className={`${styles.actions} ${className}`}>{children}</div>;
 };
 
-export const FormSubmit = ({ children, isLoading, className = '', ...props }: FormSubmitProps) => {
+export const FormSubmit = ({ children, isLoading, className = '', disabled, ...props }: FormSubmitProps) => {
   return (
-    <button type="submit" className={`${styles.submitBtn} ${className}`} disabled={isLoading} {...props}>
+    <button {...props} type="submit" className={`${styles.submitBtn} ${className}`} disabled={isLoading || disabled}>
       {isLoading ? (
         <span><i className="fas fa-spinner fa-spin"></i> Processando...</span>
       ) : (
