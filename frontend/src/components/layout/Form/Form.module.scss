@@ -1,0 +1,137 @@
+@use '@/styles/default' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-weight: 500;
+    color: $color-text-light;
+    font-size: 0.9rem;
+
+    .required {
+      color: $color-danger;
+      margin-left: 2px;
+    }
+  }
+
+  input, select, textarea {
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $border-radius-md;
+    background: $color-background;
+    color: $color-text;
+    font-family: inherit;
+    transition: all $transition-speed ease;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 2px rgba($color-primary, 0.2);
+    }
+
+    &.errorInput {
+      border-color: $color-danger;
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba($color-danger, 0.2);
+      }
+    }
+
+    &:disabled {
+      background: rgba($color-background, 0.5);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+}
+
+.checkboxField {
+  flex-direction: row;
+  align-items: center;
+  gap: $spacing-sm;
+
+  input[type="checkbox"] {
+    width: auto;
+    accent-color: $color-primary;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  label {
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+.errorMsg {
+  color: $color-danger;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-top: 2px;
+
+  i {
+    font-size: 0.85rem;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+  justify-content: flex-end;
+}
+
+.submitBtn {
+  background: $color-primary;
+  color: white;
+  border: none;
+  padding: $spacing-sm $spacing-xl;
+  border-radius: $border-radius-md;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background $transition-speed ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, $color-primary 80%, black);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+// Grid system simple
+.colSpan3 { width: 100%; }
+.colSpan4 { width: 100%; }
+.colSpan6 { width: 100%; }
+.colSpan12 { width: 100%; }
+
+@media (min-width: 768px) {
+  .colSpan3 { width: calc(25% - ($spacing-md * 0.75)); }
+  .colSpan4 { width: calc(33.333% - ($spacing-md * 0.66)); }
+  .colSpan6 { width: calc(50% - ($spacing-md * 0.5)); }
+}
