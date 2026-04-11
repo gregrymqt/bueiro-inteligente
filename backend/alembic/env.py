@@ -3,7 +3,6 @@ import sys
 from logging.config import fileConfig
 from dotenv import load_dotenv
 
-
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
@@ -38,12 +37,6 @@ if migrations_url and "asyncpg" in migrations_url:
 
 config.set_main_option("sqlalchemy.url", migrations_url)
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
-
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -67,7 +60,6 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -75,11 +67,16 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    url = config.get_main_option("sqlalchemy.url")
+    connect_args = {}
+    if "localhost" not in url and "127.0.0.1" not in url:
+        connect_args["sslmode"] = "require"
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"sslmode": "require"}
+        connect_args=connect_args
     )
 
     with connectable.connect() as connection:
@@ -89,7 +86,6 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
