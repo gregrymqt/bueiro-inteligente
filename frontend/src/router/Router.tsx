@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthInterceptor } from '@/core/http/AuthInterceptor';
 import { ProtectedLayout } from './middleware/ProtectedLayout';
 import { RoleMiddleware } from './middleware/RoleMiddleware';
-import { Dashboard } from '@/pages/DashBoard/Dashboard';
 import Home from '@/pages/Home/Home';
 import { Login } from '@/pages/Auth/Login'; 
 import { HomeManagement } from '@/pages/Admin/HomeManagement'; 
@@ -13,6 +12,7 @@ import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
 // Importando o novo MainLayout
 import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
+import { Dashboard } from '@/pages/Dashboard/Dashboard';
 
 export const router = createBrowserRouter([
   // ==========================================
