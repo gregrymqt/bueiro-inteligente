@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "BueiroInteligente/1.0.0": {
+        "runtime": {
+          "BueiroInteligente.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BueiroInteligente/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
