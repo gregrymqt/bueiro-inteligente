@@ -1,0 +1,80 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-lg;
+  border: 1px solid rgba($color-border, 0.9);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba($color-success, 0.08), transparent 45%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.eyebrow {
+  margin: 0;
+  color: $color-success;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  margin: 0;
+  color: $color-text-main;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.description {
+  margin: 0;
+  color: rgba($color-text-main, 0.72);
+  line-height: 1.55;
+}
+
+.form {
+  gap: $spacing-lg;
+}
+
+.fieldsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.actions {
+  justify-content: space-between;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.cancelButton,
+.submitButton {
+  min-width: 160px;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: $spacing-md;
+    border-radius: 20px;
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

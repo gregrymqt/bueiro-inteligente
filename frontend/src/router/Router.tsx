@@ -7,11 +7,13 @@ import { RoleMiddleware } from './middleware/RoleMiddleware';
 import Home from '@/pages/Home/Home';
 import { Login } from '@/pages/Auth/Login'; 
 import { HomeManagement } from '@/pages/Admin/HomeManagement'; 
+import { DrainManagement } from '@/pages/Admin/DrainManagement';
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
 // Importando o novo MainLayout
 import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 
 export const router = createBrowserRouter([
@@ -58,12 +60,31 @@ export const router = createBrowserRouter([
                     path: '/configuracoes',
                     element: <h1>Página de Configurações (Apenas Admin e Manutenção)</h1>,
                   },
+                ],
+              },
+            ],
+          },
+          {
+            element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
+            children: [
+              {
+                path: '/admin',
+                element: <AdminLayout />,
+                children: [
                   {
-                    path: '/admin/home',
+                    index: true,
+                    element: <Navigate to="drains" replace />,
+                  },
+                  {
+                    path: 'drains',
+                    element: <DrainManagement />,
+                  },
+                  {
+                    path: 'home',
                     element: <HomeManagement />,
-                  }
-                ]
-              }
+                  },
+                ],
+              },
             ],
           },
         ],

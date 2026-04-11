@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/setupTests.ts'],
+    },
     
     // 1. Configuração de Path Aliases (Boas práticas)
     resolve: {

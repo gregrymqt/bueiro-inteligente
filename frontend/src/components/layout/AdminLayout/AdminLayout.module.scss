@@ -1,0 +1,48 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef2f7 0%, #f8fafc 40%, #ffffff 100%);
+}
+
+.mainColumn {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-md 0;
+
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+.toolbarLabel {
+  color: $color-text-main;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.menuButton {
+  min-width: 96px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: $spacing-md;
+}
+
+.contentInner {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}

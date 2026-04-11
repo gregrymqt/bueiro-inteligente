@@ -7,6 +7,13 @@ $color-success: #10b981; // Verde (Normal)
 $color-warning: #f59e0b; // Amarelo (Alerta)
 $color-danger:  #ef4444; // Vermelho (Crítico)
 
+// Cores de Interface e Acento
+$color-primary: #0b5fb4;
+$color-secondary: #475569;
+$color-background: #ffffff;
+$color-text: #111827;
+$color-text-light: #4b5563;
+
 // Cores de Interface
 $color-bg-light: #f9fafb;
 $color-text-main: #1f2937;
@@ -14,9 +21,17 @@ $color-border: #e5e7eb;
 
 // Tipografia e Espaçamentos
 $font-stack: 'Inter', system-ui, sans-serif;
+$spacing-xs: 0.25rem;
 $spacing-sm: 0.5rem;
 $spacing-md: 1rem;
 $spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+
+// Raios e transições
+$border-radius-sm: 0.5rem;
+$border-radius-md: 0.75rem;
+$border-radius-lg: 1rem;
+$transition-speed: 0.2s;
 
 @use "sass:map";
 
