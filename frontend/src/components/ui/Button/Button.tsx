@@ -24,7 +24,6 @@ export const Button = ({
     styles.btn,
     styles[variant],
     styles[size],
-    isLoading ? styles.loading : '',
     className
   ].filter(Boolean).join(' ');
 
