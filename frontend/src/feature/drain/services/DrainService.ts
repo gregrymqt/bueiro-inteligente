@@ -2,7 +2,7 @@ import { apiClient } from '@/core/http/ApiClient';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 
 export class DrainService {
-  private static readonly basePath = '/admin/drains';
+  private static readonly basePath = 'drains';
 
   public static async getDrains(): Promise<Drain[]> {
     return apiClient.get<Drain[]>(this.basePath);
