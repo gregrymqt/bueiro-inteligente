@@ -29,7 +29,7 @@ export const Button = ({
   ].filter(Boolean).join(' ');
 
   return (
-    <button className={rootClass} disabled={disabled || isLoading} {...props}>
+    <button className={rootClass} {...props} disabled={disabled || isLoading}>
       {isLoading && <span className={styles.spinner}><i className="fas fa-spinner fa-spin"></i></span>}
       {!isLoading && leftIcon && <span className={styles.icon}>{leftIcon}</span>}
       <span className={styles.content}>{children}</span>
