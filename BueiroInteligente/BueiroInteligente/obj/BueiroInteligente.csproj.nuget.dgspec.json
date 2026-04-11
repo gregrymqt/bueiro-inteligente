@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj": {}
+    "c:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj": {}
   },
   "projects": {
-    "C:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj": {
+    "c:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj",
+        "projectUniqueName": "c:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj",
         "projectName": "BueiroInteligente",
-        "projectPath": "C:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj",
+        "projectPath": "c:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\BueiroInteligente.csproj",
         "packagesPath": "C:\\Users\\digob\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\obj\\",
+        "outputPath": "c:\\Users\\digob\\Desktop\\bueiro-inteligente\\BueiroInteligente\\BueiroInteligente\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -50,9 +50,29 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": {
               "target": "Package",
               "version": "[1.22.1, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Quartz.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[3.18.0, )"
+            },
+            "Quartz.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[3.18.0, )"
+            },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.12.14, )"
             }
           },
           "imports": [

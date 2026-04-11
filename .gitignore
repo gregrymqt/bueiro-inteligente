@@ -26,6 +26,10 @@ build/
 dist/
 *.egg-info/
 *.egg
+# Testes e Banco local
+.pytest_cache/
+*.db
+*.sqlite3
 
 ### Node.js / React ###
 node_modules/
@@ -35,8 +39,10 @@ dist/
 npm-debug.log*
 yarn-error.log*
 yarn-debug.log*
+.eslintcache
+.vite/
 
-### C++ ###
+### C++ / Arduino / ESP32 ###
 # Arquivos compilados e executáveis
 *.o
 *.obj
@@ -46,18 +52,26 @@ yarn-debug.log*
 *.so
 *.lib
 *.a
+*.bin
+*.elf
+*.hex
 
-### Kotlin / JVM (Gradle/Maven) ###
+### Kotlin / JVM (Gradle/Maven) / Android ###
 # Diretórios de build do Gradle e Maven
 target/
 out/
 # Arquivos gerados pelo Gradle
 .gradle/
+**/build/
+local.properties
 # Arquivos de log e pacotes
 *.log
 *.jar
 *.war
 *.ear
+*.apk
+*.aab
+*.ap_
 # Logs de crash da JVM
 hs_err_pid*
 

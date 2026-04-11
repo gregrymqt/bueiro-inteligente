@@ -60,7 +60,95 @@ core/
  Exceptions.cs
 extensions/
  AuthExtension.cs
+ IRealtimeService.cs
+ MonitoringServiceCollectionExtensions.cs
+ RealtimeService.cs
+ RealtimeServiceCollectionExtensions.cs
+ SchedulerServiceCollectionExtensions.cs
  SecurityExtension.cs
+Features/Auth/Application/
+ DTOs/AuthDtos.cs
+ Services/
+  AuthService.cs
+  IAuthService.cs
+Features/Auth/Domain/
+ Role.cs
+ User.cs
+Features/Auth/Infrastructure/
+ Authentication/BueiroInteligenteAuthenticationHandler.cs
+ Persistence/Configurations/
+  RoleConfiguration.cs
+  UserConfiguration.cs
+ Repositories/
+  AuthRepository.cs
+  IAuthRepository.cs
+Features/
+ Auth/Presentation/Controllers/AuthController.cs
+ Drain/
+  Domain/Drain.cs
+  Infrastructure/Persistence/Configurations/DrainConfiguration.cs
+ Drains/Application/
+  DTOs/DrainDtos.cs
+  Services/DrainService.cs
+ Drains/Domain/Interfaces/
+  IDrainRepository.cs
+  IDrainService.cs
+ Drains/
+  Infrastructure/Persistence/DrainRepository.cs
+  Presentation/Controllers/DrainsController.cs
+ Home/Application/DTOs/
+  CarouselDtos.cs
+  HomeEnums.cs
+  HomeResponseDto.cs
+  StatCardDtos.cs
+ Home/
+  Application/Interfaces/IHomeService.cs
+  Domain/
+   CarouselModel.cs
+   HomeContent.cs
+   HomeEnums.cs
+   Interfaces/IHomeRepository.cs
+   StatCardModel.cs
+  Infrastructure/Persistence/Configurations/
+   CarouselModelConfiguration.cs
+   StatCardModelConfiguration.cs
+ Monitoring/Application/
+  DTOs/MonitoringDtos.cs
+  Services/
+   IMonitoringService.cs
+   MonitoringService.cs
+ Monitoring/Domain/
+  DrainStatus.cs
+  Interfaces/IMonitoringRepository.cs
+ Monitoring/Infrastructure/Persistence/
+  Configurations/DrainStatusConfiguration.cs
+  MonitoringRepository.cs
+ Monitoring/Presentation/
+  Controllers/MonitoringController.cs
+  MonitoringHub.cs
+ Realtime/Presentation/MonitoringHub.cs
+ Rows/Application/
+  DTOs/RowsDtos.cs
+  Jobs/RowsSyncJob.cs
+  Services/
+   IRowsService.cs
+   RowsService.cs
+ Rows/Infrastructure/Extensions/
+  RowsRetryHandler.cs
+  RowsServiceCollectionExtensions.cs
+Infrastructure/Cache/
+ CacheResponseDto.cs
+ CacheServiceCollectionExtensions.cs
+ ICacheService.cs
+ RedisCacheService.cs
+Infrastructure/Extensions/
+ DatabaseServiceCollectionExtensions.cs
+ RedisServiceCollectionExtensions.cs
+Infrastructure/Persistence/
+ AppDbContext.cs
+ Converters/UtcDateTimeConverter.cs
+ IUnitOfWork.cs
+ UnitOfWork.cs
 obj/Debug/net8.0/
  .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
  BueiroInteligente.AssemblyInfo.cs
@@ -376,6 +464,18 @@ Program.cs
  System.Xml.XPath.dll
  System.Xml.XPath.XDocument.dll
  WindowsBase.dll
+<NUGET>/
+ microsoft.entityframeworkcore.abstractions/8.0.0/lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+ microsoft.entityframeworkcore.relational/8.0.0/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll
+ microsoft.entityframeworkcore/8.0.0/lib/net8.0/Microsoft.EntityFrameworkCore.dll
+ npgsql.entityframeworkcore.postgresql/8.0.0/lib/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+ npgsql/8.0.0/lib/net8.0/Npgsql.dll
+ pipelines.sockets.unofficial/2.2.8/lib/net5.0/Pipelines.Sockets.Unofficial.dll
+ quartz.extensions.dependencyinjection/3.18.0/lib/net8.0/Quartz.Extensions.DependencyInjection.dll
+ quartz.extensions.hosting/3.18.0/lib/net8.0/Quartz.Extensions.Hosting.dll
+ quartz/3.18.0/lib/net8.0/Quartz.dll
+ stackexchange.redis/2.12.14/lib/net8.0/StackExchange.Redis.dll
+ system.io.hashing/10.0.2/lib/net8.0/System.IO.Hashing.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.AspNetCore.App.Ref/8.0.25/analyzers/dotnet/cs/
@@ -402,6 +502,7 @@ Program.cs
 <DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/microsoft.entityframeworkcore.analyzers/8.0.0/analyzers/dotnet/cs/Microsoft.EntityFrameworkCore.Analyzers.dll
 
 [analyzerConfigFiles]
 <DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig

@@ -70,4 +70,21 @@ namespace BueiroInteligente.Core
 
         public string? ResourceName { get; }
     }
+
+    public sealed class NotFoundException : BueiroInteligenteException
+    {
+        public NotFoundException(string message)
+            : base(message) { }
+
+        public NotFoundException(string resourceName, object? key)
+            : base($"{resourceName} '{key}' was not found.")
+        {
+            ResourceName = resourceName;
+            ResourceKey = key?.ToString();
+        }
+
+        public string? ResourceName { get; }
+
+        public string? ResourceKey { get; }
+    }
 }

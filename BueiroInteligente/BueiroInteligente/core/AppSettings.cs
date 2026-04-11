@@ -24,6 +24,7 @@ namespace BueiroInteligente.Core
             string databaseUrl,
             string migrationsUrl,
             string rowsApiKey,
+            string rowsBaseUrl,
             string rowsSpreadsheetId,
             string rowsTableId,
             string[] allowedOrigins
@@ -44,6 +45,7 @@ namespace BueiroInteligente.Core
             DatabaseUrl = databaseUrl;
             MigrationsUrl = migrationsUrl;
             RowsApiKey = rowsApiKey;
+            RowsBaseUrl = rowsBaseUrl;
             RowsSpreadsheetId = rowsSpreadsheetId;
             RowsTableId = rowsTableId;
             AllowedOrigins = allowedOrigins;
@@ -78,6 +80,8 @@ namespace BueiroInteligente.Core
         public string MigrationsUrl { get; }
 
         public string RowsApiKey { get; }
+
+        public string RowsBaseUrl { get; }
 
         public string RowsSpreadsheetId { get; }
 
@@ -114,6 +118,7 @@ namespace BueiroInteligente.Core
                 databaseUrl: dbLocal ? databaseUrlLocal : databaseUrlCloud,
                 migrationsUrl: GetString("MIGRATIONS_URL"),
                 rowsApiKey: GetString("ROWS_API_KEY"),
+                rowsBaseUrl: GetString("ROWS_BASE_URL", "https://api.rows.com/v1"),
                 rowsSpreadsheetId: GetString("ROWS_SPREADSHEET_ID"),
                 rowsTableId: GetString("ROWS_TABLE_ID"),
                 allowedOrigins: GetAllowedOrigins("ALLOWED_ORIGINS", ["*"])

@@ -3,6 +3,10 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using BueiroInteligente.Core;
+using BueiroInteligente.Features.Auth.Application.Services;
+using BueiroInteligente.Features.Auth.Infrastructure.Authentication;
+using BueiroInteligente.Features.Auth.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -358,6 +362,18 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<ITokenBlacklistStore, InMemoryTokenBlacklistStore>();
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<AuthExtension>();
+        services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IAuthService, AuthService>();
+        services
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = BueiroInteligenteAuthenticationDefaults.Scheme;
+                options.DefaultChallengeScheme = BueiroInteligenteAuthenticationDefaults.Scheme;
+            })
+            .AddScheme<AuthenticationSchemeOptions, BueiroInteligenteAuthenticationHandler>(
+                BueiroInteligenteAuthenticationDefaults.Scheme,
+                _ => { }
+            );
         services.AddAuthorization();
         return services;
     }

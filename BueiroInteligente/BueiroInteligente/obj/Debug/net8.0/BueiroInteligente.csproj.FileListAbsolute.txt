@@ -32,3 +32,16 @@ C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\ob
 C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\obj\Debug\net8.0\BueiroInteligente.pdb
 C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\obj\Debug\net8.0\BueiroInteligente.genruntimeconfig.cache
 C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\obj\Debug\net8.0\ref\BueiroInteligente.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\obj\Debug\net8.0\BueiroInteligente.csproj.AssemblyReference.cache
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Npgsql.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\obj\Debug\net8.0\BueiroIn.4CF89465.Up2Date
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Pipelines.Sockets.Unofficial.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\StackExchange.Redis.dll
+C:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\System.IO.Hashing.dll
+c:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Quartz.dll
+c:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Quartz.Extensions.DependencyInjection.dll
+c:\Users\digob\Desktop\bueiro-inteligente\BueiroInteligente\BueiroInteligente\bin\Debug\net8.0\Quartz.Extensions.Hosting.dll
