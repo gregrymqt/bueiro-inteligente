@@ -8,7 +8,7 @@ namespace backend.Core
     {
         public static AppSettings Current { get; } = Load();
 
-        private AppSettings(
+        public AppSettings(
             string projectName,
             string version,
             string apiStr,
@@ -27,7 +27,8 @@ namespace backend.Core
             string rowsBaseUrl,
             string rowsSpreadsheetId,
             string rowsTableId,
-            string[] allowedOrigins
+            string[] allowedOrigins,
+            bool dotnetSystemGlobalizationInvariant
         )
         {
             ProjectName = projectName;
@@ -49,6 +50,7 @@ namespace backend.Core
             RowsSpreadsheetId = rowsSpreadsheetId;
             RowsTableId = rowsTableId;
             AllowedOrigins = allowedOrigins;
+            DotNetSystemGlobalizationInvariant = dotnetSystemGlobalizationInvariant;
         }
 
         public string ProjectName { get; }
@@ -89,6 +91,8 @@ namespace backend.Core
 
         public string[] AllowedOrigins { get; }
 
+        public bool DotNetSystemGlobalizationInvariant { get; }
+
         public static AppSettings Reload()
         {
             return Load();
@@ -121,7 +125,11 @@ namespace backend.Core
                 rowsBaseUrl: GetString("ROWS_BASE_URL", "https://api.rows.com/v1"),
                 rowsSpreadsheetId: GetString("ROWS_SPREADSHEET_ID"),
                 rowsTableId: GetString("ROWS_TABLE_ID"),
-                allowedOrigins: GetAllowedOrigins("ALLOWED_ORIGINS", ["*"])
+                allowedOrigins: GetAllowedOrigins("ALLOWED_ORIGINS", ["*"]),
+                dotnetSystemGlobalizationInvariant: GetBool(
+                    "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
+                    true
+                )
             );
         }
 

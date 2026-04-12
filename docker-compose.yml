@@ -28,6 +28,7 @@ services:
       ROWS_SPREADSHEET_ID: "${ROWS_SPREADSHEET_ID}"
       ROWS_TABLE_ID: "${ROWS_TABLE_ID}"
       ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-*}"
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "${DOTNET_SYSTEM_GLOBALIZATION_INVARIANT:-true}"
     volumes:
       - ./.env:/app/.env:ro
     ports:

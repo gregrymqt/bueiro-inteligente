@@ -41,8 +41,23 @@ public static class DatabaseServiceCollectionExtensions
     )
     {
         using IServiceScope scope = serviceProvider.CreateScope();
-        AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        // 1. Pegamos as configurações
+        var settings = scope.ServiceProvider.GetRequiredService<AppSettings>();
+
+        // 2. Se estivermos em nuvem, usamos a porta 5432 explicitamente para migrar
+        string connectionString = settings.DbLocal ? settings.DatabaseUrl : settings.MigrationsUrl;
+        string resolvedConnectionString = PostgreSqlConnectionStringFactory.Create(
+            connectionString
+        );
+
+        // 3. Criamos um contexto temporário apenas para a migração
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+        optionsBuilder.UseNpgsql(resolvedConnectionString);
+
+        using var dbContext = new AppDbContext(optionsBuilder.Options);
+
+        // Agora o MigrateAsync rodará na porta 5432, que permite criar tabelas
         await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
     }
 
