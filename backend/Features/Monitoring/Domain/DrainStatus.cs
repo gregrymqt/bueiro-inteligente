@@ -8,7 +8,7 @@ public sealed class DrainStatus(
     string status = "",
     double? latitude = null,
     double? longitude = null,
-    DateTimeOffset? lastUpdate = null,
+    DateTimeOffset lastUpdate = default,
     bool syncedToRows = false
 )
 {
@@ -26,7 +26,8 @@ public sealed class DrainStatus(
 
     public double? Longitude { get; set; } = longitude;
 
-    public DateTimeOffset LastUpdate { get; set; } = lastUpdate ?? DateTimeOffset.UtcNow;
+    public DateTimeOffset LastUpdate { get; set; } =
+        lastUpdate == default ? DateTimeOffset.UtcNow : lastUpdate;
 
     public bool SyncedToRows { get; set; } = syncedToRows;
 }
