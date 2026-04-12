@@ -2,7 +2,7 @@ import { apiClient } from '@/core/http/ApiClient';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 
 export class DrainService {
-  private static readonly basePath = 'drains';
+  private static readonly basePath = '/drains';
 
   public static async getDrains(): Promise<Drain[]> {
     return apiClient.get<Drain[]>(this.basePath);
@@ -17,7 +17,7 @@ export class DrainService {
   }
 
   public static async updateDrain(id: string, data: DrainUpdatePayload): Promise<Drain> {
-    return apiClient.patch<Drain, DrainUpdatePayload>(`${this.basePath}/${id}`, data);
+    return apiClient.put<Drain, DrainUpdatePayload>(`${this.basePath}/${id}`, data);
   }
 
   public static async deleteDrain(id: string): Promise<void> {

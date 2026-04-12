@@ -13,43 +13,37 @@ jobs:
   testes:
     name: Testes Unitários
     runs-on: ubuntu-latest
-    container:
-      image: python:3.11-slim
-    
-    defaults:
-      run:
-        working-directory: ./backend
 
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Instalar dependências do sistema
-        run: apt-get update && apt-get install -y gcc libpq-dev
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: |
+            backend/backend.csproj
+            Tests/backend.Tests.csproj
 
-      - name: Atualizar PIP e instalar requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Restaurar dependências
+        run: dotnet restore Tests/backend.Tests.csproj
 
-      - name: Executar Pytest
-        run: PYTHONPATH=. pytest
+      - name: Executar testes
+        run: dotnet test Tests/backend.Tests.csproj --configuration Release --no-restore
 
   build:
     name: Docker Build (Verificação)
     needs: testes
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./backend
-
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
 
       - name: Realizar o Build da Imagem
-        run: docker build -t bueiro-inteligente-backend:latest .
+        run: docker build -t bueiro-inteligente-backend:latest -f backend/Dockerfile .
 
   deploy:
     name: Solicitar Deploy no Render

@@ -135,7 +135,7 @@ public sealed class AuthServiceTests
         UserResponse result = await _service.RegisterAsync(request);
 
         // Assert
-        result.Should().BeEquivalentTo(new UserResponse(request.Email, request.FullName, role.Name));
+        result.Should().BeEquivalentTo(new UserResponse(request.Email, request.FullName, new[] { role.Name }));
 
         _repositoryMock.Verify(repository => repository.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()), Times.Once);
         _repositoryMock.Verify(repository => repository.GetRoleByNameAsync(request.Role, It.IsAny<CancellationToken>()), Times.Once);

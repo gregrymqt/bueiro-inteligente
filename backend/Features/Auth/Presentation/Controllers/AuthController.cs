@@ -73,7 +73,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
             UserResponse result = await _authService.RegisterAsync(request, cancellationToken)
                 .ConfigureAwait(false);
 
-            return Created("/auth/me", result);
+            return Created("/auth/users/me", result);
         }
         catch (ConnectionException exception)
         {
@@ -137,7 +137,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         }
     }
 
-    [HttpGet("me")]
+    [HttpGet("users/me")]
     public async Task<ActionResult<UserResponse>> GetMe(CancellationToken cancellationToken)
     {
         try

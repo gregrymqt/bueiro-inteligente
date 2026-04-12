@@ -29,9 +29,9 @@ export const useDrainStatus = (bueiroId: string) => {
 
     // 2. Inscrição no Real-time via Service
     const unsubscribe = MonitoringService.subscribeToUpdates((payload) => {
-      // Regra de Negócio: Só atualiza se o evento for o correto e o ID bater
-      if (payload.evento_tipo === "BUEIRO_STATUS_MUDOU" && payload.dados.id_bueiro === bueiroId) {
-        setData(payload.dados);
+      // Só atualiza quando a leitura pertence ao bueiro em tela.
+      if (payload.id_bueiro === bueiroId) {
+        setData(payload);
       }
     });
 

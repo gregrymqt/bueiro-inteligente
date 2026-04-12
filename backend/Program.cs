@@ -1,3 +1,4 @@
+using System.Text.Json;
 using backend.Extensions;
 using backend.Features.Realtime.Filters;
 using backend.Infrastructure;
@@ -9,7 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
+    });
 builder.Services.AddBueiroInteligenteAuth();
 builder.Services.AddBueiroInteligenteSecurity();
 builder.Services.AddBueiroInteligenteDatabase();
@@ -17,12 +24,18 @@ builder.Services.AddBueiroInteligenteRedis();
 builder.Services.AddBueiroInteligenteCache();
 builder.Services.AddSingleton<HubExceptionFilter>();
 builder.Services.AddSingleton<HubLoggingFilter>();
-builder.Services.AddSignalR(options =>
-{
-    options.EnableDetailedErrors = true;
-    options.AddFilter<HubExceptionFilter>();
-    options.AddFilter<HubLoggingFilter>();
-});
+builder.Services
+    .AddSignalR(options =>
+    {
+        options.EnableDetailedErrors = true;
+        options.AddFilter<HubExceptionFilter>();
+        options.AddFilter<HubLoggingFilter>();
+    })
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+        options.PayloadSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
+    });
 builder.Services.AddBueiroInteligenteHome();
 builder.Services.AddBueiroInteligenteMonitoring();
 builder.Services.AddBueiroInteligenteRealtime();

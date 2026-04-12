@@ -106,7 +106,7 @@ public sealed class AuthService(
         await _repository.AddUserAsync(user, cancellationToken).ConfigureAwait(false);
         await _unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-        return new UserResponse(user.Email, user.FullName, role.Name);
+        return new UserResponse(user.Email, user.FullName, new List<string> { role.Name });
     }
 
     public async Task LogoutAsync(string tokenJti, CancellationToken cancellationToken = default)
@@ -139,6 +139,6 @@ public sealed class AuthService(
         }
 
         string role = user.Role?.Name ?? "User";
-        return new UserResponse(user.Email, user.FullName, role);
+        return new UserResponse(user.Email, user.FullName, new List<string> { role });
     }
 }

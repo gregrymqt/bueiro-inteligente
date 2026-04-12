@@ -7,8 +7,3 @@ export interface DrainStatus {
   longitude?: number;
   ultima_atualizacao: string; // ISO Date do Pydantic
 }
-
-export interface WSPayload {
-  evento_tipo: "BUEIRO_STATUS_MUDOU";
-  dados: DrainStatus;
-}

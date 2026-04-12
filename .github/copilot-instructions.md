@@ -1,4 +1,5 @@
 ## 🛠 Stack Tecnológica
+
 ### Backend (C# / .NET 8)
 - **Framework Principal:** ASP.NET Core 8 com C#.
 - **Interface Web:** Controllers, Razor Pages e SignalR.
@@ -8,11 +9,11 @@
 - **Autenticação:** JWT com extensões e serviços próprios do backend.
 - **Validação de Dados:** DTOs C# fortes, nullable reference types e Data Annotations quando necessário.
 - **Estrutura/Padrões:**
-   - Arquitetura baseada em Features (`backend/Features/`).
-   - Configuração central em `backend/core/AppSettings.cs`, com leitura automática de `.env`.
-   - Injeção de dependências via `backend/extensions/` e `backend/Infrastructure/Extensions/`.
-   - Padrão `Controller -> Service -> Repository` para isolar regras de negócio e acesso a dados.
-   - `Program.cs` atua como composition root, registrando serviços, middlewares, hubs SignalR e rotas.
+  - Arquitetura baseada em Features (`backend/Features/`).
+  - Configuração central em `backend/core/AppSettings.cs`, com leitura automática de `.env`.
+  - Injeção de dependências via `backend/extensions/` e `backend/Infrastructure/Extensions/`.
+  - Padrão `Controller -> Service -> Repository` para isolar regras de negócio e acesso a dados.
+  - `Program.cs` atua como composition root, registrando serviços, middlewares, hubs SignalR e rotas.
 
 ### Testes do Backend (`/Tests`)
 - **Projeto de Testes:** `Tests/backend.Tests.csproj`.
@@ -20,42 +21,6 @@
 - **Estrutura:** namespaces `backend.Tests.Features.<Feature>` e arquivos organizados por feature.
 - **Boas Práticas:** AAA, mocks estritos quando fizer sentido, `VerifyNoOtherCalls()` em cenários sensíveis e isolamento de dependências externas.
 - **Banco de Dados:** prefira mocks, fakes ou fixtures ao banco real sempre que existir uma alternativa equivalente e confiável.
-## 🧭 Arquitetura e Integração
-
-O ecossistema é centrado no backend ASP.NET Core. Cada frente conversa com ele por contratos específicos:
-
-### Padrões do Backend (`/backend`)
-- `/core`: Configurações globais e carregamento do `.env` (`AppSettings.cs`).
-- `/extensions`: Extensões de registro e inicialização de serviços da aplicação.
-- `/Infrastructure/Extensions`: Bootstrap de banco, Redis e demais integrações de infraestrutura.
-- `/Infrastructure/Persistence`: `AppDbContext`, `UnitOfWork` e contratos de persistência.
-- `/Infrastructure/Cache`: abstrações e implementações de cache Redis.
-- `/Features`: Módulos de negócio isolados. Cada feature pode conter:
-   - `Presentation/`: Controllers, hubs e endpoints.
-   - `Application/`: Services, DTOs e contratos.
-   - `Domain/`: Entidades, interfaces e regras centrais.
-   - `Infrastructure/`: Repositories e implementações de acesso a dados.
-- `/Pages`: Razor Pages do backend.
-- `/Program.cs`: Composição da aplicação, registro de dependências e mapeamento de hubs/rotas.
-# Contexto Geral do Projeto: Bueiro Inteligente (Smart Drain)
-
-Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que monitoriza o estado de bueiros inteligentes e sincroniza dados (ETL). O projeto adota uma arquitetura modular baseada em "Features" (funcionalidades) em suas camadas de software, separando responsabilidades e facilitando a manutenção.
-
-## 🛠 Stack Tecnológica
-
-### Backend (Python)
-- **Framework Principal:** FastAPI (com Uvicorn)
-- **Linguagem:** Python 3.x
-- **Bancos de Dados/Cache:** PostgreSQL (SQLAlchemy + Alembic) e Redis
-- **Autenticação:** JWT (python-jose, passlib)
-- **Validação de Dados:** Pydantic / Pydantic Settings
-- **Agendamento (Jobs/Workers):** APScheduler
-- **Tempo Real:** WebSockets
-- **Comunicações HTTP (Assíncronas):** HTTPX (Usado para integrações, ex: Adafruit, Rows.com)
-- **Estrutura/Padrões:**
-  - Arquitetura baseada em Features (`app/features/`).
-  - Princípios de Inversão de Dependência (Dependency Injection via interfaces).
-  - Padrão Repository e Services para isolar regras de negócio.
 
 ### Frontend (React + TypeScript)
 - **Framework Principal:** React 19 (criado com Vite)
@@ -82,18 +47,32 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 
 ---
 
+## 🧭 Arquitetura e Integração
+
+O ecossistema é centrado no backend ASP.NET Core. Cada frente conversa com ele por contratos específicos:
+
+1. **Hardware (ESP32/ESP8266)** envia leituras para `POST /monitoring/medicoes?token=...` com payload JSON contendo `id_bueiro`, `distancia_cm`, `latitude` e `longitude`.
+2. **Backend (ASP.NET Core)** valida o hardware token, persiste a medição no PostgreSQL, atualiza o Redis, emite eventos em tempo real via WebSocket em `/realtime/ws` e agenda a sincronização ETL com Rows.
+3. **Frontend Web (React)** consome `GET /home`, `GET /auth/users/me`, `GET /monitoring/{id}/status` e o WebSocket de realtime; a comunicação HTTP passa pelo `ApiClient` e os alertas visuais passam pelo `AlertService`.
+4. **Mobile (Kotlin)** consome os mesmos contratos REST e o canal de realtime, mantendo estado de interface via `StateFlow` e `collectAsStateWithLifecycle()`.
+
+---
+
 ## 📁 Estrutura de Diretórios e Padrões Arquiteturais
 
-### Padrões do Backend (`/backend/app`)
-- `/core`: Configurações globais e de ambiente (`config.py`).
-- `/extensions`: Inicialização de infraestrutura como banco de dados/cache (`infrastructure.py`), segurança (`auth.py`), websockets (`realtime.py`) e agendamentos (`scheduler.py`).
-- `/features`: Módulos de negócio isolados. Cada feature (como `auth`, `monitoring`, `rows`, `cache`, `realtime`) pode conter:
-  - `controller.py`: Endpoints do FastAPI (Rotas).
-  - `service.py` ou pasta `/services/`: Regras de negócio da aplicação (quando complexa, a feature divide serviços em arquivos, ex: `broadcast_service.py` em `monitoring`).
-  - `repository.py`: Interação direta com a camada de dados (PostgreSQL/Redis).
-  - `interfaces.py`: Classes abstratas / Tipagens para injeção de dependência.
-  - `dto.py` / `dtos.py`: Modelos Pydantic para validação de entrada/saída (Schemas).
-- `/routes`: Pasta destinada à agregação e registro das rotas dos controllers.
+### Padrões do Backend (`/backend`)
+- `/core`: Configurações globais e carregamento do `.env` (`AppSettings.cs`).
+- `/extensions`: Extensões de registro e inicialização de serviços da aplicação.
+- `/Infrastructure/Extensions`: Bootstrap de banco, Redis e demais integrações de infraestrutura.
+- `/Infrastructure/Persistence`: `AppDbContext`, `UnitOfWork` e contratos de persistência.
+- `/Infrastructure/Cache`: abstrações e implementações de cache Redis.
+- `/Features`: Módulos de negócio isolados. Cada feature pode conter:
+  - `Presentation/`: Controllers, hubs e endpoints.
+  - `Application/`: Services, DTOs e contratos.
+  - `Domain/`: Entidades, interfaces e regras centrais.
+  - `Infrastructure/`: Repositories e implementações de acesso a dados.
+- `/Pages`: Razor Pages do backend.
+- `/Program.cs`: Composição da aplicação, registro de dependências e mapeamento de hubs/rotas.
 
 ### Padrões do Frontend (`/frontend/src`)
 - `/core`: Utilitários centrais como clientes HTTP base, interceptors e manipulação de tokens (`ApiClient.ts`, `TokenService.ts`, `AuthInterceptor.tsx`).
@@ -123,7 +102,6 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 
 Quando solicitarem código para este projeto, você deve SEMPRE seguir estas regras restritas:
 
-
 1. **Separação de Preocupações:** Nunca coloque regras de negócio ou chamadas de banco de dados nos `controllers` (backend) ou diretamente nos componentes de UI (frontend). 
    - Backend: O `Controller` chama o `Service`, que por sua vez chama o `Repository`.
    - Frontend: O `Component` / `Page` usa um `Hook` (`useMinhaFeature`), que chama um `Service` que se apoia no `ApiClient`.
@@ -135,7 +113,7 @@ Quando solicitarem código para este projeto, você deve SEMPRE seguir estas reg
    - Prefira validação explícita, nullable reference types e Data Annotations quando fizer sentido.
    - Mantenha controllers leves e deixe regra de negócio em services.
 4. **Tratamento de Dados Assíncronos:** 
-   - No Backend, priorize funções e bibliotecas `async` (como o `httpx`).
+   - No Backend, priorize funções e bibliotecas `async`.
    - Mantenha o loop de eventos não-bloqueante.
 5. **Estilização (Frontend):** 
    - Os estilos devem ser importados de arquivos `.scss`. 
@@ -147,11 +125,9 @@ Quando solicitarem código para este projeto, você deve SEMPRE seguir estas reg
 10. **Testes do Backend:** Quando criar lógica complexa em services, repositories ou integrações com Rows, adicione testes em `Tests/Features/<feature>/`. Use `xUnit`, `Moq`, `FluentAssertions`, mocks de dependência e testes async quando necessário; nunca acople teste ao banco real quando existir fixture equivalente.
 11. **Hardware e Credenciais:** Ao sugerir alterações em `esp_bueiro.ino`, mantenha credenciais em `secrets.h` e preserve a autenticação por query token `?token=` na API. Evite JWT no firmware e prefira `StaticJsonDocument` para payloads pequenos.
 12. **Frontend HTTP e Alertas:** Nunca use `fetch`, `axios` ou chamadas HTTP diretas em componentes e páginas. Todo acesso à API deve passar por `src/core/http/ApiClient.ts` e pelos services da feature; feedback visual deve usar `src/core/alert/AlertService.ts`, e não `window.alert`.
-## 🚀 Comandos Úteis (Para Referência)
-- **Backend:** `dotnet run --project backend/backend.csproj` (a partir da raiz) ou `dotnet run` dentro de `/backend`.
 
 ## 🚀 Comandos Úteis (Para Referência)
-- **Backend:** `uvicorn app.main:app --reload` (Para desenvolvimento local a partir de `/backend`).
+- **Backend:** `dotnet run --project backend/backend.csproj` (a partir da raiz) ou `dotnet run` dentro de `/backend`.
 - **Testes do Backend:** `dotnet test Tests/backend.Tests.csproj`.
 - **Frontend:** `npm run dev` (A partir do `/frontend`).
 - **Mobile Android:** Abra a pasta `/app` no **Android Studio** para gerenciar o Gradle Build ou rode `./gradlew assembleDebug` via terminal.

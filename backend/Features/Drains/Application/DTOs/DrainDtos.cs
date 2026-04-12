@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace backend.Features.Drains.Application.DTOs;
 
@@ -30,10 +31,14 @@ public sealed record DrainCreateRequest(
     [property:
         Required,
         StringLength(100),
+        JsonPropertyName("hardware_id"),
         Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")
     ]
         string HardwareId,
-    [property: Display(Name = "Bueiro ativo", Description = "Status de atividade do bueiro")]
+    [property:
+        JsonPropertyName("is_active"),
+        Display(Name = "Bueiro ativo", Description = "Status de atividade do bueiro")
+    ]
         bool IsActive = true
 );
 
@@ -55,10 +60,14 @@ public sealed record DrainUpdateRequest(
         Display(Name = "Longitude do bueiro", Description = "Longitude do bueiro")
     ]
         double? Longitude = null,
-    [property: Display(Name = "Bueiro ativo", Description = "Status de atividade do bueiro")]
+    [property:
+        JsonPropertyName("is_active"),
+        Display(Name = "Bueiro ativo", Description = "Status de atividade do bueiro")
+    ]
         bool? IsActive = null,
     [property:
         StringLength(100),
+        JsonPropertyName("hardware_id"),
         Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")
     ]
         string? HardwareId = null
@@ -70,7 +79,7 @@ public sealed record DrainResponse(
     string Address,
     double Latitude,
     double Longitude,
-    bool IsActive,
-    string HardwareId,
-    DateTimeOffset CreatedAt
+    [property: JsonPropertyName("is_active")] bool IsActive,
+    [property: JsonPropertyName("hardware_id")] string HardwareId,
+    [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt
 );

@@ -86,7 +86,7 @@ public sealed class AuthControllerTests
     {
         // Arrange
         UserCreateRequest request = new("user@example.com", "Senha123!", "User Test", "Admin");
-        UserResponse response = new(request.Email, request.FullName, request.Role);
+        UserResponse response = new(request.Email, request.FullName, new[] { request.Role });
 
         _authServiceMock
             .Setup(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()))
@@ -98,7 +98,7 @@ public sealed class AuthControllerTests
         // Assert
         CreatedResult createdResult = result.Result.Should().BeOfType<CreatedResult>().Subject;
 
-        createdResult.Location.Should().Be("/auth/me");
+        createdResult.Location.Should().Be("/auth/users/me");
         createdResult.Value.Should().BeEquivalentTo(response);
 
         _authServiceMock.Verify(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()), Times.Once);
@@ -134,7 +134,7 @@ public sealed class AuthControllerTests
     {
         // Arrange
         string email = "user@example.com";
-        UserResponse response = new(email, "User Test", "Admin");
+        UserResponse response = new(email, "User Test", new[] { "Admin" });
         _controller.ControllerContext = BuildControllerContext(new Claim(ClaimTypes.Email, email));
 
         _authServiceMock
