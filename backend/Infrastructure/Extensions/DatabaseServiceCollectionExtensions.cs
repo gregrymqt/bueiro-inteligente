@@ -97,17 +97,10 @@ public static class DatabaseServiceCollectionExtensions
                 var key = queryParameter.Key.ToLower();
                 var value = queryParameter.Value;
 
+                // Apenas mapeie o SslMode. O Npgsql moderno cuida da validação internamente.
                 if (key == "sslmode" && Enum.TryParse(value, true, out SslMode sslMode))
                 {
                     builder.SslMode = sslMode;
-                }
-                // Adicione este suporte para o Supabase
-                else if (key == "trustservercertificate" || key == "trust server certificate")
-                {
-                    if (value.Equals("require", StringComparison.OrdinalIgnoreCase))
-                    {
-                        builder.SslMode = SslMode.Require;
-                    }
                 }
             }
 

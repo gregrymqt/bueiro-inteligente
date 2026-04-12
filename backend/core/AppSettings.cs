@@ -98,7 +98,7 @@ namespace backend.Core
         {
             LoadDotEnv();
 
-            bool dbLocal = GetBool("DB_LOCAL", true);
+            bool dbLocal = GetBool("DB_LOCAL", false);
             string databaseUrlCloud = GetString("DATABASE_URL_CLOUD");
             string databaseUrlLocal = GetString("DATABASE_URL_LOCAL");
 
@@ -111,7 +111,7 @@ namespace backend.Core
                 accessTokenExpireMinutes: GetInt("ACCESS_TOKEN_EXPIRE_MINUTES", 30),
                 hardwareToken: GetString("HARDWARE_TOKEN"),
                 redisUrl: GetString("REDIS_URL"),
-                redisLocal: GetBool("REDIS_LOCAL", true),
+                redisLocal: GetBool("REDIS_LOCAL", false),
                 dbLocal: dbLocal,
                 databaseUrlCloud: databaseUrlCloud,
                 databaseUrlLocal: databaseUrlLocal,
@@ -226,7 +226,7 @@ namespace backend.Core
             if (
                 string.Equals(rawValue, "1", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(rawValue, "yes", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(rawValue, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawValue, "True", StringComparison.OrdinalIgnoreCase)
             )
             {
                 return true;
@@ -235,7 +235,7 @@ namespace backend.Core
             if (
                 string.Equals(rawValue, "0", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(rawValue, "no", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(rawValue, "false", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawValue, "False", StringComparison.OrdinalIgnoreCase)
             )
             {
                 return false;
