@@ -1,12 +1,20 @@
 #!/bin/bash
 
-# Aborta o script se algum comando falhar
+# Aborta se algum comando falhar
 set -e
 
-echo "🚀 Verificando migrações do banco de dados..."
-# O Alembic só aplicará mudanças se houver arquivos novos na pasta /alembic/versions
-alembic upgrade head
+echo "🚀 [BACKEND] Iniciando rotina de inicialização..."
 
-echo "✅ Banco de dados sincronizado. Subindo a API..."
-# O Render injeta a variável $PORT automaticamente[cite: 11, 15]
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Tenta aplicar as migrations. 
+# Nota: Em produção (Render), se você usar uma imagem de runtime pura, 
+# o comando 'dotnet ef' não funcionará. Recomendo chamar 
+# 'context.Database.Migrate()' no seu Program.cs para garantir 100% em Prod.
+if [ "$ASPNETCORE_ENVIRONMENT" = "Development" ]; then
+    echo "📂 [DEV] Aplicando migrations do EF Core..."
+    dotnet ef database update
+fi
+
+echo "✅ Banco de dados verificado. Subindo API .NET 8..."
+
+# O Render injeta a variável $PORT. Se não houver, usa 8080 por padrão.
+exec dotnet backend.dll --urls "http://0.0.0.0:${PORT:-8080}"

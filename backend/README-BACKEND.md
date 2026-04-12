@@ -1,104 +1,191 @@
-# Bueiro Inteligente - Backend
+# Backend
 
-Este é o backend do projeto **Bueiro Inteligente**, responsável por fornecer a API e gerenciar as regras de negócio, persistência de dados e integrações com o IoT.
+Backend do projeto Bueiro Inteligente, implementado em ASP.NET Core 8 com Controllers, Razor Pages, SignalR, Entity Framework Core, PostgreSQL e Redis.
 
-## Tecnologias Principais
+## Visao geral
 
-- **[FastAPI](https://fastapi.tiangolo.com/)**: Framework web moderno e rápido para construção de APIs com Python 3.10+ baseado em standard Python type hints.
-- **[Uvicorn](https://www.uvicorn.org/)**: Servidor ASGI leve e rápido.
-- **[PostgreSQL](https://www.postgresql.org/)**: Sistema gerenciador de banco de dados relacional (utilizado com **SQLAlchemy** e **Alembic** para migrações).
-- **[Redis](https://redis.io/)**: Banco de dados em memória, utilizado para cache, otimização de performance e Blacklist de JWT.
-- **Autenticação e Segurança (JWT & RBAC)**: Autenticação baseada em tokens (via `python-jose`), controle de acesso por papéis e criptografia de senhas com `passlib`.
-- **Hardware IoT**: A rota `POST /monitoring/medicoes` recebe o token do ESP32 via query string `?token=...` e também aceita Bearer token para cenários compatíveis.
-- **Background Jobs (APScheduler)**: Execução de rotinas assíncronas em background (como sincronização de planilhas ETL).
-- **WebSockets**: Comunicação em tempo real para os painéis de monitoramento (React/Kotlin).
-- **Integrações Externas (`httpx`)**: 
-  - Comunicação com hardware IoT.
-  - Sincronização e ETL com a plataforma de planilhas de dados **Rows.com**.
-- **Testes**: `pytest`, `pytest-asyncio`, `pytest-mock` e `aiosqlite` para a suíte em `backend/tests/`.
+Este backend centraliza as regras de negocio, a persistencia de dados e as integracoes do ecossistema:
 
-## Estrutura de Diretórios
+- autenticao e autorizacao via JWT
+- monitoramento de bueiros em tempo real com SignalR
+- leitura e persistencia de dados no PostgreSQL
+- cache com Redis
+- rotinas agendadas com Quartz
+- integracao com Rows para sincronizacao de dados
 
-O projeto segue uma arquitetura baseada em features/módulos para facilitar a manutenção e escalabilidade:
+O projeto usa uma arquitetura por Features para manter controllers, services, repositories e DTOs separados por responsabilidade.
+
+## Tecnologias
+
+- .NET 8
+- ASP.NET Core Web App
+- Entity Framework Core 8
+- Npgsql para PostgreSQL
+- StackExchange.Redis
+- Quartz
+- SignalR
+- Razor Pages
+
+## Estrutura do projeto
 
 ```text
 backend/
-├── alembic/                    # Arquivos e versões de migração do banco (Alembic)
-├── app/
-│   ├── main.py                 # Ponto de entrada da aplicação FastAPI e ciclo de vida
-│   ├── core/                   # Configurações globais, banco de dados (database.py) e variáveis
-│   ├── extensions/             # Configurações de infraestrutura e serviços core (auth, infrastructure, realtime, scheduler)
-│   ├── routes/                 # Registro centralizado de rotas (agregação de controllers)
-│   └── features/               # Módulos específicos de negócio (features)
-│       ├── auth/               # Autenticação de usuários, roles e gestão de JWT
-│       ├── cache/              # Serviços centralizados para manipulação do Redis
-│       ├── home/               # Lógica para o Dashboard inicial
-│       ├── monitoring/         # Lógica IoT de bueiros, alertas, validações e status
-│       ├── realtime/           # Gerenciamento de WebSockets
-│       └── rows/               # Componentes de Job/Services de planilhas ETL integradas
-├── alembic.ini                 # Configuração do Alembic
-├── entrypoint.sh               # Script de execução em containers (roda as migrações no boot)
-├── Dockerfile                  # Instruções para conteinerização da aplicação
-└── requirements.txt            # Dependências em Python do projeto
+├── Program.cs
+├── backend.csproj
+├── backend.sln
+├── core/
+│   └── AppSettings.cs
+├── extensions/
+├── Features/
+│   ├── Auth/
+│   ├── Home/
+│   ├── Monitoring/
+│   ├── Realtime/
+│   ├── Rows/
+│   ├── Drain/
+│   └── Drains/
+├── Infrastructure/
+│   ├── Cache/
+│   ├── Extensions/
+│   └── Persistence/
+├── Pages/
+├── Properties/
+├── wwwroot/
+├── Dockerfile
+└── entrypoint.sh
 ```
 
-## Configuração do Ambiente de Desenvolvimento
+## Configuracao de ambiente
 
-### Pré-requisitos
+O backend carrega um arquivo `.env` automaticamente pelo `AppSettings` em `core/AppSettings.cs`. O arquivo e procurado a partir de `AppContext.BaseDirectory`, subindo na arvore de diretorios ate encontrar o `.env`.
 
-- Python 3.10+ (recomendado)
-- Docker e Docker Compose (opcional, para execução isolada)
+Se voce abrir a pasta `backend/` isoladamente, o `.env` do repositorio fica em `../.env`.
 
-### Passos para rodar localmente
+### Variaveis usadas pelo backend
 
-1. **Clone o repositório e acesse a pasta do backend:**
-   ```bash
-   cd backend
-   ```
+As variaveis abaixo sao lidas pelo `AppSettings`:
 
-2. **Crie e ative um ambiente virtual:**
-   ```bash
-   python -m venv venv
-   # No Windows:
-   venv\Scripts\activate
-   # No Linux/macOS:
-   source venv/bin/activate
-   ```
+| Variavel | Descricao |
+| --- | --- |
+| `PROJECT_NAME` | Nome exibido da aplicacao |
+| `VERSION` | Versao do backend |
+| `API_STR` | Prefixo base das rotas da API |
+| `SECRET_KEY` | Chave usada para JWT |
+| `ALGORITHM` | Algoritmo JWT |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo de expiracao do token |
+| `HARDWARE_TOKEN` | Token usado pelo firmware/IoT |
+| `REDIS_URL` | URL do Redis quando `REDIS_LOCAL=false` |
+| `REDIS_LOCAL` | Alterna entre Redis local e remoto |
+| `DB_LOCAL` | Alterna entre banco local e cloud |
+| `DATABASE_URL_CLOUD` | URL do banco em cloud |
+| `DATABASE_URL_LOCAL` | URL do banco local |
+| `MIGRATIONS_URL` | URL usada para migracoes |
+| `ROWS_API_KEY` | Chave de integracao com Rows |
+| `ROWS_BASE_URL` | Base URL da API do Rows |
+| `ROWS_SPREADSHEET_ID` | ID da planilha |
+| `ROWS_TABLE_ID` | ID da tabela |
+| `ALLOWED_ORIGINS` | Origens permitidas no CORS |
 
-3. **Instale as dependências:**
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
+### Exemplo de `.env`
 
-4. **Configuração de Variáveis de Ambiente:**
-   - Crie um arquivo `.env` na raiz do diretório `backend` e preencha as chaves de banco, Redis, JWT, Rows e hardware token.
-   - As variáveis mais importantes são `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `DATABASE_URL_LOCAL`, `DATABASE_URL_CLOUD`, `DB_LOCAL`, `REDIS_URL`, `REDIS_LOCAL`, `HARDWARE_TOKEN`, `ROWS_API_KEY`, `ROWS_SPREADSHEET_ID` e `ROWS_TABLE_ID`.
-   - O backend lê automaticamente esse arquivo via `pydantic-settings`.
+```env
+PROJECT_NAME=Bueiro Inteligente
+VERSION=1.0.0
+API_STR=/api/v1
+SECRET_KEY=troque-esta-chave
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+HARDWARE_TOKEN=token-do-esp32
+REDIS_URL=redis://redis:6379/0
+REDIS_LOCAL=true
+DB_LOCAL=true
+DATABASE_URL_CLOUD=
+DATABASE_URL_LOCAL=postgresql+asyncpg://bueiro_user:bueiro_password@db:5432/bueiro_db
+MIGRATIONS_URL=postgresql+psycopg2://bueiro_user:bueiro_password@db:5432/bueiro_db
+ROWS_API_KEY=
+ROWS_BASE_URL=https://api.rows.com/v1
+ROWS_SPREADSHEET_ID=
+ROWS_TABLE_ID=
+ALLOWED_ORIGINS=https://localhost:5173,http://localhost:5173
+```
 
-5. **Execute as Migrações do Banco:**
-   ```bash
-   alembic upgrade head
-   ```
+## Como executar com Docker Compose
 
-6. **Inicie o servidor de desenvolvimento:**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-   A API estará acessível em: `http://localhost:8000`
-   
-   A documentação interativa (Swagger UI) estará disponível em: `http://localhost:8000/docs`
+Na raiz do repositorio:
+
+```bash
+docker compose up -d --build
+```
+
+Esse comando sobe:
+
+- backend em `http://localhost:8080`
+- PostgreSQL na porta `5432`
+- Redis na porta `6379`
+
+O `docker-compose.yml` injeta as variaveis do `.env` da raiz e tambem monta esse arquivo dentro do container em `/app/.env`.
+
+## Como executar localmente
+
+Dentro da pasta `backend/`:
+
+```bash
+dotnet restore
+```
+
+Para rodar em modo HTTP com o profile do Visual Studio / launchSettings:
+
+```bash
+dotnet run --launch-profile http
+```
+
+Rotas locais padrao do `launchSettings.json`:
+
+- HTTP: `http://localhost:5273`
+- HTTPS: `https://localhost:7061`
+
+## Migracoes do banco
+
+O backend aplica migracoes ao iniciar o servico via `Database.MigrateAsync()`.
+
+No container de desenvolvimento, o `entrypoint.sh` tambem executa:
+
+```bash
+dotnet ef database update
+```
+
+## Principais rotas
+
+- `/auth` - autenticacao e cadastro de usuarios
+- `/home` - conteudo do painel inicial
+- `/monitoring` - recebimento e consulta de medições
+- `/drains` - gerenciamento de bueiros
+- `/rows` - integracao e sincronizacao com Rows
+- `/realtime/ws` - hub SignalR de tempo real
 
 ## Testes
 
-Execute a suíte com:
+A suite de testes fica no projeto `Tests/backend.Tests.csproj`.
+
+Executar a partir da raiz do repositorio:
 
 ```bash
-pytest tests/ -v
+dotnet test Tests/backend.Tests.csproj
 ```
 
-As fixtures principais ficam em `backend/tests/conftest.py`, com overrides de dependência e banco SQLite em memória para testes isolados.
+## Observacoes de arquitetura
 
-## Deploy
+- controllers chamam services
+- services concentram regras de negocio
+- repositories acessam o banco de dados
+- DTOs validam entradas e saidas
+- `Program.cs` apenas registra dependencias e faz o mapeamento das rotas
 
-O projeto inclui um `Dockerfile` que facilita o deploy em ambientes de produção que suportam containers.
+## Arquivos importantes
+
+- [Program.cs](Program.cs)
+- [core/AppSettings.cs](core/AppSettings.cs)
+- [Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs](Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs)
+- [Infrastructure/Extensions/RedisServiceCollectionExtensions.cs](Infrastructure/Extensions/RedisServiceCollectionExtensions.cs)
+- [entrypoint.sh](entrypoint.sh)
+- [backend.csproj](backend.csproj)

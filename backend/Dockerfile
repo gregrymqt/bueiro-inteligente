@@ -1,37 +1,41 @@
-# Estágio 1: Builder (Instalação de dependências pesadas)
-FROM python:3.11-slim as builder
-
+# Estágio de Runtime (Produção)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Estágio de Build e Ferramentas
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
 
-# Instala gcc e dependências de sistema necessárias para compilar libs (ex: psycopg2)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev libpq-dev
+# Instala o dotnet-ef globalmente para rodar as migrations
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install --user --no-cache-dir -r requirements.txt
+# Copia e restaura o projeto (agora renomeado para backend)
+COPY ["backend/backend.csproj", "backend/"]
+RUN dotnet restore "backend/backend.csproj"
 
-# Estágio 2: Runtime (Imagem final de execução)
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Copia apenas as libs instaladas no builder (pasta .local)
-COPY --from=builder /root/.local /root/.local
+# Copia todo o código e compila
 COPY . .
+WORKDIR "/src/backend"
+RUN dotnet build "backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Garante que o Python encontre as dependências e não gere arquivos .pyc
-ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Publicação da aplicação
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Configuração do Script de Entrada (Alembic Migrations + Uvicorn)
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Estágio Final (Copia apenas o necessário para rodar)
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 
-# Porta padrão do backend
-EXPOSE 8000
+# Copia o script de entrada e dá permissão de execução
+COPY backend/entrypoint.sh .
+USER root
+RUN chmod +x ./entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+# O entrypoint gerencia migrations e o início da app
+ENTRYPOINT ["./entrypoint.sh"]

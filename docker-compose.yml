@@ -1,70 +1,51 @@
 
 services:
-  # ==========================================
-  # SERVIÇOS WEB (Long-running)
-  # ==========================================
-
-  # Backend: API FastAPI
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: bueiro_backend
-    ports:
-      - "8000:8000"
-    env_file:                 
-      - .env  
+    env_file:
+      - ./.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      PORT: "8080"
+      PROJECT_NAME: "${PROJECT_NAME:-Bueiro Inteligente}"
+      VERSION: "${VERSION:-1.0.0}"
+      API_STR: "${API_STR:-/api/v1}"
+      SECRET_KEY: "${SECRET_KEY}"
+      ALGORITHM: "${ALGORITHM:-HS256}"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "${ACCESS_TOKEN_EXPIRE_MINUTES:-30}"
+      HARDWARE_TOKEN: "${HARDWARE_TOKEN}"
+      REDIS_URL: "redis://redis:6379/0"
+      REDIS_LOCAL: "true"
+      DB_LOCAL: "true"
+      DATABASE_URL_CLOUD: "${DATABASE_URL_CLOUD}"
+      DATABASE_URL_LOCAL: "postgresql+asyncpg://bueiro_user:bueiro_password@db:5432/bueiro_db"
+      MIGRATIONS_URL: "postgresql+psycopg2://bueiro_user:bueiro_password@db:5432/bueiro_db"
+      ROWS_API_KEY: "${ROWS_API_KEY}"
+      ROWS_BASE_URL: "${ROWS_BASE_URL:-https://api.rows.com/v1}"
+      ROWS_SPREADSHEET_ID: "${ROWS_SPREADSHEET_ID}"
+      ROWS_TABLE_ID: "${ROWS_TABLE_ID}"
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-*}"
     volumes:
-      - ./backend:/app
-    networks:
-      - bueiro_net
+      - ./.env:/app/.env:ro
+    ports:
+      - "8080:8080"
     depends_on:
-      - redis
       - db
-    command: sh /app/start.sh
-    restart: unless-stopped
-
-  backend-test:
-    build:
-      context: ./backend
-    profiles: 
-      - tools
-    env_file:
-      - .env
-    command: ["pytest", "tests/", "-v"]
-    networks:
-      - bueiro_net  
-
-  # Frontend: React SPA (Modo de Desenvolvimento Vite + HMR)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: builder # Para no estágio do Node.js, não instala o Nginx
-    container_name: bueiro_frontend
-    env_file:
-      - ./backend/.env
-    ports:
-      - "5173:5173" # Porta padrão do dev server do Vite
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules # Evita sobrescrever os node_modules do contêiner
+      - redis
     networks:
       - bueiro_net
-    depends_on:
-      - backend
-    command: npm run dev -- --host 0.0.0.0 # Roda com acesso externo da rede
     restart: unless-stopped
 
-  # Banco de Dados: PostgreSQL
   db:
     image: postgres:15-alpine
     container_name: bueiro_db
-    restart: unless-stopped
     environment:
-      - POSTGRES_USER=bueiro_user
-      - POSTGRES_PASSWORD=bueiro_password
-      - POSTGRES_DB=DATABASE_URL_LOCAL
+      POSTGRES_USER: "bueiro_user"
+      POSTGRES_PASSWORD: "bueiro_password"
+      POSTGRES_DB: "bueiro_db"
     ports:
       - "5432:5432"
     volumes:
@@ -72,7 +53,6 @@ services:
     networks:
       - bueiro_net
 
-  # Cache / Fila em Memória
   redis:
     image: redis:7-alpine
     container_name: bueiro_redis
@@ -80,40 +60,6 @@ services:
       - "6379:6379"
     networks:
       - bueiro_net
-    restart: unless-stopped
-
-  # ==========================================
-  # SERVIÇOS DE BUILD (Profiles Opcionais)
-  # ==========================================
-  
-  # Serviço para buildar o APK Android
-  # Rode: docker compose --profile tools run --rm app-mobile
-  app-mobile:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    container_name: bueiro_app_build
-    profiles: 
-      - tools
-    volumes:
-      # Sincroniza as saídas do build localmente para podermos pegar o .apk gerado!
-      - ./app/app/build:/app/app/build
-    networks:
-      - bueiro_net
-    command: ["./gradlew", "assembleDebug", "--no-daemon"]
-
-  # Serviço para compilar e validar o código C++ do ESP32
-  # Rode: docker compose --profile tools run --rm hardware
-  hardware:
-    build:
-      context: ./hardware/esp_bueiro
-      dockerfile: Dockerfile
-    container_name: bueiro_hardware_build
-    profiles: 
-      - tools
-    networks:
-      - bueiro_net
-    command: ["arduino-cli", "compile", "--fqbn", "esp32:esp32:esp32", "esp_bueiro.ino"]
 
 networks:
   bueiro_net:

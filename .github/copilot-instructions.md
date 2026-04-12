@@ -1,3 +1,42 @@
+## 🛠 Stack Tecnológica
+### Backend (C# / .NET 8)
+- **Framework Principal:** ASP.NET Core 8 com C#.
+- **Interface Web:** Controllers, Razor Pages e SignalR.
+- **Persistência:** PostgreSQL com Entity Framework Core e Npgsql.
+- **Cache:** Redis com StackExchange.Redis.
+- **Jobs/Workers:** Quartz para tarefas agendadas.
+- **Autenticação:** JWT com extensões e serviços próprios do backend.
+- **Validação de Dados:** DTOs C# fortes, nullable reference types e Data Annotations quando necessário.
+- **Estrutura/Padrões:**
+   - Arquitetura baseada em Features (`backend/Features/`).
+   - Configuração central em `backend/core/AppSettings.cs`, com leitura automática de `.env`.
+   - Injeção de dependências via `backend/extensions/` e `backend/Infrastructure/Extensions/`.
+   - Padrão `Controller -> Service -> Repository` para isolar regras de negócio e acesso a dados.
+   - `Program.cs` atua como composition root, registrando serviços, middlewares, hubs SignalR e rotas.
+
+### Testes do Backend (`/Tests`)
+- **Projeto de Testes:** `Tests/backend.Tests.csproj`.
+- **Stack de Testes:** `xUnit`, `Moq`, `FluentAssertions` e `coverlet.collector`.
+- **Estrutura:** namespaces `backend.Tests.Features.<Feature>` e arquivos organizados por feature.
+- **Boas Práticas:** AAA, mocks estritos quando fizer sentido, `VerifyNoOtherCalls()` em cenários sensíveis e isolamento de dependências externas.
+- **Banco de Dados:** prefira mocks, fakes ou fixtures ao banco real sempre que existir uma alternativa equivalente e confiável.
+## 🧭 Arquitetura e Integração
+
+O ecossistema é centrado no backend ASP.NET Core. Cada frente conversa com ele por contratos específicos:
+
+### Padrões do Backend (`/backend`)
+- `/core`: Configurações globais e carregamento do `.env` (`AppSettings.cs`).
+- `/extensions`: Extensões de registro e inicialização de serviços da aplicação.
+- `/Infrastructure/Extensions`: Bootstrap de banco, Redis e demais integrações de infraestrutura.
+- `/Infrastructure/Persistence`: `AppDbContext`, `UnitOfWork` e contratos de persistência.
+- `/Infrastructure/Cache`: abstrações e implementações de cache Redis.
+- `/Features`: Módulos de negócio isolados. Cada feature pode conter:
+   - `Presentation/`: Controllers, hubs e endpoints.
+   - `Application/`: Services, DTOs e contratos.
+   - `Domain/`: Entidades, interfaces e regras centrais.
+   - `Infrastructure/`: Repositories e implementações de acesso a dados.
+- `/Pages`: Razor Pages do backend.
+- `/Program.cs`: Composição da aplicação, registro de dependências e mapeamento de hubs/rotas.
 # Contexto Geral do Projeto: Bueiro Inteligente (Smart Drain)
 
 Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que monitoriza o estado de bueiros inteligentes e sincroniza dados (ETL). O projeto adota uma arquitetura modular baseada em "Features" (funcionalidades) em suas camadas de software, separando responsabilidades e facilitando a manutenção.
@@ -84,30 +123,36 @@ Este é um ecossistema distribuído (IoT, Mobile, Web Frontend e Backend) que mo
 
 Quando solicitarem código para este projeto, você deve SEMPRE seguir estas regras restritas:
 
+
 1. **Separação de Preocupações:** Nunca coloque regras de negócio ou chamadas de banco de dados nos `controllers` (backend) ou diretamente nos componentes de UI (frontend). 
    - Backend: O `Controller` chama o `Service`, que por sua vez chama o `Repository`.
    - Frontend: O `Component` / `Page` usa um `Hook` (`useMinhaFeature`), que chama um `Service` que se apoia no `ApiClient`.
 2. **Tipagem e TypeScript:** 
    - No Frontend, crie interfaces detalhadas em `types/index.ts` dentro da feature correspondente.
    - Evite o uso da tipagem `any`. Use `unknown` ou generics quando necessário.
-3. **Pydantic (Backend):**
-   - Use sempre modelos Pydantic (`dtos.py`) para validar requests e estruturar os responses nas rotas do FastAPI.
+3. **DTOs e Validação (Backend C#):**
+   - Use sempre DTOs fortes (`record`, `class` ou `struct` quando apropriado) para requests e responses.
+   - Prefira validação explícita, nullable reference types e Data Annotations quando fizer sentido.
+   - Mantenha controllers leves e deixe regra de negócio em services.
 4. **Tratamento de Dados Assíncronos:** 
    - No Backend, priorize funções e bibliotecas `async` (como o `httpx`).
    - Mantenha o loop de eventos não-bloqueante.
 5. **Estilização (Frontend):** 
    - Os estilos devem ser importados de arquivos `.scss`. 
    - Siga a organização base onde componentes menores ficam na pasta `components` e páginas na pasta `pages`.
-6. **Injeção de Dependências:** Respeite as interfaces (`interfaces.py`) existentes no backend. Quando mockar algo para testes, crie a dependência injetada ao longo da raiz da funcionalidade.
+6. **Injeção de Dependências:** Respeite os contratos e interfaces existentes no backend. Quando mockar algo para testes, crie a dependência injetada ao longo da raiz da funcionalidade.
 7. **Hardware C++:** No código do ESP32 (`/hardware`), não sobrecarregue a memória com alocações dinâmicas exageradas; use `StaticJsonDocument` definindo um tamanho limpo (ex: `<200>`) para envios pequenos via HTTP. Lembre-se: O hardware autentica via Query Token na API, não via JWT.
 8. **Mobile Android:** O diretório `/app` concentra código nativo. Sempre verifique e respeite as configurações do gradle (`minSdk 24`) e o namespace do pacote `br.edu.fatecpg`.
 9. **Mobile Compose e Estado:** Em telas Compose, consuma `StateFlow` exclusivamente com `collectAsStateWithLifecycle()`. Mantenha navegação, intents e abertura de mapas fora dos Composables; use a abstração `LocationHandler` e o fluxo `MainActivity -> AppContainer -> AppNavigation`.
-10. **Testes do Backend:** Quando criar lógica complexa em `services.py`, `repository.py` ou integrações de `rows`, adicione testes em `backend/tests/features/<feature>/`. Use `pytest`, `AsyncClient`, overrides de dependência e mocks de repositório; nunca acople teste ao banco real quando existir fixture equivalente.
+10. **Testes do Backend:** Quando criar lógica complexa em services, repositories ou integrações com Rows, adicione testes em `Tests/Features/<feature>/`. Use `xUnit`, `Moq`, `FluentAssertions`, mocks de dependência e testes async quando necessário; nunca acople teste ao banco real quando existir fixture equivalente.
 11. **Hardware e Credenciais:** Ao sugerir alterações em `esp_bueiro.ino`, mantenha credenciais em `secrets.h` e preserve a autenticação por query token `?token=` na API. Evite JWT no firmware e prefira `StaticJsonDocument` para payloads pequenos.
 12. **Frontend HTTP e Alertas:** Nunca use `fetch`, `axios` ou chamadas HTTP diretas em componentes e páginas. Todo acesso à API deve passar por `src/core/http/ApiClient.ts` e pelos services da feature; feedback visual deve usar `src/core/alert/AlertService.ts`, e não `window.alert`.
+## 🚀 Comandos Úteis (Para Referência)
+- **Backend:** `dotnet run --project backend/backend.csproj` (a partir da raiz) ou `dotnet run` dentro de `/backend`.
 
 ## 🚀 Comandos Úteis (Para Referência)
 - **Backend:** `uvicorn app.main:app --reload` (Para desenvolvimento local a partir de `/backend`).
+- **Testes do Backend:** `dotnet test Tests/backend.Tests.csproj`.
 - **Frontend:** `npm run dev` (A partir do `/frontend`).
 - **Mobile Android:** Abra a pasta `/app` no **Android Studio** para gerenciar o Gradle Build ou rode `./gradlew assembleDebug` via terminal.
 - **Hardware IoT:** Utilizar a **Arduino IDE** com placas baseadas em ESP32 e bibliotecas como `ArduinoJson` instaladas para compilar e subir código em `/hardware/esp_bueiro`.
