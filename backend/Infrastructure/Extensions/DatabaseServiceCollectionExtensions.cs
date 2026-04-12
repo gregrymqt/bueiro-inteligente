@@ -51,28 +51,15 @@ public static class DatabaseServiceCollectionExtensions
         public static string Create(string databaseUrl)
         {
             if (string.IsNullOrWhiteSpace(databaseUrl))
-            {
                 throw new InvalidOperationException("DATABASE_URL não está definida.");
-            }
 
             string normalizedUrl = databaseUrl.Trim();
 
-            if (normalizedUrl.Contains("?", StringComparison.Ordinal))
-            {
-                normalizedUrl = normalizedUrl[
-                    ..normalizedUrl.IndexOf('?', StringComparison.Ordinal)
-                ];
-            }
-
             if (!normalizedUrl.Contains("://", StringComparison.Ordinal))
-            {
                 return normalizedUrl;
-            }
 
             if (!Uri.TryCreate(normalizedUrl, UriKind.Absolute, out Uri? uri))
-            {
                 throw new InvalidOperationException("DATABASE_URL possui um formato inválido.");
-            }
 
             if (!uri.Scheme.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
             {
@@ -107,12 +94,20 @@ public static class DatabaseServiceCollectionExtensions
 
             foreach (KeyValuePair<string, string> queryParameter in ParseQueryString(uri.Query))
             {
-                if (
-                    queryParameter.Key.Equals("sslmode", StringComparison.OrdinalIgnoreCase)
-                    && Enum.TryParse(queryParameter.Value, true, out SslMode sslMode)
-                )
+                var key = queryParameter.Key.ToLower();
+                var value = queryParameter.Value;
+
+                if (key == "sslmode" && Enum.TryParse(value, true, out SslMode sslMode))
                 {
                     builder.SslMode = sslMode;
+                }
+                // Adicione este suporte para o Supabase
+                else if (key == "trustservercertificate" || key == "trust server certificate")
+                {
+                    if (value.Equals("require", StringComparison.OrdinalIgnoreCase))
+                    {
+                        builder.SslMode = SslMode.Require;
+                    }
                 }
             }
 
