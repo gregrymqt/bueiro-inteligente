@@ -6,9 +6,15 @@ namespace backend.Extensions.Auth.Utils;
 
 internal static class JwtTokenHelper
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions SerializerOptions = new(
+        JsonSerializerDefaults.Web
+    );
 
-    public static string Encode(Dictionary<string, object?> claims, string secretKey, string algorithm)
+    public static string Encode(
+        Dictionary<string, object?> claims,
+        string secretKey,
+        string algorithm
+    )
     {
         EnsureSupportedAlgorithm(algorithm);
 
@@ -26,7 +32,11 @@ internal static class JwtTokenHelper
         return $"{signingInput}.{signaturePart}";
     }
 
-    public static Dictionary<string, object?> Decode(string token, string secretKey, string algorithm)
+    public static Dictionary<string, object?> Decode(
+        string token,
+        string secretKey,
+        string algorithm
+    )
     {
         EnsureSupportedAlgorithm(algorithm);
 
@@ -108,7 +118,8 @@ internal static class JwtTokenHelper
         {
             JsonValueKind.String => element.GetString(),
             JsonValueKind.Number when element.TryGetInt64(out long int64Value) => int64Value,
-            JsonValueKind.Number when element.TryGetDecimal(out decimal decimalValue) => decimalValue,
+            JsonValueKind.Number when element.TryGetDecimal(out decimal decimalValue) =>
+                decimalValue,
             JsonValueKind.Number => element.GetDouble(),
             JsonValueKind.True => true,
             JsonValueKind.False => false,
