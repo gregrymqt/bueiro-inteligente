@@ -70,5 +70,6 @@ app.UseAuthorization();
 app.MapHub<MonitoringHub>("/realtime/ws");
 app.MapControllers();
 app.MapRazorPages();
+app.MapGet("/health", () => Results.Ok()).AllowAnonymous();
 
 app.Run();
