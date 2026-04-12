@@ -18,6 +18,16 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(255);
 
+        builder.Property(x => x.GoogleId).HasColumnName("google_id").HasMaxLength(255);
+
+        builder.Property(x => x.AvatarUrl).HasColumnName("avatar_url").HasMaxLength(2048);
+
+        builder
+            .Property(x => x.EmailConfirmed)
+            .HasColumnName("email_confirmed")
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder
             .Property(x => x.HashedPassword)
             .HasColumnName("hashed_password")
@@ -27,6 +37,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.RoleId).HasColumnName("role_id").HasColumnType("uuid").IsRequired();
 
         builder.HasIndex(x => x.Email).IsUnique();
+        builder.HasIndex(x => x.GoogleId).IsUnique();
         builder.HasIndex(x => x.RoleId);
 
         builder

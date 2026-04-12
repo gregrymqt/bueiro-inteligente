@@ -14,19 +14,24 @@
 .registerForm {
   background-color: #ffffff;
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   padding: $spacing-lg;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
 
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+  }
 
   @include respond-to('md') {
     padding: 2.5rem 2rem;
-    max-width: 450px;
+    max-width: 500px;
   }
 
   &Title {
@@ -51,102 +56,86 @@
     line-height: 1.4;
   }
 
-  &Error {
-    background-color: rgba($color-danger, 0.08);
-    color: $color-danger;
-    padding: $spacing-sm $spacing-md;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    text-align: left;
-    border: 1px solid rgba($color-danger, 0.2);
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-  }
-
-  &Field {
+  &Requirements {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    padding: $spacing-md;
+    border: 1px solid rgba($color-border, 0.8);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba($color-bg-light, 0.92), rgba(#ffffff, 0.96));
+  }
 
-    label {
-      font-weight: 600;
-      color: $color-text-main;
-      font-size: 0.9rem;
-    }
-
-    input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid $color-border;
-      border-radius: 8px;
-      font-size: 1rem;
-      background-color: $color-bg-light;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-      &:focus {
-        outline: none;
-        border-color: $color-success;
-        box-shadow: 0 0 0 3px rgba($color-success, 0.1);
-      }
-
-      &.error {
-        border-color: $color-danger;
-        background-color: rgba($color-danger, 0.05);
-      }
-
-      &:disabled {
-        background-color: #e9ecef;
-        cursor: not-allowed;
-      }
-    }
+  &RequirementsTitle {
+    margin: 0;
+    color: $color-text-main;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   &CriteriaContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-top: -0.25rem;
-    margin-bottom: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   &CriteriaItem {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8rem;
+    min-height: 2rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
     color: color.adjust(#1f2937, $lightness: 30%);
-    transition: color 0.2s ease;
+    background-color: rgba($color-bg-light, 0.7);
+    border: 1px solid rgba($color-border, 0.65);
+    transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 
     svg {
       width: 14px;
       height: 14px;
-      transition: color 0.2s ease;
+      flex-shrink: 0;
+      transition: color 0.3s ease, transform 0.3s ease;
     }
 
     &.met {
       color: $color-success;
+      background-color: rgba($color-success, 0.08);
+      border-color: rgba($color-success, 0.18);
+
       svg {
         color: $color-success;
+        transform: scale(1.05);
       }
     }
   }
 
+  &Actions {
+    margin-top: $spacing-xs;
+  }
+
   &Button {
-    margin-top: $spacing-sm;
     width: 100%;
-    padding: 0.75rem 2rem;
+    padding: 0.9rem 2rem;
     background-color: $color-success;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 
     &:hover:not(:disabled) {
       background-color: color.adjust($color-success, $lightness: -10%);
+      transform: translateY(-1px);
     }
 
     &:disabled {
@@ -174,7 +163,7 @@
       color: #3b82f6;
       text-decoration: none;
       font-weight: 600;
-      transition: color 0.2s ease, text-decoration 0.2s ease;
+      transition: color 0.3s ease, text-decoration 0.3s ease;
 
       &:hover {
         color: color.adjust(#3b82f6, $lightness: -15%);

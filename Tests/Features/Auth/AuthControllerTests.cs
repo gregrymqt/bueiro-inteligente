@@ -1,14 +1,24 @@
+using backend.Extensions.Auth.Models;
+using backend.Features.Auth.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace backend.Tests.Features.Auth;
 
 public sealed class AuthControllerTests
 {
     private readonly Mock<IAuthService> _authServiceMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationService> _authenticationServiceMock = new(MockBehavior.Strict);
+    private readonly GoogleSettings _googleSettings =
+        new("google-client-id", "google-client-secret", "https://frontend.example");
 
     private readonly AuthController _controller;
 
     public AuthControllerTests()
     {
-        _controller = new AuthController(_authServiceMock.Object);
+        _controller = new AuthController(_authServiceMock.Object, _googleSettings);
     }
 
     [Fact]
@@ -193,6 +203,56 @@ public sealed class AuthControllerTests
         _authServiceMock.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public void GoogleLogin_DeveRetornarChallengeParaGoogle()
+    {
+        // Act
+        IActionResult result = _controller.GoogleLogin();
+
+        // Assert
+        ChallengeResult challengeResult = result.Should().BeOfType<ChallengeResult>().Subject;
+        challengeResult.AuthenticationSchemes.Should().ContainSingle().Which.Should().Be(GoogleDefaults.AuthenticationScheme);
+        challengeResult.Properties.Should().NotBeNull();
+        challengeResult.Properties!.RedirectUri.Should().Be(GoogleAuthDefaults.RedirectPath);
+    }
+
+    [Fact]
+    public async Task GoogleCallback_ComPrincipalValido_DeveRedirecionarParaFrontend()
+    {
+        // Arrange
+        ClaimsPrincipal principal = BuildPrincipal(
+            new Claim(ClaimTypes.NameIdentifier, "google-123"),
+            new Claim(ClaimTypes.Email, "user@example.com"),
+            new Claim(ClaimTypes.Name, "User Test"),
+            new Claim("picture", "https://example.com/avatar.png")
+        );
+
+        AuthenticationTicket ticket = new(principal, IdentityConstants.ExternalScheme);
+        AuthenticateResult authenticateResult = AuthenticateResult.Success(ticket);
+
+        _authenticationServiceMock
+            .Setup(service => service.AuthenticateAsync(It.IsAny<HttpContext>(), IdentityConstants.ExternalScheme))
+            .ReturnsAsync(authenticateResult);
+
+        _authServiceMock
+            .Setup(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()))
+            .Returns(Task.CompletedTask);
+
+        _controller.ControllerContext = BuildControllerContextWithServices(_authenticationServiceMock.Object);
+
+        // Act
+        IActionResult result = await _controller.GoogleCallback(CancellationToken.None);
+
+        // Assert
+        RedirectResult redirectResult = result.Should().BeOfType<RedirectResult>().Subject;
+        redirectResult.Url.Should().Be(_googleSettings.FrontendRedirectUrl);
+
+        _authenticationServiceMock.Verify(service => service.AuthenticateAsync(It.IsAny<HttpContext>(), IdentityConstants.ExternalScheme), Times.Once);
+        _authServiceMock.Verify(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()), Times.Once);
+        _authenticationServiceMock.VerifyNoOtherCalls();
+        _authServiceMock.VerifyNoOtherCalls();
+    }
+
     private static ControllerContext BuildControllerContext(params Claim[] claims)
     {
         ClaimsIdentity identity = new(claims, "TestAuth");
@@ -203,7 +263,36 @@ public sealed class AuthControllerTests
             HttpContext = new DefaultHttpContext
             {
                 User = principal,
+                RequestServices = BuildRequestServices(),
             },
         };
+    }
+
+    private static ControllerContext BuildControllerContextWithServices(
+        IAuthenticationService authenticationService
+    )
+    {
+        return new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                RequestServices = BuildRequestServices(authenticationService),
+            },
+        };
+    }
+
+    private static IServiceProvider BuildRequestServices(
+        IAuthenticationService? authenticationService = null
+    )
+    {
+        ServiceCollection services = new();
+        services.AddSingleton(authenticationService ?? Mock.Of<IAuthenticationService>());
+        return services.BuildServiceProvider();
+    }
+
+    private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)
+    {
+        ClaimsIdentity identity = new(claims, "Google");
+        return new ClaimsPrincipal(identity);
     }
 }

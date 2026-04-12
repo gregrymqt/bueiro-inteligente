@@ -64,6 +64,22 @@ namespace backend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("full_name");
 
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("google_id");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("avatar_url");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("email_confirmed");
+
                     b.Property<string>("HashedPassword")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -77,6 +93,9 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("GoogleId")
                         .IsUnique();
 
                     b.HasIndex("RoleId");

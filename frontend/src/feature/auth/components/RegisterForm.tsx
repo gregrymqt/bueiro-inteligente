@@ -1,112 +1,172 @@
-import React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Check, Circle } from 'lucide-react';
+import { Form } from '@/components/layout/Form';
 import styles from './RegisterForm.module.scss';
-import { useAuthForm } from '../hooks/useAuthForm';
+import { useAuth } from '../hooks/useAuth';
+import type { RegisterRequestDTO } from '../types';
 
-export const RegisterForm: React.FC = () => {
-  const {
-    formData,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    isEmailValid,
-    passwordCriteria,
-    isFormValid,
-    touched,
-    loading
-  } = useAuthForm();
+type RegisterFormValues = RegisterRequestDTO & {
+  full_name: string;
+  confirmPassword: string;
+};
+
+type PasswordRequirement = {
+  key: string;
+  label: string;
+  test: (password: string) => boolean;
+};
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const passwordRequirements: PasswordRequirement[] = [
+  { key: 'minLength', label: '8+ caracteres', test: (password) => password.length >= 8 },
+  { key: 'upperCase', label: 'Letra maiúscula', test: (password) => /[A-Z]/.test(password) },
+  { key: 'number', label: 'Um número', test: (password) => /[0-9]/.test(password) },
+  { key: 'special', label: 'Caractere especial', test: (password) => /[!@#$%^&*]/.test(password) },
+];
+
+const getDefaultValues = (): RegisterFormValues => ({
+  full_name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+});
+
+export const RegisterForm = () => {
+  const { register: registerUser, loading } = useAuth();
+
+  const methods = useForm<RegisterFormValues>({
+    mode: 'onChange',
+    defaultValues: getDefaultValues(),
+  });
+
+  const [passwordValue, setPasswordValue] = useState(methods.getValues('password'));
+
+  useEffect(() => {
+    // Mantém o feedback de senha sincronizado em tempo real via watch do react-hook-form.
+    // eslint-disable-next-line react-hooks/incompatible-library
+    const subscription = methods.watch((values, { name }) => {
+      if (name === 'password') {
+        setPasswordValue(values.password ?? '');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [methods]);
+
+  const passwordChecks = useMemo(
+    () =>
+      passwordRequirements.map((requirement) => ({
+        ...requirement,
+        met: requirement.test(passwordValue),
+      })),
+    [passwordValue]
+  );
+
+  const isPasswordValid = passwordChecks.every((requirement) => requirement.met);
+
+  const handleSubmit = async (values: RegisterFormValues) => {
+    const payload: RegisterRequestDTO = {
+      email: values.email.trim(),
+      password: values.password,
+      full_name: values.full_name.trim(),
+    };
+
+    await registerUser(payload);
+  };
 
   return (
     <div className={styles.registerContainer}>
-      <form className={styles.registerForm} onSubmit={handleSubmit}>
+      <Form methods={methods} onSubmit={handleSubmit} className={styles.registerForm}>
         <h1 className={styles.registerFormTitle}>Crie sua Conta</h1>
         <p className={styles.registerFormSubtitle}>Inscreva-se para monitorar os bueiros em tempo real.</p>
 
-        <div className={styles.registerFormField}>
-          <label htmlFor="full_name">Nome Completo</label>
-          <input
-            id="full_name"
-            name="full_name"
-            type="text"
-            placeholder="Seu nome"
-            value={formData.full_name}
-            onChange={handleChange}
-            disabled={loading}
-          />
-        </div>
+        <Form.Input
+          name="full_name"
+          label="Nome Completo"
+          type="text"
+          placeholder="Seu nome"
+          validation={{ required: 'Nome completo é obrigatório.' }}
+        />
 
-        <div className={styles.registerFormField}>
-          <label htmlFor="email">E-mail</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="seu@email.com"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={loading}
-            className={touched.email && !isEmailValid ? styles.error : ''}
-          />
-        </div>
+        <Form.Input
+          name="email"
+          label="E-mail"
+          type="email"
+          placeholder="seu@email.com"
+          validation={{
+            required: 'E-mail é obrigatório.',
+            pattern: {
+              value: EMAIL_REGEX,
+              message: 'Por favor, insira um e-mail válido.',
+            },
+          }}
+        />
 
-        <div className={styles.registerFormField}>
-          <label htmlFor="password">Senha</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Sua senha"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={loading}
-          />
-        </div>
+        <Form.Input
+          name="password"
+          label="Senha"
+          type="password"
+          placeholder="Sua senha"
+          validation={{
+            required: 'Senha é obrigatória.',
+            validate: (value: string) =>
+              passwordRequirements.every((requirement) => requirement.test(value)) ||
+              'A senha deve atender aos requisitos abaixo.',
+          }}
+        />
 
-        {/* Real-time Password Feedback */}
-        <div className={styles.registerFormCriteriaContainer}>
-          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.minLen ? styles.met : ''}`}>
-            {passwordCriteria.minLen ? <Check /> : <Circle />} Mínimo 8 caracteres
-          </div>
-          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasUpper ? styles.met : ''}`}>
-            {passwordCriteria.hasUpper ? <Check /> : <Circle />} Letra maiúscula
-          </div>
-          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasNumber ? styles.met : ''}`}>
-            {passwordCriteria.hasNumber ? <Check /> : <Circle />} Um número
-          </div>
-          <div className={`${styles.registerFormCriteriaItem} ${passwordCriteria.hasSpecial ? styles.met : ''}`}>
-            {passwordCriteria.hasSpecial ? <Check /> : <Circle />} Caractere especial
-          </div>
-        </div>
+        <section className={styles.registerFormRequirements} aria-labelledby="password-requirements-title">
+          <p id="password-requirements-title" className={styles.registerFormRequirementsTitle}>
+            Requisitos de Senha
+          </p>
 
-        <div className={styles.registerFormField}>
-          <label htmlFor="confirmPassword">Confirmar Senha</label>
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            placeholder="Confirme sua senha"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={loading}
-            className={touched.confirmPassword && formData.password !== formData.confirmPassword ? styles.error : ''}
-          />
-        </div>
+          <ul className={styles.registerFormCriteriaContainer} aria-live="polite">
+            {passwordChecks.map((requirement) => {
+              const isMet = requirement.met;
 
-        <button
-          type="submit"
-          className={styles.registerFormButton}
-          disabled={!isFormValid || loading}
-        >
-          {loading ? 'Processando...' : 'Cadastrar'}
-        </button>
+              return (
+                <li
+                  key={requirement.key}
+                  className={`${styles.registerFormCriteriaItem} ${isMet ? styles.met : ''}`}
+                >
+                  {isMet ? <Check size={16} aria-hidden="true" /> : <Circle size={16} aria-hidden="true" />}
+                  <span>{requirement.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <Form.Input
+          name="confirmPassword"
+          label="Confirmar Senha"
+          type="password"
+          placeholder="Confirme sua senha"
+          validation={{
+            required: 'Confirmação de senha é obrigatória.',
+            deps: 'password',
+            validate: (value: string) =>
+              value === passwordValue || 'As senhas não coincidem.',
+          }}
+        />
+
+        <Form.Actions className={styles.registerFormActions}>
+          <Form.Submit
+            isLoading={loading || methods.formState.isSubmitting}
+            disabled={!methods.formState.isValid || !isPasswordValid}
+            className={styles.registerFormButton}
+          >
+            Cadastrar
+          </Form.Submit>
+        </Form.Actions>
 
         <div className={styles.registerFormLoginLink}>
           <span>Já possui conta?</span> <Link to="/login">Faça login</Link>
         </div>
-      </form>
+      </Form>
     </div>
   );
 };

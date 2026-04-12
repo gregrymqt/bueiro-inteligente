@@ -1,17 +1,24 @@
 using System.Security.Claims;
 using backend.Core;
+using backend.Extensions.Auth.Models;
 using backend.Features;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Application.Services;
+using backend.Features.Auth.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Auth.Presentation.Controllers;
 
-public sealed class AuthController(IAuthService authService) : ApiControllerBase
+public sealed class AuthController(IAuthService authService, GoogleSettings googleSettings) : ApiControllerBase
 {
     private readonly IAuthService _authService =
         authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly GoogleSettings _googleSettings =
+        googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -39,6 +46,72 @@ public sealed class AuthController(IAuthService authService) : ApiControllerBase
             }
 
             return Ok(token);
+        }
+        catch (ConnectionException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new ProblemDetails
+                {
+                    Title = "Connection error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status503ServiceUnavailable,
+                }
+            );
+        }
+        catch (LogicException exception)
+        {
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Validation error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
+        }
+    }
+
+    [HttpGet("google-login")]
+    [AllowAnonymous]
+    public IActionResult GoogleLogin()
+    {
+        return Challenge(
+            new AuthenticationProperties
+            {
+                RedirectUri = GoogleAuthDefaults.RedirectPath,
+            },
+            GoogleDefaults.AuthenticationScheme
+        );
+    }
+
+    [HttpGet("google-callback")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+    {
+        try
+        {
+            AuthenticateResult authenticateResult = await HttpContext
+                .AuthenticateAsync(IdentityConstants.ExternalScheme)
+                .ConfigureAwait(false);
+
+            if (!authenticateResult.Succeeded || authenticateResult.Principal is null)
+            {
+                return Unauthorized(
+                    new ProblemDetails
+                    {
+                        Title = "Unauthorized",
+                        Detail = "Google authentication failed.",
+                        Status = StatusCodes.Status401Unauthorized,
+                    }
+                );
+            }
+
+            await _authService
+                .SignInWithGoogleAsync(authenticateResult.Principal, HttpContext)
+                .ConfigureAwait(false);
+
+            return Redirect(_googleSettings.FrontendRedirectUrl);
         }
         catch (ConnectionException exception)
         {

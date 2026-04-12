@@ -84,6 +84,8 @@ As variaveis abaixo sao lidas pelo `AppSettings`:
 | `ROWS_BASE_URL` | Base URL da API do Rows |
 | `ROWS_SPREADSHEET_ID` | ID da planilha |
 | `ROWS_TABLE_ID` | ID da tabela |
+| `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
+| `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth |
 | `ALLOWED_ORIGINS` | Origens permitidas no CORS |
 
 ### Exemplo de `.env`
@@ -106,6 +108,8 @@ ROWS_API_KEY=
 ROWS_BASE_URL=https://api.rows.com/v1
 ROWS_SPREADSHEET_ID=
 ROWS_TABLE_ID=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ALLOWED_ORIGINS=https://localhost:5173,http://localhost:5173
 ```
 

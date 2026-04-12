@@ -27,6 +27,8 @@ namespace backend.Core
             string rowsBaseUrl,
             string rowsSpreadsheetId,
             string rowsTableId,
+            string googleClientId,
+            string googleClientSecret,
             string[] allowedOrigins,
             bool dotnetSystemGlobalizationInvariant
         )
@@ -49,9 +51,58 @@ namespace backend.Core
             RowsBaseUrl = rowsBaseUrl;
             RowsSpreadsheetId = rowsSpreadsheetId;
             RowsTableId = rowsTableId;
+            GoogleClientId = googleClientId;
+            GoogleClientSecret = googleClientSecret;
             AllowedOrigins = allowedOrigins;
             DotNetSystemGlobalizationInvariant = dotnetSystemGlobalizationInvariant;
         }
+
+        public AppSettings(
+            string projectName,
+            string version,
+            string apiStr,
+            string secretKey,
+            string algorithm,
+            int accessTokenExpireMinutes,
+            string hardwareToken,
+            string redisUrl,
+            bool redisLocal,
+            bool dbLocal,
+            string databaseUrlCloud,
+            string databaseUrlLocal,
+            string databaseUrl,
+            string migrationsUrl,
+            string rowsApiKey,
+            string rowsBaseUrl,
+            string rowsSpreadsheetId,
+            string rowsTableId,
+            string[] allowedOrigins,
+            bool dotnetSystemGlobalizationInvariant
+        )
+            : this(
+                projectName,
+                version,
+                apiStr,
+                secretKey,
+                algorithm,
+                accessTokenExpireMinutes,
+                hardwareToken,
+                redisUrl,
+                redisLocal,
+                dbLocal,
+                databaseUrlCloud,
+                databaseUrlLocal,
+                databaseUrl,
+                migrationsUrl,
+                rowsApiKey,
+                rowsBaseUrl,
+                rowsSpreadsheetId,
+                rowsTableId,
+                string.Empty,
+                string.Empty,
+                allowedOrigins,
+                dotnetSystemGlobalizationInvariant
+            ) { }
 
         public string ProjectName { get; }
 
@@ -89,6 +140,10 @@ namespace backend.Core
 
         public string RowsTableId { get; }
 
+        public string GoogleClientId { get; }
+
+        public string GoogleClientSecret { get; }
+
         public string[] AllowedOrigins { get; }
 
         public bool DotNetSystemGlobalizationInvariant { get; }
@@ -125,6 +180,8 @@ namespace backend.Core
                 rowsBaseUrl: GetString("ROWS_BASE_URL", "https://api.rows.com/v1"),
                 rowsSpreadsheetId: GetString("ROWS_SPREADSHEET_ID"),
                 rowsTableId: GetString("ROWS_TABLE_ID"),
+                googleClientId: GetString("GOOGLE_CLIENT_ID"),
+                googleClientSecret: GetString("GOOGLE_CLIENT_SECRET"),
                 allowedOrigins: GetAllowedOrigins("ALLOWED_ORIGINS", ["*"]),
                 dotnetSystemGlobalizationInvariant: GetBool(
                     "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",

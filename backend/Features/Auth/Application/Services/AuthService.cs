@@ -1,10 +1,13 @@
+using System.Security.Claims;
 using backend.Core;
+using backend.Features.Auth.Infrastructure.Authentication;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Domain;
 using backend.Features.Auth.Infrastructure.Repositories;
 using backend.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
@@ -110,6 +113,78 @@ public sealed class AuthService(
         return new UserResponse(user.Email, user.FullName, new List<string> { role.Name });
     }
 
+    public async Task SignInWithGoogleAsync(ClaimsPrincipal principal, HttpContext httpContext)
+    {
+        if (principal is null)
+        {
+            throw LogicException.NullValue(nameof(principal));
+        }
+
+        if (httpContext is null)
+        {
+            throw LogicException.NullValue(nameof(httpContext));
+        }
+
+        string googleId = GetRequiredClaim(principal, ClaimTypes.NameIdentifier, "sub", "id");
+        string email = GetRequiredClaim(principal, ClaimTypes.Email, "email");
+        string? fullName = GetOptionalClaim(principal, ClaimTypes.Name, "name");
+        string? avatarUrl = GetOptionalClaim(principal, "picture");
+
+        _logger.LogInformation("Signing in Google user {Email}", email);
+
+        User? user = await _repository
+            .FindByGoogleIdAsync(googleId, httpContext.RequestAborted)
+            .ConfigureAwait(false);
+
+        if (user is null)
+        {
+            Role? role = await _repository
+                .GetRoleByNameAsync("User", httpContext.RequestAborted)
+                .ConfigureAwait(false);
+
+            if (role is null)
+            {
+                throw new LogicException("Role 'User' was not found.");
+            }
+
+            string hashedPassword = await _authExtension
+                .GetPasswordHashAsync(Guid.NewGuid().ToString("N"))
+                .ConfigureAwait(false);
+
+            user = new User
+            {
+                Email = email,
+                FullName = fullName,
+                HashedPassword = hashedPassword,
+                RoleId = role.Id,
+                Role = role,
+                GoogleId = googleId,
+                AvatarUrl = avatarUrl,
+                EmailConfirmed = true,
+            };
+
+            await _repository.AddUserAsync(user, httpContext.RequestAborted).ConfigureAwait(false);
+            await _unitOfWork.CommitAsync(httpContext.RequestAborted).ConfigureAwait(false);
+        }
+
+        string roleName = user.Role?.Name ?? "User";
+        string accessToken = _authExtension.CreateAccessToken(
+            new SharedTokenPayload(user.Email, roleName)
+        );
+
+        httpContext.Response.Cookies.Append(
+            GoogleAuthDefaults.AccessTokenCookieName,
+            accessToken,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+            }
+        );
+    }
+
     public async Task LogoutAsync(string tokenJti, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tokenJti))
@@ -141,5 +216,32 @@ public sealed class AuthService(
 
         string role = user.Role?.Name ?? "User";
         return new UserResponse(user.Email, user.FullName, new List<string> { role });
+    }
+
+    private static string GetRequiredClaim(ClaimsPrincipal principal, params string[] claimTypes)
+    {
+        string? value = GetOptionalClaim(principal, claimTypes);
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw LogicException.NullValue(claimTypes[0]);
+        }
+
+        return value;
+    }
+
+    private static string? GetOptionalClaim(ClaimsPrincipal principal, params string[] claimTypes)
+    {
+        foreach (string claimType in claimTypes)
+        {
+            string? value = principal.FindFirstValue(claimType);
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 }

@@ -383,6 +383,8 @@ public sealed class RowsSyncJobTests
             "https://api.rows.com/v1",
             spreadsheetId,
             tableId,
+            "google-client-id",
+            "google-client-secret",
             Array.Empty<string>(),
             false
         );

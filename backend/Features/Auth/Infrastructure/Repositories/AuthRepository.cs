@@ -14,6 +14,30 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
     private readonly ILogger<AuthRepository> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
+    public async Task<User?> FindByGoogleIdAsync(
+        string googleId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            return await _dbContext
+                .Users.AsNoTracking()
+                .Include(user => user.Role)
+                .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Error retrieving user by Google id {GoogleId}", googleId);
+            throw new ConnectionException(
+                "AuthRepository.FindByGoogleIdAsync",
+                $"Failed to query user by Google id '{googleId}'.",
+                exception
+            );
+        }
+    }
+
     public async Task<User?> GetUserByEmailAsync(
         string email,
         CancellationToken cancellationToken = default

@@ -37,6 +37,25 @@ public sealed class BueiroInteligenteAuthenticationHandler
             Request.Headers.Authorization.ToString()
         );
 
+        if (
+            string.IsNullOrWhiteSpace(token)
+            && Request.Cookies.TryGetValue(
+                GoogleAuthDefaults.AccessTokenCookieName,
+                out string? cookieToken
+            )
+        )
+        {
+            token = AuthExtension.NormalizeBearerToken(cookieToken);
+        }
+
+        if (
+            string.IsNullOrWhiteSpace(token)
+            && Request.Query.TryGetValue("access_token", out var queryToken)
+        )
+        {
+            token = AuthExtension.NormalizeBearerToken(queryToken.ToString());
+        }
+
         if (string.IsNullOrWhiteSpace(token))
         {
             return AuthenticateResult.NoResult();

@@ -1,3 +1,4 @@
+using backend.Features.Auth.Infrastructure.Authentication;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
 namespace backend.Tests.Features.Auth;
@@ -213,5 +214,141 @@ public sealed class AuthServiceTests
         _repositoryMock.VerifyNoOtherCalls();
         _authExtensionMock.VerifyNoOtherCalls();
         _unitOfWorkMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ComNovoUsuario_DeveCriarContaEAnexarCookie()
+    {
+        // Arrange
+        string googleId = "google-123";
+        string email = "user@example.com";
+        string fullName = "User Test";
+        string avatarUrl = "https://example.com/avatar.png";
+        ClaimsPrincipal principal = BuildGooglePrincipal(googleId, email, fullName, avatarUrl);
+        Role role = new() { Name = "User" };
+        DefaultHttpContext httpContext = new();
+
+        _repositoryMock
+            .Setup(repository => repository.FindByGoogleIdAsync(googleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        _repositoryMock
+            .Setup(repository => repository.GetRoleByNameAsync("User", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        _authExtensionMock
+            .Setup(extension => extension.GetPasswordHashAsync(It.IsAny<string>()))
+            .ReturnsAsync("google-hash");
+
+        _authExtensionMock
+            .Setup(extension => extension.CreateAccessToken(
+                It.Is<SharedTokenPayload>(payload => payload.Email == email && payload.Role == role.Name)))
+            .Returns("jwt-token");
+
+        _repositoryMock
+            .Setup(repository => repository.AddUserAsync(
+                It.Is<User>(user =>
+                    user.Email == email
+                    && user.FullName == fullName
+                    && user.GoogleId == googleId
+                    && user.AvatarUrl == avatarUrl
+                    && user.EmailConfirmed
+                    && user.HashedPassword == "google-hash"
+                    && user.RoleId == role.Id
+                    && user.Role == role),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(unitOfWork => unitOfWork.CommitAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        await _service.SignInWithGoogleAsync(principal, httpContext);
+
+        // Assert
+        string setCookieHeader = httpContext.Response.Headers["Set-Cookie"].ToString();
+        setCookieHeader.Should().Contain($"{GoogleAuthDefaults.AccessTokenCookieName}=jwt-token");
+        setCookieHeader.Should().Contain("httponly");
+        setCookieHeader.Should().Contain("secure");
+        setCookieHeader.Should().Contain("samesite=lax");
+
+        _repositoryMock.Verify(repository => repository.FindByGoogleIdAsync(googleId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(repository => repository.GetRoleByNameAsync("User", It.IsAny<CancellationToken>()), Times.Once);
+        _authExtensionMock.Verify(extension => extension.GetPasswordHashAsync(It.IsAny<string>()), Times.Once);
+        _authExtensionMock.Verify(extension => extension.CreateAccessToken(It.IsAny<SharedTokenPayload>()), Times.Once);
+        _repositoryMock.Verify(repository => repository.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(unitOfWork => unitOfWork.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.VerifyNoOtherCalls();
+        _authExtensionMock.VerifyNoOtherCalls();
+        _unitOfWorkMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ComUsuarioExistente_DeveReutilizarConta()
+    {
+        // Arrange
+        string googleId = "google-123";
+        string email = "user@example.com";
+        string fullName = "User Test";
+        string avatarUrl = "https://example.com/avatar.png";
+        Role role = new() { Name = "Admin" };
+        User existingUser = new()
+        {
+            Email = email,
+            FullName = fullName,
+            HashedPassword = "hashed-password",
+            GoogleId = googleId,
+            AvatarUrl = avatarUrl,
+            EmailConfirmed = true,
+            Role = role,
+            RoleId = role.Id,
+        };
+        ClaimsPrincipal principal = BuildGooglePrincipal(googleId, email, fullName, avatarUrl);
+        DefaultHttpContext httpContext = new();
+
+        _repositoryMock
+            .Setup(repository => repository.FindByGoogleIdAsync(googleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingUser);
+
+        _authExtensionMock
+            .Setup(extension => extension.CreateAccessToken(
+                It.Is<SharedTokenPayload>(payload => payload.Email == email && payload.Role == role.Name)))
+            .Returns("jwt-token");
+
+        // Act
+        await _service.SignInWithGoogleAsync(principal, httpContext);
+
+        // Assert
+        httpContext.Response.Headers["Set-Cookie"].ToString().Should().Contain($"{GoogleAuthDefaults.AccessTokenCookieName}=jwt-token");
+
+        _repositoryMock.Verify(repository => repository.FindByGoogleIdAsync(googleId, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(repository => repository.GetRoleByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _authExtensionMock.Verify(extension => extension.GetPasswordHashAsync(It.IsAny<string>()), Times.Never);
+        _authExtensionMock.Verify(extension => extension.CreateAccessToken(It.IsAny<SharedTokenPayload>()), Times.Once);
+        _repositoryMock.Verify(repository => repository.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(unitOfWork => unitOfWork.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _repositoryMock.VerifyNoOtherCalls();
+        _authExtensionMock.VerifyNoOtherCalls();
+        _unitOfWorkMock.VerifyNoOtherCalls();
+    }
+
+    private static ClaimsPrincipal BuildGooglePrincipal(
+        string googleId,
+        string email,
+        string fullName,
+        string avatarUrl
+    )
+    {
+        List<Claim> claims = new()
+        {
+            new Claim(ClaimTypes.NameIdentifier, googleId),
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Name, fullName),
+            new Claim("picture", avatarUrl),
+        };
+
+        ClaimsIdentity identity = new(claims, "Google");
+        return new ClaimsPrincipal(identity);
     }
 }
