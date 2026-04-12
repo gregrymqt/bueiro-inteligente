@@ -33,9 +33,9 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Copia o script de entrada e dá permissão de execução
-COPY entrypoint.sh /entrypoint.sh
+COPY backend/entrypoint.sh /entrypoint.sh
 USER root
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # O entrypoint gerencia migrations e o início da app
 ENTRYPOINT ["/entrypoint.sh"]
