@@ -289,32 +289,27 @@ public sealed class RowsSyncJobTests
 
     private static AppSettings CreateSettings(string spreadsheetId, string tableId)
     {
-        ConstructorInfo constructor = typeof(AppSettings)
-            .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
-            .Single(item => item.GetParameters().Length == 19);
-
-        return (AppSettings)constructor.Invoke(
-            [
-                "Bueiro Inteligente",
-                "1.0.0",
-                "/api/v1",
-                "secret-key",
-                "HS256",
-                30,
-                "hardware-token",
-                "redis://localhost:6379",
-                true,
-                true,
-                "postgres://cloud",
-                "postgres://local",
-                "postgres://local",
-                "migrations",
-                "rows-api-key",
-                "https://api.rows.com/v1",
-                spreadsheetId,
-                tableId,
-                Array.Empty<string>()
-            ]
+        return new AppSettings(
+            "Bueiro Inteligente",
+            "1.0.0",
+            "/api/v1",
+            "secret-key",
+            "HS256",
+            30,
+            "hardware-token",
+            "redis://localhost:6379",
+            true,
+            true,
+            "postgres://cloud",
+            "postgres://local",
+            "postgres://local",
+            "migrations",
+            "rows-api-key",
+            "https://api.rows.com/v1",
+            spreadsheetId,
+            tableId,
+            Array.Empty<string>(),
+            false
         );
     }
 
