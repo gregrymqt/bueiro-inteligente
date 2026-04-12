@@ -1,3 +1,9 @@
+import { AlertService } from '../alert/AlertService';
+import {
+  RATE_LIMIT_THROTTLED_EVENT,
+  rateLimitService as defaultRateLimitService,
+  type IRateLimitService,
+} from './RateLimitService';
 import { type ITokenService, tokenService } from './TokenService';
 
 // 1. O Contrato do nosso Wrapper
@@ -9,14 +15,22 @@ export interface IApiClient {
   delete<TResponse>(url: string): Promise<TResponse>;
 }
 
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
 // 2. A Implementação Concreta
 export class ApiClient implements IApiClient {
-  private baseUrl: string;
-  private tokenService: ITokenService;
+  private readonly baseUrl: string;
+  private readonly tokenService: ITokenService;
+  private readonly rateLimitService: IRateLimitService;
 
-  constructor(baseUrl: string, tokenService: ITokenService) {
+  constructor(
+    baseUrl: string,
+    tokenService: ITokenService,
+    rateLimitService: IRateLimitService = defaultRateLimitService,
+  ) {
     this.baseUrl = baseUrl;
     this.tokenService = tokenService;
+    this.rateLimitService = rateLimitService;
   }
 
   // Método privado para montar os cabeçalhos padrão e injetar o JWT
@@ -34,21 +48,35 @@ export class ApiClient implements IApiClient {
     return headers;
   }
 
+  private rejectRateLimitedRequest(): never {
+    AlertService.warning(
+      'Muitas requisições',
+      'Por favor, aguarde 1 minuto para não sobrecarregar o servidor.',
+    );
+    window.dispatchEvent(new Event(RATE_LIMIT_THROTTLED_EVENT));
+    throw new Error(RATE_LIMIT_THROTTLED_EVENT);
+  }
+
+  private enforceRateLimit(): void {
+    if (!this.rateLimitService.checkLimit()) {
+      this.rejectRateLimitedRequest();
+    }
+  }
+
   // Método privado para tratar as respostas e disparar erros centralizados
   private async handleResponse<TResponse>(response: Response): Promise<TResponse> {
     if (!response.ok) {
-      // Se o token for inválido/expirado, o FastAPI retornará 401
+      // Se o token for inválido/expirado, o backend retornará 401
       if (response.status === 401) {
         this.tokenService.removeToken();
         // Disparar evento para forçar o usuário para a tela de Login
-        window.dispatchEvent(new Event('auth:unauthorized')); 
+        window.dispatchEvent(new Event('auth:unauthorized'));
       }
 
       if (response.status === 429) {
-        window.dispatchEvent(new Event('api:rate-limit'));
-        throw new Error("Muitas requisições. Por favor, aguarde um momento antes de tentar novamente.");
+        this.rejectRateLimitedRequest();
       }
-      
+
       const errorData = await response.json().catch(() => null);
       throw new Error(errorData?.detail || `Erro HTTP: ${response.status}`);
     }
@@ -61,54 +89,51 @@ export class ApiClient implements IApiClient {
     return await response.json() as TResponse;
   }
 
+  private async executeRequest<TResponse, TBody = unknown>(
+    method: HttpMethod,
+    url: string,
+    body?: TBody,
+  ): Promise<TResponse> {
+    this.enforceRateLimit();
+
+    const requestInit: RequestInit = {
+      method,
+      headers: this.getHeaders(),
+    };
+
+    if (body !== undefined) {
+      requestInit.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${this.baseUrl}${url}`, requestInit);
+    return this.handleResponse<TResponse>(response);
+  }
+
   // ==========================================
   // MÉTODOS GENÉRICOS (CRUD REST)
   // ==========================================
 
   public async get<TResponse>(url: string): Promise<TResponse> {
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<TResponse>(response);
+    return this.executeRequest<TResponse>('GET', url);
   }
 
   public async post<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body),
-    });
-    return this.handleResponse<TResponse>(response);
+    return this.executeRequest<TResponse, TBody>('POST', url, body);
   }
 
   public async put<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      method: 'PUT',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body),
-    });
-    return this.handleResponse<TResponse>(response);
+    return this.executeRequest<TResponse, TBody>('PUT', url, body);
   }
 
   public async patch<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    return this.handleResponse<TResponse>(response);
+    return this.executeRequest<TResponse, TBody>('PATCH', url, body);
   }
 
   public async delete<TResponse>(url: string): Promise<TResponse> {
-    const response = await fetch(`${this.baseUrl}${url}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<TResponse>(response);
+    return this.executeRequest<TResponse>('DELETE', url);
   }
 }
 
 // Exportamos a instância já configurada com a URL base do seu ambiente
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-export const apiClient = new ApiClient(API_BASE_URL, tokenService);
+export const apiClient = new ApiClient(API_BASE_URL, tokenService, defaultRateLimitService);

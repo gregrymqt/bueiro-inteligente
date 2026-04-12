@@ -1,30 +1,25 @@
 using backend.Core;
-using backend.Extensions;
+using backend.Extensions.Auth.Abstractions;
+using backend.Features;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Net.Http.Headers;
 
 namespace backend.Features.Monitoring.Presentation.Controllers;
 
-[ApiController]
-[Route("monitoring")]
+[Authorize(Roles = "User,Admin,Manager")]
 public sealed class MonitoringController(
     IMonitoringService monitoringService,
     IAuthExtension authExtension,
-    IRateLimiter rateLimiter,
     ILogger<MonitoringController> logger
-) : ControllerBase
+) : ApiControllerBase
 {
     private readonly IMonitoringService _monitoringService =
         monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
 
     private readonly IAuthExtension _authExtension =
         authExtension ?? throw new ArgumentNullException(nameof(authExtension));
-
-    private readonly IRateLimiter _rateLimiter =
-        rateLimiter ?? throw new ArgumentNullException(nameof(rateLimiter));
 
     private readonly ILogger<MonitoringController> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
@@ -38,8 +33,6 @@ public sealed class MonitoringController(
     {
         try
         {
-            await _rateLimiter.EnforceAsync(HttpContext, cancellationToken).ConfigureAwait(false);
-
             _authExtension.VerifyHardwareToken(
                 Request.Headers.Authorization.ToString(),
                 Request.Query["token"].ToString()
@@ -69,10 +62,6 @@ public sealed class MonitoringController(
                 exception.Message
             );
         }
-        catch (RateLimitExceededException exception)
-        {
-            return CreateTooManyRequestsProblem(exception);
-        }
         catch (ConnectionException exception)
         {
             return CreateProblem(
@@ -92,7 +81,6 @@ public sealed class MonitoringController(
     }
 
     [HttpGet("{id}/status")]
-    [Authorize(Roles = "User,Admin,Manager")]
     public async Task<ActionResult<DrainStatusDTO>> GetStatus(
         string id,
         CancellationToken cancellationToken = default
@@ -100,8 +88,6 @@ public sealed class MonitoringController(
     {
         try
         {
-            await _rateLimiter.EnforceAsync(HttpContext, cancellationToken).ConfigureAwait(false);
-
             _logger.LogInformation("Solicitação de status recebida para o bueiro {DrainIdentifier}.", id);
 
             DrainStatusDTO result = await _monitoringService
@@ -109,10 +95,6 @@ public sealed class MonitoringController(
                 .ConfigureAwait(false);
 
             return Ok(result);
-        }
-        catch (RateLimitExceededException exception)
-        {
-            return CreateTooManyRequestsProblem(exception);
         }
         catch (NotFoundException exception)
         {
@@ -134,21 +116,6 @@ public sealed class MonitoringController(
                 exception.Message
             );
         }
-    }
-
-    private ObjectResult CreateTooManyRequestsProblem(RateLimitExceededException exception)
-    {
-        if (exception.RetryAfter.HasValue)
-        {
-            Response.Headers[HeaderNames.RetryAfter] =
-                ((int)exception.RetryAfter.Value.TotalSeconds).ToString();
-        }
-
-        return CreateProblem(
-            StatusCodes.Status429TooManyRequests,
-            "Too many requests",
-            exception.Message
-        );
     }
 
     private static ObjectResult CreateProblem(int statusCode, string title, string detail)

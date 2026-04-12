@@ -1,4 +1,4 @@
-using SharedTokenPayload = backend.Extensions.TokenPayload;
+using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
 namespace backend.Tests.Features.Auth;
 

@@ -1,5 +1,6 @@
 using backend.Core;
 using backend.Extensions;
+using backend.Extensions.Realtime.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Infrastructure.Cache;
@@ -167,7 +168,12 @@ public sealed class MonitoringService(
 
     private void ValidateSensorNoise(string drainIdentifier, double distanceCm)
     {
-        if (double.IsNaN(distanceCm) || double.IsInfinity(distanceCm) || distanceCm < 0 || distanceCm > MaxBucketDepthCm)
+        if (
+            double.IsNaN(distanceCm)
+            || double.IsInfinity(distanceCm)
+            || distanceCm < 0
+            || distanceCm > MaxBucketDepthCm
+        )
         {
             _logger.LogWarning(
                 "Sensor ruidoso detectado: Leitura {DistanceCm} ignorada para o bueiro {DrainIdentifier}.",

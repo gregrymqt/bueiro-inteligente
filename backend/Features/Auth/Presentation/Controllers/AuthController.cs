@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using backend.Core;
+using backend.Features;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,12 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Auth.Presentation.Controllers;
 
-[ApiController]
-[Route("auth")]
-[Authorize(Roles = "Admin,Manager,User")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService) : ApiControllerBase
 {
-    private readonly IAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly IAuthService _authService =
+        authService ?? throw new ArgumentNullException(nameof(authService));
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -23,17 +22,20 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         try
         {
-            TokenResponse? token = await _authService.LoginAsync(request, cancellationToken)
+            TokenResponse? token = await _authService
+                .LoginAsync(request, cancellationToken)
                 .ConfigureAwait(false);
 
             if (token is null)
             {
-                return Unauthorized(new ProblemDetails
-                {
-                    Title = "Unauthorized",
-                    Detail = "Incorrect email or password.",
-                    Status = StatusCodes.Status401Unauthorized,
-                });
+                return Unauthorized(
+                    new ProblemDetails
+                    {
+                        Title = "Unauthorized",
+                        Detail = "Incorrect email or password.",
+                        Status = StatusCodes.Status401Unauthorized,
+                    }
+                );
             }
 
             return Ok(token);
@@ -52,12 +54,14 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         }
         catch (LogicException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Validation error",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest,
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Validation error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 
@@ -70,7 +74,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         try
         {
-            UserResponse result = await _authService.RegisterAsync(request, cancellationToken)
+            UserResponse result = await _authService
+                .RegisterAsync(request, cancellationToken)
                 .ConfigureAwait(false);
 
             return Created("/auth/users/me", result);
@@ -89,12 +94,14 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         }
         catch (LogicException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Validation error",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest,
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Validation error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 
@@ -128,12 +135,14 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         }
         catch (LogicException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Validation error",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest,
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Validation error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 
@@ -142,7 +151,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         try
         {
-            string? email = User.FindFirstValue(ClaimTypes.Email)
+            string? email =
+                User.FindFirstValue(ClaimTypes.Email)
                 ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? User.FindFirstValue("sub");
 
@@ -151,17 +161,20 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
                 throw LogicException.NullValue("email");
             }
 
-            UserResponse? result = await _authService.GetMeAsync(email, cancellationToken)
+            UserResponse? result = await _authService
+                .GetMeAsync(email, cancellationToken)
                 .ConfigureAwait(false);
 
             if (result is null)
             {
-                return NotFound(new ProblemDetails
-                {
-                    Title = "Not found",
-                    Detail = "User not found.",
-                    Status = StatusCodes.Status404NotFound,
-                });
+                return NotFound(
+                    new ProblemDetails
+                    {
+                        Title = "Not found",
+                        Detail = "User not found.",
+                        Status = StatusCodes.Status404NotFound,
+                    }
+                );
             }
 
             return Ok(result);
@@ -180,12 +193,14 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         }
         catch (LogicException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Validation error",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest,
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Validation error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 }

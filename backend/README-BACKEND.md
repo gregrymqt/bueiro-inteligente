@@ -156,11 +156,12 @@ dotnet ef database update
 
 ## Principais rotas
 
-- `/auth` - autenticacao e cadastro de usuarios
-- `/home` - conteudo do painel inicial
-- `/monitoring` - recebimento e consulta de medições
-- `/drains` - gerenciamento de bueiros
-- `/rows` - integracao e sincronizacao com Rows
+- `/api/v1/auth` - autenticacao e cadastro de usuarios
+- `/api/v1/home` - conteudo do painel inicial
+- `/api/v1/monitoring` - recebimento e consulta de medições
+- `/api/v1/drains` - gerenciamento de bueiros
+- `/api/v1/homeadmin` - endpoints administrativos da Home
+- `/api/v1/[controller]` - padrao base aplicado aos controllers da API
 - `/realtime/ws` - hub SignalR de tempo real
 
 ## Testes
@@ -179,6 +180,7 @@ dotnet test Tests/backend.Tests.csproj
 - services concentram regras de negocio
 - repositories acessam o banco de dados
 - DTOs validam entradas e saidas
+- `ApiControllerBase` padroniza rotas em `api/v1/[controller]`, resposta JSON, autorizacao base e rate limit global
 - `Program.cs` apenas registra dependencias e faz o mapeamento das rotas
 
 ## Arquivos importantes

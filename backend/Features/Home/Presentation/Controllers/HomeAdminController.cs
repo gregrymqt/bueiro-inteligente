@@ -1,15 +1,14 @@
 using backend.Core;
 using backend.Features.Home.Application.DTOs;
 using backend.Features.Home.Application.Interfaces;
+using backend.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Home.Presentation.Controllers;
 
-[ApiController]
-[Route("admin/home")]
 [Authorize(Roles = "Admin,Manager")]
-public sealed class HomeAdminController(IHomeService homeService) : ControllerBase
+public sealed class HomeAdminController(IHomeService homeService) : ApiControllerBase
 {
     private readonly IHomeService _homeService =
         homeService ?? throw new ArgumentNullException(nameof(homeService));

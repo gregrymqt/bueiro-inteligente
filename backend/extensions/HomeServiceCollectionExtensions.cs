@@ -1,5 +1,5 @@
-using backend.Features.Home.Application.Services;
 using backend.Features.Home.Application.Interfaces;
+using backend.Features.Home.Application.Services;
 using backend.Features.Home.Domain.Interfaces;
 using backend.Features.Home.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;

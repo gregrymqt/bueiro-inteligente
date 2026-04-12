@@ -4,7 +4,6 @@ public sealed class MonitoringControllerTests
 {
     private readonly Mock<IMonitoringService> _monitoringServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IAuthExtension> _authExtensionMock = new(MockBehavior.Strict);
-    private readonly Mock<IRateLimiter> _rateLimiterMock = new(MockBehavior.Strict);
 
     private readonly MonitoringController _controller;
 
@@ -13,7 +12,6 @@ public sealed class MonitoringControllerTests
         _controller = new MonitoringController(
             _monitoringServiceMock.Object,
             _authExtensionMock.Object,
-            _rateLimiterMock.Object,
             Mock.Of<ILogger<MonitoringController>>()
         );
     }
@@ -28,10 +26,6 @@ public sealed class MonitoringControllerTests
             authorizationHeader: "Bearer token-invalido",
             queryToken: "query-token"
         );
-
-        _rateLimiterMock
-            .Setup(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         _authExtensionMock
             .Setup(auth => auth.VerifyHardwareToken("Bearer token-invalido", "query-token"))
@@ -49,45 +43,8 @@ public sealed class MonitoringControllerTests
         problemDetails.Title.Should().Be("Unauthorized");
         problemDetails.Detail.Should().Be("Hardware inválido ou não autorizado.");
 
-        _rateLimiterMock.Verify(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()), Times.Once);
         _authExtensionMock.Verify(auth => auth.VerifyHardwareToken("Bearer token-invalido", "query-token"), Times.Once);
         _monitoringServiceMock.Verify(service => service.ProcessSensorDataAsync(It.IsAny<SensorPayloadDTO>(), It.IsAny<CancellationToken>()), Times.Never);
-        _rateLimiterMock.VerifyNoOtherCalls();
-        _authExtensionMock.VerifyNoOtherCalls();
-        _monitoringServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task ReceiveSensorData_ComRateLimitExcedido_DeveRetornar429()
-    {
-        // Arrange
-        SensorPayloadDTO payload = BuildPayload("DRN-11", 60);
-        ConfigureHttpContext(path: "/monitoring/medicoes");
-
-        _rateLimiterMock
-            .Setup(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new RateLimitExceededException(
-                "Too Many Requests. Limite de requisições excedido.",
-                TimeSpan.FromSeconds(15)
-            ));
-
-        // Act
-        ActionResult<DrainStatusDTO> result = await _controller.ReceiveSensorData(payload, CancellationToken.None);
-
-        // Assert
-        ObjectResult objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        ProblemDetails problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status429TooManyRequests);
-        problemDetails.Status.Should().Be(StatusCodes.Status429TooManyRequests);
-        problemDetails.Title.Should().Be("Too many requests");
-        problemDetails.Detail.Should().Contain("Limite de requisições");
-        _controller.Response.Headers["Retry-After"].ToString().Should().Be("15");
-
-        _rateLimiterMock.Verify(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()), Times.Once);
-        _authExtensionMock.Verify(auth => auth.VerifyHardwareToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _monitoringServiceMock.Verify(service => service.ProcessSensorDataAsync(It.IsAny<SensorPayloadDTO>(), It.IsAny<CancellationToken>()), Times.Never);
-        _rateLimiterMock.VerifyNoOtherCalls();
         _authExtensionMock.VerifyNoOtherCalls();
         _monitoringServiceMock.VerifyNoOtherCalls();
     }
@@ -98,10 +55,6 @@ public sealed class MonitoringControllerTests
         // Arrange
         string drainIdentifier = "DRN-404";
         ConfigureHttpContext(path: $"/monitoring/{drainIdentifier}/status");
-
-        _rateLimiterMock
-            .Setup(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         _monitoringServiceMock
             .Setup(service => service.GetDrainStatusAsync(drainIdentifier, It.IsAny<CancellationToken>()))
@@ -119,10 +72,8 @@ public sealed class MonitoringControllerTests
         problemDetails.Title.Should().Be("Not found");
         problemDetails.Detail.Should().Contain(drainIdentifier);
 
-        _rateLimiterMock.Verify(rateLimiter => rateLimiter.EnforceAsync(It.IsAny<HttpContext>(), It.IsAny<CancellationToken>()), Times.Once);
         _monitoringServiceMock.Verify(service => service.GetDrainStatusAsync(drainIdentifier, It.IsAny<CancellationToken>()), Times.Once);
         _authExtensionMock.Verify(auth => auth.VerifyHardwareToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _rateLimiterMock.VerifyNoOtherCalls();
         _authExtensionMock.VerifyNoOtherCalls();
         _monitoringServiceMock.VerifyNoOtherCalls();
     }

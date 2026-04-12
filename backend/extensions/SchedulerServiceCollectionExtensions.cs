@@ -13,9 +13,7 @@ public static class SchedulerServiceCollectionExtensions
     private const string JobIdentity = "rows-sync-job";
     private const string TriggerIdentity = "rows-sync-trigger";
 
-    public static IServiceCollection AddBueiroInteligenteScheduler(
-        this IServiceCollection services
-    )
+    public static IServiceCollection AddBueiroInteligenteScheduler(this IServiceCollection services)
     {
         services.AddBueiroInteligenteRows();
         services.AddTransient<RowsSyncJob>();

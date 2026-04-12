@@ -1,0 +1,161 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const alertMocks = vi.hoisted(() => ({
+  error: vi.fn(),
+  warning: vi.fn(),
+  success: vi.fn(),
+  confirm: vi.fn(),
+}));
+
+vi.mock('../../alert/AlertService', () => ({
+  AlertService: {
+    error: alertMocks.error,
+    warning: alertMocks.warning,
+    success: alertMocks.success,
+    confirm: alertMocks.confirm,
+  },
+}));
+
+const signalRMocks = vi.hoisted(() => {
+  const state: {
+    oncloseHandler: ((error?: unknown) => void) | null;
+    connection: {
+      state: string;
+      start: ReturnType<typeof vi.fn>;
+      on: ReturnType<typeof vi.fn>;
+      off: ReturnType<typeof vi.fn>;
+      onclose: ReturnType<typeof vi.fn>;
+    };
+    builder: {
+      withUrl: ReturnType<typeof vi.fn>;
+      withAutomaticReconnect: ReturnType<typeof vi.fn>;
+      configureLogging: ReturnType<typeof vi.fn>;
+      build: ReturnType<typeof vi.fn>;
+    };
+  } = {
+    oncloseHandler: null,
+    connection: {
+      state: 'Disconnected',
+      start: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      onclose: vi.fn((handler: (error?: unknown) => void) => {
+        state.oncloseHandler = handler;
+      }),
+    },
+    builder: {
+      withUrl: vi.fn().mockReturnThis(),
+      withAutomaticReconnect: vi.fn().mockReturnThis(),
+      configureLogging: vi.fn().mockReturnThis(),
+      build: vi.fn(() => state.connection),
+    },
+  };
+
+  return state;
+});
+
+vi.mock('@microsoft/signalr', () => ({
+  HubConnectionBuilder: class HubConnectionBuilderMock {
+    public withUrl(...args: unknown[]) {
+      signalRMocks.builder.withUrl(...args);
+      return this;
+    }
+
+    public withAutomaticReconnect(...args: unknown[]) {
+      signalRMocks.builder.withAutomaticReconnect(...args);
+      return this;
+    }
+
+    public configureLogging(...args: unknown[]) {
+      signalRMocks.builder.configureLogging(...args);
+      return this;
+    }
+
+    public build(...args: unknown[]) {
+      signalRMocks.builder.build(...args);
+      return signalRMocks.connection;
+    }
+  },
+  HubConnectionState: {
+    Connected: 'Connected',
+    Connecting: 'Connecting',
+    Disconnected: 'Disconnected',
+    Reconnecting: 'Reconnecting',
+  },
+  LogLevel: {
+    Information: 'Information',
+  },
+}));
+
+describe('SignalRClient', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    signalRMocks.oncloseHandler = null;
+    signalRMocks.connection.state = 'Disconnected';
+    signalRMocks.connection.start.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('resolve a URL local quando as flags indicam ambiente local', async () => {
+    const module = await import('../SignalRClient');
+
+    expect(
+      module.resolveSignalRHubUrl({
+        VITE_WS_LOCAL: 'TRUE',
+        VITE_BACKEND_LOCAL: 'FALSE',
+        VITE_WS_URL: 'https://example.com/realtime/ws',
+      }),
+    ).toBe('http://localhost:8000/realtime/ws');
+
+    expect(
+      module.resolveSignalRHubUrl({
+        VITE_WS_LOCAL: 'FALSE',
+        VITE_BACKEND_LOCAL: 'TRUE',
+        VITE_WS_URL: 'https://example.com/realtime/ws',
+      }),
+    ).toBe('http://localhost:8000/realtime/ws');
+
+    expect(
+      module.resolveSignalRHubUrl({
+        VITE_WS_URL: 'https://example.com/realtime/ws',
+      }),
+    ).toBe('https://example.com/realtime/ws');
+  });
+
+  it('cria uma única conexão compartilhada e inicia apenas uma vez', async () => {
+    const module = await import('../SignalRClient');
+    const firstHandler = vi.fn();
+    const secondHandler = vi.fn();
+
+    const firstUnsubscribe = module.signalRClient.subscribe('BUEIRO_STATUS_MUDOU', firstHandler);
+    const secondUnsubscribe = module.signalRClient.subscribe('BUEIRO_STATUS_MUDOU', secondHandler);
+
+    expect(signalRMocks.builder.withUrl).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.builder.withAutomaticReconnect).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.builder.configureLogging).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.builder.build).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.connection.start).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.connection.on).toHaveBeenCalledTimes(2);
+
+    firstUnsubscribe();
+    secondUnsubscribe();
+
+    expect(signalRMocks.connection.off).toHaveBeenCalledTimes(2);
+  });
+
+  it('mostra erro quando a conexão encerra com falha', async () => {
+    const module = await import('../SignalRClient');
+
+    module.signalRClient.subscribe('BUEIRO_STATUS_MUDOU', vi.fn());
+    signalRMocks.oncloseHandler?.(new Error('connection lost'));
+
+    expect(alertMocks.error).toHaveBeenCalledWith(
+      'Erro de Conexão',
+      'Falha ao conectar no realtime do bueiro.',
+    );
+  });
+});

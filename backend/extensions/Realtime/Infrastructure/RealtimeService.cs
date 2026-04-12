@@ -1,8 +1,9 @@
 using backend.Core;
+using backend.Extensions.Realtime.Abstractions;
 using backend.Features.Realtime.Presentation;
 using Microsoft.AspNetCore.SignalR;
 
-namespace backend.Extensions;
+namespace backend.Extensions.Realtime.Infrastructure;
 
 /// <summary>
 /// Default SignalR implementation used to push monitoring updates to clients.

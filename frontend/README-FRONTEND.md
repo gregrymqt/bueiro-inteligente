@@ -8,7 +8,7 @@ Este é o aplicativo web (Dashboard) do ecossistema **Bueiro Inteligente (Smart 
 - **Linguagem:** TypeScript
 - **Roteamento:** React Router DOM (v7)
 - **Estilização:** SCSS / CSS Modules padrão
-- **Comunicação HTTP:** Clientes centralizados em `src/core/http/ApiClient.ts`, com autenticação via `AuthInterceptor.tsx` e feedback visual via `src/core/alert/AlertService.ts`.
+- **Comunicação HTTP e Realtime:** Clientes centralizados em `src/core/http/ApiClient.ts` e `src/core/socket/SignalRClient.ts`, com autenticação via `AuthInterceptor.tsx` e feedback visual via `src/core/alert/AlertService.ts`.
 - **Ferramentas de Qualidade:** ESLint configurado para validação rigorosa de tipagem
 
 ---
@@ -21,6 +21,7 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
 
 - **/core:** Utilitários essenciais e transversais do sistema.
   - http/: Configuração de clientes HTTP (ApiClient.ts), manipulação de tokens da sessão (TokenService.ts) e interceptadores (AuthInterceptor.tsx).
+   - socket/: Cliente global de SignalR compartilhado entre features.
    - alert/: Feedback visual centralizado com SweetAlert2 (`AlertService.ts`).
 - **/feature:** O coração das regras de negócio do frontend. Cada domínio contém suas subdivisões: components, hooks, services e types.
   - auth: Autenticação, formulário de login e serviços de validação de acesso.
@@ -77,5 +78,5 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
 - **Tipagem Estrita:** Não utilize o tipo `any`. Declare e exporte os contratos na pasta local de types/ atrelada à Feature.
 - **Responsabilidade Visual:** Os painéis visuais (.tsx) **nunca** devem chamar uma Promise HTTP diretamente. Use um Custom Hook na Feature que então orquestra as comunicações pelo Service.
 - **Importação de SCSS:** Mantenha os estilos isolados nos arquivos da árvore para evitar sobrescritas e vazamentos de regras CSS globais.
-- **Integração com ambiente:** O frontend lê `VITE_BACKEND_URL` e `VITE_WS_URL`; quando ausentes, usa `http://localhost:8000` e `ws://localhost:8000/realtime/ws`.
+- **Integração com ambiente:** O frontend lê `VITE_BACKEND_URL`, `VITE_BACKEND_LOCAL`, `VITE_WS_URL`, `VITE_WS_LOCAL` e `VITE_ENABLE_RATE_LIMIT`. Quando `VITE_WS_LOCAL` ou `VITE_BACKEND_LOCAL` estão em `TRUE`, usa `http://localhost:8000` e `http://localhost:8000/realtime/ws`; caso contrário, usa os valores de produção definidos nas variáveis `VITE_BACKEND_URL` e `VITE_WS_URL`. O rate limit client-side pode ser habilitado com `VITE_ENABLE_RATE_LIMIT=true`.
 - **Feedback de UI:** Erros, confirmações e sucesso devem passar pelo `AlertService`, não por `window.alert` ou bibliotecas espalhadas em componentes.

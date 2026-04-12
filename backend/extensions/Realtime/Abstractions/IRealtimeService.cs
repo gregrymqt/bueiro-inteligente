@@ -1,4 +1,4 @@
-namespace backend.Extensions;
+namespace backend.Extensions.Realtime.Abstractions;
 
 /// <summary>
 /// Contract used to broadcast monitoring data to connected SignalR clients.

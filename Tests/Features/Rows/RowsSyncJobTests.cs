@@ -26,23 +26,33 @@ public sealed class RowsSyncJobTests
 
         IReadOnlyList<DrainStatusDTO> unsyncedData =
         [
-            CreateDrainStatus("DRN-001", 40, 66.67, "Alerta", -23.5505, -46.6333, 0)
+            CreateDrainStatus("DRN-001", 40, 66.67, "Alerta", -23.5505, -46.6333, 0),
         ];
 
         monitoringRepositoryMock
-            .Setup(repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()))
+            .Setup(repository =>
+                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(unsyncedData);
 
         rowsServiceMock
-            .Setup(service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(new ExternalApiException("Rows", "Falha simulada ao enviar lote."));
 
         monitoringRepositoryMock
-            .Setup(repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.CompletedTask);
 
         (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
@@ -62,15 +72,21 @@ public sealed class RowsSyncJobTests
             Times.Once
         );
         rowsServiceMock.Verify(
-            service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()),
+            service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
         monitoringRepositoryMock.Verify(
-            repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()),
+            repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
         rowsServiceMock.VerifyNoOtherCalls();
@@ -86,11 +102,18 @@ public sealed class RowsSyncJobTests
         Mock<IRowsService> rowsServiceMock = new(MockBehavior.Strict);
 
         monitoringRepositoryMock
-            .Setup(repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()))
+            .Setup(repository =>
+                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(Array.Empty<DrainStatusDTO>());
 
         monitoringRepositoryMock
-            .Setup(repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.CompletedTask);
 
         (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
@@ -110,15 +133,21 @@ public sealed class RowsSyncJobTests
             Times.Once
         );
         monitoringRepositoryMock.Verify(
-            repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()),
+            repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
         rowsServiceMock.Verify(
-            service => service.AppendDataAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()),
+            service =>
+                service.AppendDataAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
         rowsServiceMock.VerifyNoOtherCalls();
@@ -136,27 +165,41 @@ public sealed class RowsSyncJobTests
         IReadOnlyList<DrainStatusDTO> unsyncedData =
         [
             CreateDrainStatus("DRN-001", 40, 66.67, "Alerta", -23.5505, -46.6333, 0),
-            CreateDrainStatus("DRN-002", 20, 83.33, "Crítico", -23.5515, -46.6343, 1)
+            CreateDrainStatus("DRN-002", 20, 83.33, "Crítico", -23.5515, -46.6343, 1),
         ];
 
         monitoringRepositoryMock
-            .Setup(repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()))
+            .Setup(repository =>
+                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(unsyncedData);
 
         List<RowsAppendRequest> capturedPayloads = [];
         rowsServiceMock
-            .Setup(service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()))
-            .Callback<string, string, RowsAppendRequest, CancellationToken>((_, _, payload, _) => capturedPayloads.Add(payload))
+            .Setup(service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<string, string, RowsAppendRequest, CancellationToken>(
+                (_, _, payload, _) => capturedPayloads.Add(payload)
+            )
             .ReturnsAsync(true);
 
         List<IReadOnlyCollection<string>> markedBatches = [];
         monitoringRepositoryMock
-            .Setup(repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .Callback<IReadOnlyCollection<string>, CancellationToken>((identifiers, _) => markedBatches.Add(identifiers.ToArray()))
+            .Setup(repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<IReadOnlyCollection<string>, CancellationToken>(
+                (identifiers, _) => markedBatches.Add(identifiers.ToArray())
+            )
             .Returns(Task.CompletedTask);
 
         (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
@@ -173,24 +216,30 @@ public sealed class RowsSyncJobTests
         // Assert
         capturedPayloads.Should().HaveCount(1);
         capturedPayloads[0].Values.Should().HaveCount(2);
-        capturedPayloads[0].Values[0].Should().Equal(
-            "DRN-001",
-            40d,
-            66.67d,
-            "Alerta",
-            -23.5505d,
-            -46.6333d,
-            unsyncedData[0].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
-        );
-        capturedPayloads[0].Values[1].Should().Equal(
-            "DRN-002",
-            20d,
-            83.33d,
-            "Crítico",
-            -23.5515d,
-            -46.6343d,
-            unsyncedData[1].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
-        );
+        capturedPayloads[0]
+            .Values[0]
+            .Should()
+            .Equal(
+                "DRN-001",
+                40d,
+                66.67d,
+                "Alerta",
+                -23.5505d,
+                -46.6333d,
+                unsyncedData[0].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
+            );
+        capturedPayloads[0]
+            .Values[1]
+            .Should()
+            .Equal(
+                "DRN-002",
+                20d,
+                83.33d,
+                "Crítico",
+                -23.5515d,
+                -46.6343d,
+                unsyncedData[1].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
+            );
 
         markedBatches.Should().HaveCount(1);
         markedBatches[0].Should().Equal("DRN-001", "DRN-002");
@@ -200,15 +249,21 @@ public sealed class RowsSyncJobTests
             Times.Once
         );
         rowsServiceMock.Verify(
-            service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()),
+            service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
         monitoringRepositoryMock.Verify(
-            repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()),
+            repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
         rowsServiceMock.VerifyNoOtherCalls();
@@ -227,24 +282,38 @@ public sealed class RowsSyncJobTests
         IReadOnlyList<DrainStatusDTO> secondChunk = BuildBatch(501, 1);
 
         monitoringRepositoryMock
-            .SetupSequence(repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()))
+            .SetupSequence(repository =>
+                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(firstChunk)
             .ReturnsAsync(secondChunk);
 
         List<RowsAppendRequest> capturedPayloads = [];
         rowsServiceMock
-            .Setup(service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()))
-            .Callback<string, string, RowsAppendRequest, CancellationToken>((_, _, payload, _) => capturedPayloads.Add(payload))
+            .Setup(service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<string, string, RowsAppendRequest, CancellationToken>(
+                (_, _, payload, _) => capturedPayloads.Add(payload)
+            )
             .ReturnsAsync(true);
 
         List<IReadOnlyCollection<string>> markedBatches = [];
         monitoringRepositoryMock
-            .Setup(repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
-            .Callback<IReadOnlyCollection<string>, CancellationToken>((identifiers, _) => markedBatches.Add(identifiers.ToArray()))
+            .Setup(repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<IReadOnlyCollection<string>, CancellationToken>(
+                (identifiers, _) => markedBatches.Add(identifiers.ToArray())
+            )
             .Returns(Task.CompletedTask);
 
         (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
@@ -272,15 +341,21 @@ public sealed class RowsSyncJobTests
             Times.Exactly(2)
         );
         rowsServiceMock.Verify(
-            service => service.AppendDataAsync(
-                settings.RowsSpreadsheetId,
-                settings.RowsTableId,
-                It.IsAny<RowsAppendRequest>(),
-                It.IsAny<CancellationToken>()),
+            service =>
+                service.AppendDataAsync(
+                    settings.RowsSpreadsheetId,
+                    settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Exactly(2)
         );
         monitoringRepositoryMock.Verify(
-            repository => repository.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()),
+            repository =>
+                repository.MarkAsSyncedAsync(
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Exactly(2)
         );
         rowsServiceMock.VerifyNoOtherCalls();
@@ -316,11 +391,16 @@ public sealed class RowsSyncJobTests
     private static Mock<IJobExecutionContext> CreateExecutionContext()
     {
         Mock<IJobExecutionContext> executionContextMock = new(MockBehavior.Strict);
-        executionContextMock.SetupGet(context => context.CancellationToken).Returns(CancellationToken.None);
+        executionContextMock
+            .SetupGet(context => context.CancellationToken)
+            .Returns(CancellationToken.None);
         return executionContextMock;
     }
 
-    private static (Mock<IServiceScopeFactory> ScopeFactoryMock, Mock<IServiceScope> ScopeMock) CreateScopeInfrastructure(
+    private static (
+        Mock<IServiceScopeFactory> ScopeFactoryMock,
+        Mock<IServiceScope> ScopeMock
+    ) CreateScopeInfrastructure(
         IMonitoringRepository monitoringRepository,
         IRowsService rowsService
     )
@@ -386,7 +466,9 @@ public sealed class RowsSyncJobTests
             Status = status,
             Latitude = latitude,
             Longitude = longitude,
-            UltimaAtualizacao = new DateTimeOffset(2026, 4, 11, 10, 0, 0, TimeSpan.Zero).AddMinutes(minuteOffset),
+            UltimaAtualizacao = new DateTimeOffset(2026, 4, 11, 10, 0, 0, TimeSpan.Zero).AddMinutes(
+                minuteOffset
+            ),
         };
     }
 }

@@ -1,10 +1,7 @@
-using backend.Features.Auth.Application.Services;
+using backend.Extensions.Auth.Models;
 
-namespace backend.Extensions;
+namespace backend.Extensions.Auth.Abstractions;
 
-/// <summary>
-/// Contract exposed by the auth infrastructure extension so application services can be mocked.
-/// </summary>
 public interface IAuthExtension
 {
     Task<bool> VerifyPasswordAsync(string plainPassword, string hashedPassword);

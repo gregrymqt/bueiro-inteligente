@@ -1,11 +1,12 @@
 using backend.Core;
-using backend.Extensions;
+using backend.Extensions.Auth.Abstractions;
+using backend.Extensions.Auth.Models;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Domain;
 using backend.Features.Auth.Infrastructure.Repositories;
 using backend.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
-using SharedTokenPayload = backend.Extensions.TokenPayload;
+using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
 namespace backend.Features.Auth.Application.Services;
 

@@ -1,4 +1,5 @@
-using backend.Extensions;
+using backend.Extensions.Security.Exceptions;
+using backend.Extensions.Security.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Features.Realtime.Presentation;

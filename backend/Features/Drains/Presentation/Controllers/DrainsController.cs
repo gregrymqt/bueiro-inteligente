@@ -1,20 +1,19 @@
 using backend.Core;
 using backend.Features.Drains.Application.DTOs;
 using backend.Features.Drains.Domain.Interfaces;
+using backend.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Drains.Presentation.Controllers;
 
-[ApiController]
-[Route("drains")]
-public sealed class DrainsController(IDrainService drainService) : ControllerBase
+[Authorize(Roles = "User,Admin,Manager")]
+public sealed class DrainsController(IDrainService drainService) : ApiControllerBase
 {
     private readonly IDrainService _drainService =
         drainService ?? throw new ArgumentNullException(nameof(drainService));
 
     [HttpGet]
-    [Authorize(Roles = "User,Admin,Manager")]
     public async Task<ActionResult<IReadOnlyList<DrainResponse>>> GetAll(
         [FromQuery] int skip = 0,
         [FromQuery] int limit = 100,
@@ -52,7 +51,6 @@ public sealed class DrainsController(IDrainService drainService) : ControllerBas
     }
 
     [HttpGet("{drainId:guid}")]
-    [Authorize(Roles = "User,Admin,Manager")]
     public async Task<ActionResult<DrainResponse>> GetById(
         Guid drainId,
         CancellationToken cancellationToken = default

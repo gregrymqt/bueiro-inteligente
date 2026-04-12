@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { RATE_LIMIT_THROTTLED_EVENT } from '../http/RateLimitService';
 import styles from './Alert.module.scss';
 import type { ConfirmAlertParams } from './Alert.types';
 
@@ -20,10 +21,28 @@ export class AlertService {
     });
   }
 
+  static warning(title: string, text?: string): void {
+    Swal.fire({
+      icon: 'warning',
+      title,
+      text,
+      confirmButtonText: 'OK',
+      customClass: {
+        popup: styles.popup,
+        title: styles.title,
+        confirmButton: styles.warningButton,
+      },
+    });
+  }
+
   /**
    * Error message (e.g., API errors) requiring user acknowledgment.
    */
   static error(title: string, text?: string): void {
+    if (text === RATE_LIMIT_THROTTLED_EVENT) {
+      return;
+    }
+
     Swal.fire({
       icon: 'error',
       title,

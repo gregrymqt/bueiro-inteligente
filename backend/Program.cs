@@ -1,5 +1,8 @@
 using System.Text.Json;
 using backend.Extensions;
+using backend.Extensions.Auth;
+using backend.Extensions.Realtime;
+using backend.Extensions.Security;
 using backend.Features.Realtime.Filters;
 using backend.Infrastructure;
 using backend.Infrastructure.Cache;
@@ -10,8 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services
-    .AddControllers()
+builder
+    .Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
@@ -24,8 +27,8 @@ builder.Services.AddBueiroInteligenteRedis();
 builder.Services.AddBueiroInteligenteCache();
 builder.Services.AddSingleton<HubExceptionFilter>();
 builder.Services.AddSingleton<HubLoggingFilter>();
-builder.Services
-    .AddSignalR(options =>
+builder
+    .Services.AddSignalR(options =>
     {
         options.EnableDetailedErrors = true;
         options.AddFilter<HubExceptionFilter>();
@@ -43,7 +46,7 @@ builder.Services.AddBueiroInteligenteScheduler();
 
 var app = builder.Build();
 
-app.Services.InitializeBueiroInteligenteAuth();
+await app.Services.GetRequiredService<AuthExtension>().OpenAsync();
 app.Services.InitializeBueiroInteligenteSecurity();
 await app.Services.InitializeBueiroInteligenteDatabaseAsync();
 await app.Services.InitializeBueiroInteligenteRedisAsync();

@@ -1,6 +1,8 @@
+using backend.Extensions.Realtime.Abstractions;
+using backend.Extensions.Realtime.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Extensions;
+namespace backend.Extensions.Realtime;
 
 /// <summary>
 /// Registers the realtime broadcast service.
