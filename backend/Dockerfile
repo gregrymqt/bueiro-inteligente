@@ -33,7 +33,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Copia o script de entrada e dá permissão de execução
-COPY backend/entrypoint.sh .
+COPY entrypoint.sh .
 USER root
 RUN chmod +x ./entrypoint.sh
 
