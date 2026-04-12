@@ -8,7 +8,7 @@ public sealed class Drain(
     double longitude = 0d,
     string hardwareId = "",
     bool isActive = true,
-    DateTimeOffset? createdAt = null
+    DateTimeOffset CreatedAt = default
 )
 {
     public Guid Id { get; set; } = id == Guid.Empty ? Guid.NewGuid() : id;
@@ -25,5 +25,6 @@ public sealed class Drain(
 
     public required string HardwareId { get; set; } = hardwareId;
 
-    public DateTimeOffset CreatedAt { get; set; } = createdAt ?? DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } =
+        CreatedAt == default ? DateTimeOffset.UtcNow : CreatedAt;
 }
