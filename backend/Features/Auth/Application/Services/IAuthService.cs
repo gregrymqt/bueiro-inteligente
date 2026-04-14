@@ -10,7 +10,7 @@ public interface IAuthService
 
     Task<UserResponse> RegisterAsync(UserCreateRequest request, CancellationToken cancellationToken = default);
 
-    Task SignInWithGoogleAsync(ClaimsPrincipal principal, HttpContext httpContext);
+    Task<string> SignInWithGoogleAsync(ClaimsPrincipal principal, HttpContext httpContext);
 
     Task LogoutAsync(string tokenJti, CancellationToken cancellationToken = default);
 

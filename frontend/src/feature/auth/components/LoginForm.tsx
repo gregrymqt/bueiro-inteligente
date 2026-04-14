@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import './LoginForm.scss';
 import { useAuth } from '../hooks/useAuth';
+import { GoogleLoginButton } from './GoogleLoginButton';
 import { GenericForm, type FormField } from '@/components/layout/Form/GenericForm';
 import { type LoginRequestDTO } from '../types';
 
@@ -47,6 +48,14 @@ export const LoginForm: React.FC = () => {
         >
           <div className="login-form__register-link">
             <span>Não possui conta?</span> <Link to="/register">Crie uma aqui</Link>
+          </div>
+
+          <div className="login-form__social">
+            <div className="login-form__divider" aria-hidden="true">
+              <span>ou</span>
+            </div>
+
+            <GoogleLoginButton className="login-form__google-button" />
           </div>
         </GenericForm>
       </div>

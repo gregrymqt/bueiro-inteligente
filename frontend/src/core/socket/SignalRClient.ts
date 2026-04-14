@@ -1,9 +1,10 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 import { AlertService } from '../alert/AlertService';
+import { resolveBackendBaseUrl, resolveUrlMode } from '../http/environment';
 
 export type SignalRHubEnvironment = Pick<
   ImportMetaEnv,
-  'VITE_BACKEND_LOCAL' | 'VITE_WS_LOCAL' | 'VITE_WS_URL'
+  'VITE_BACKEND_LOCAL' | 'VITE_BACKEND_URL' | 'VITE_WS_LOCAL' | 'VITE_WS_URL'
 >;
 
 export type SignalRMessageHandler<TPayload> = (payload: TPayload) => void;
@@ -15,11 +16,23 @@ export const SIGNALR_CONNECTION_ERROR_TEXT = 'Falha ao conectar no realtime do b
 export function resolveSignalRHubUrl(
   env: SignalRHubEnvironment = import.meta.env,
 ): string {
+  const backendUrl = resolveBackendBaseUrl(env);
+  const backendMode = resolveUrlMode(backendUrl);
+  const wsUrl = normalizeUrl(env.VITE_WS_URL);
+
+  if (backendMode === 'local' || backendMode === 'tunnel') {
+    return appendRealtimePath(backendUrl);
+  }
+
   if (isTruthyFlag(env.VITE_WS_LOCAL) || isTruthyFlag(env.VITE_BACKEND_LOCAL)) {
     return SIGNALR_LOCAL_URL;
   }
 
-  return env.VITE_WS_URL?.trim() || SIGNALR_LOCAL_URL;
+  if (wsUrl) {
+    return wsUrl;
+  }
+
+  return appendRealtimePath(backendUrl);
 }
 
 export class SignalRClient {
@@ -59,7 +72,7 @@ export class SignalRClient {
       .configureLogging(LogLevel.Information)
       .build();
 
-    this.connection.onclose((error) => {
+    this.connection.onclose((error: unknown) => {
       if (error) {
         this.handleConnectionError(error);
       }
@@ -84,7 +97,7 @@ export class SignalRClient {
         this.startPromise = null;
       });
 
-    return this.startPromise;
+    return this.startPromise ?? Promise.resolve();
   }
 
   private handleConnectionError(error: unknown): void {
@@ -95,6 +108,22 @@ export class SignalRClient {
 
 function isTruthyFlag(value?: string): boolean {
   return value?.trim().toUpperCase() === 'TRUE';
+}
+
+function normalizeUrl(value?: string): string | null {
+  const normalized = value?.trim().replace(/\/+$/, '');
+
+  return normalized ? normalized : null;
+}
+
+function appendRealtimePath(baseUrl: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
+
+  if (normalizedBase.endsWith('/realtime/ws')) {
+    return normalizedBase;
+  }
+
+  return `${normalizedBase}/realtime/ws`;
 }
 
 export const signalRClient = SignalRClient.getInstance();

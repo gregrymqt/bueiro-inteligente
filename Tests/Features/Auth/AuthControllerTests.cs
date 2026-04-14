@@ -12,7 +12,12 @@ public sealed class AuthControllerTests
     private readonly Mock<IAuthService> _authServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IAuthenticationService> _authenticationServiceMock = new(MockBehavior.Strict);
     private readonly GoogleSettings _googleSettings =
-        new("google-client-id", "google-client-secret", "https://frontend.example");
+        new(
+            "google-client-id",
+            "google-client-secret",
+            "https://frontend.example",
+            ["http://localhost:5173", "https://frontend.example"]
+        );
 
     private readonly AuthController _controller;
 
@@ -207,13 +212,15 @@ public sealed class AuthControllerTests
     public void GoogleLogin_DeveRetornarChallengeParaGoogle()
     {
         // Act
-        IActionResult result = _controller.GoogleLogin();
+        IActionResult result = _controller.GoogleLogin("http://localhost:5173");
 
         // Assert
         ChallengeResult challengeResult = result.Should().BeOfType<ChallengeResult>().Subject;
         challengeResult.AuthenticationSchemes.Should().ContainSingle().Which.Should().Be(GoogleDefaults.AuthenticationScheme);
         challengeResult.Properties.Should().NotBeNull();
-        challengeResult.Properties!.RedirectUri.Should().Be(GoogleAuthDefaults.RedirectPath);
+        string expectedRedirectUri =
+            $"{GoogleAuthDefaults.RedirectPath}?frontend_redirect={Uri.EscapeDataString("http://localhost:5173")}";
+        challengeResult.Properties!.RedirectUri.Should().Be(expectedRedirectUri);
     }
 
     [Fact]
@@ -236,16 +243,16 @@ public sealed class AuthControllerTests
 
         _authServiceMock
             .Setup(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("jwt-token");
 
         _controller.ControllerContext = BuildControllerContextWithServices(_authenticationServiceMock.Object);
 
         // Act
-        IActionResult result = await _controller.GoogleCallback(CancellationToken.None);
+        IActionResult result = await _controller.GoogleCallback("http://localhost:5173", CancellationToken.None);
 
         // Assert
         RedirectResult redirectResult = result.Should().BeOfType<RedirectResult>().Subject;
-        redirectResult.Url.Should().Be(_googleSettings.FrontendRedirectUrl);
+        redirectResult.Url.Should().Be("http://localhost:5173#token=jwt-token");
 
         _authenticationServiceMock.Verify(service => service.AuthenticateAsync(It.IsAny<HttpContext>(), IdentityConstants.ExternalScheme), Times.Once);
         _authServiceMock.Verify(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()), Times.Once);

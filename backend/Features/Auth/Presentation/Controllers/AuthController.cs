@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using backend.Core;
+using backend.Extensions.Auth;
 using backend.Extensions.Auth.Models;
 using backend.Features;
 using backend.Features.Auth.Application.DTOs;
@@ -74,12 +75,21 @@ public sealed class AuthController(IAuthService authService, GoogleSettings goog
 
     [HttpGet("google-login")]
     [AllowAnonymous]
-    public IActionResult GoogleLogin()
+    public IActionResult GoogleLogin(
+        [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl = null
+    )
     {
+        string resolvedFrontendRedirectUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
+            frontendRedirectUrl,
+            _googleSettings.AllowedOrigins,
+            _googleSettings.FrontendRedirectUrl
+        );
+
         return Challenge(
             new AuthenticationProperties
             {
-                RedirectUri = GoogleAuthDefaults.RedirectPath,
+                RedirectUri =
+                    $"{GoogleAuthDefaults.RedirectPath}?frontend_redirect={Uri.EscapeDataString(resolvedFrontendRedirectUrl)}",
             },
             GoogleDefaults.AuthenticationScheme
         );
@@ -87,7 +97,10 @@ public sealed class AuthController(IAuthService authService, GoogleSettings goog
 
     [HttpGet("google-callback")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+    public async Task<IActionResult> GoogleCallback(
+        [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -107,11 +120,20 @@ public sealed class AuthController(IAuthService authService, GoogleSettings goog
                 );
             }
 
-            await _authService
+            string accessToken = await _authService
                 .SignInWithGoogleAsync(authenticateResult.Principal, HttpContext)
                 .ConfigureAwait(false);
 
-            return Redirect(_googleSettings.FrontendRedirectUrl);
+            string resolvedFrontendRedirectUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
+                frontendRedirectUrl,
+                _googleSettings.AllowedOrigins,
+                _googleSettings.FrontendRedirectUrl
+            );
+
+            string redirectUrl =
+                $"{resolvedFrontendRedirectUrl}#token={Uri.EscapeDataString(accessToken)}";
+
+            return Redirect(redirectUrl);
         }
         catch (ConnectionException exception)
         {

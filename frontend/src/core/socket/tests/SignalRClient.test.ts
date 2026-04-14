@@ -100,30 +100,38 @@ describe('SignalRClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('resolve a URL local quando as flags indicam ambiente local', async () => {
+  it('resolve a URL local quando o backend aponta para localhost', async () => {
     const module = await import('../SignalRClient');
 
     expect(
       module.resolveSignalRHubUrl({
-        VITE_WS_LOCAL: 'TRUE',
-        VITE_BACKEND_LOCAL: 'FALSE',
-        VITE_WS_URL: 'https://example.com/realtime/ws',
+        VITE_BACKEND_URL: 'http://localhost:8080',
       }),
-    ).toBe('http://localhost:8000/realtime/ws');
+    ).toBe('http://localhost:8080/realtime/ws');
 
     expect(
       module.resolveSignalRHubUrl({
-        VITE_WS_LOCAL: 'FALSE',
         VITE_BACKEND_LOCAL: 'TRUE',
-        VITE_WS_URL: 'https://example.com/realtime/ws',
       }),
     ).toBe('http://localhost:8000/realtime/ws');
 
     expect(
       module.resolveSignalRHubUrl({
+        VITE_BACKEND_URL: 'https://example.com',
         VITE_WS_URL: 'https://example.com/realtime/ws',
       }),
     ).toBe('https://example.com/realtime/ws');
+  });
+
+  it('deriva o websocket a partir de uma URL de tunel', async () => {
+    const module = await import('../SignalRClient');
+
+    expect(
+      module.resolveSignalRHubUrl({
+        VITE_BACKEND_URL: 'https://abc.ngrok-free.app/',
+        VITE_WS_URL: 'https://another.example.com/realtime/ws',
+      }),
+    ).toBe('https://abc.ngrok-free.app/realtime/ws');
   });
 
   it('cria uma única conexão compartilhada e inicia apenas uma vez', async () => {

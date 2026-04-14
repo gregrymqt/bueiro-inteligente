@@ -4,6 +4,7 @@ export interface ITokenService {
   saveToken(token: string): void; // Create / Update
   removeToken(): void; // Delete
   isAuthenticated(): boolean;
+  captureTokenFromUrl(urlString?: string): string | null;
 }
 
 // Instale: npm install jwt-decode
@@ -46,6 +47,51 @@ export class TokenService implements ITokenService {
 
   public removeToken(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  public captureTokenFromUrl(urlString: string = window.location.href): string | null {
+    const url = new URL(urlString);
+    const token = this.extractTokenFromUrl(url);
+
+    if (!token) {
+      return null;
+    }
+
+    this.saveToken(token);
+    this.cleanTokenFromUrl(url);
+
+    return token;
+  }
+
+  private extractTokenFromUrl(url: URL): string | null {
+    const queryToken = url.searchParams.get('token');
+
+    if (queryToken) {
+      return queryToken;
+    }
+
+    if (!url.hash) {
+      return null;
+    }
+
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+
+    return hashParams.get('token') || hashParams.get('access_token');
+  }
+
+  private cleanTokenFromUrl(url: URL): void {
+    const searchParams = new URLSearchParams(url.search);
+    searchParams.delete('token');
+    url.search = searchParams.toString();
+
+    if (url.hash) {
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+      hashParams.delete('token');
+      hashParams.delete('access_token');
+      url.hash = hashParams.toString() ? `#${hashParams.toString()}` : '';
+    }
+
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
   }
 
   public isAuthenticated(): boolean {

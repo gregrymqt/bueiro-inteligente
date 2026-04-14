@@ -113,7 +113,7 @@ public sealed class AuthService(
         return new UserResponse(user.Email, user.FullName, new List<string> { role.Name });
     }
 
-    public async Task SignInWithGoogleAsync(ClaimsPrincipal principal, HttpContext httpContext)
+    public async Task<string> SignInWithGoogleAsync(ClaimsPrincipal principal, HttpContext httpContext)
     {
         if (principal is null)
         {
@@ -183,6 +183,8 @@ public sealed class AuthService(
                 Path = "/",
             }
         );
+
+        return accessToken;
     }
 
     public async Task LogoutAsync(string tokenJti, CancellationToken cancellationToken = default)

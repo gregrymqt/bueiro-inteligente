@@ -217,7 +217,7 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task SignInWithGoogle_ComNovoUsuario_DeveCriarContaEAnexarCookie()
+    public async Task SignInWithGoogle_ComNovoUsuario_DeveCriarContaEAnexarCookieERetornarToken()
     {
         // Arrange
         string googleId = "google-123";
@@ -264,9 +264,11 @@ public sealed class AuthServiceTests
             .ReturnsAsync(1);
 
         // Act
-        await _service.SignInWithGoogleAsync(principal, httpContext);
+        string result = await _service.SignInWithGoogleAsync(principal, httpContext);
 
         // Assert
+        result.Should().Be("jwt-token");
+
         string setCookieHeader = httpContext.Response.Headers["Set-Cookie"].ToString();
         setCookieHeader.Should().Contain($"{GoogleAuthDefaults.AccessTokenCookieName}=jwt-token");
         setCookieHeader.Should().Contain("httponly");
@@ -285,7 +287,7 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task SignInWithGoogle_ComUsuarioExistente_DeveReutilizarConta()
+    public async Task SignInWithGoogle_ComUsuarioExistente_DeveReutilizarContaERetornarToken()
     {
         // Arrange
         string googleId = "google-123";
@@ -317,9 +319,11 @@ public sealed class AuthServiceTests
             .Returns("jwt-token");
 
         // Act
-        await _service.SignInWithGoogleAsync(principal, httpContext);
+        string result = await _service.SignInWithGoogleAsync(principal, httpContext);
 
         // Assert
+        result.Should().Be("jwt-token");
+
         httpContext.Response.Headers["Set-Cookie"].ToString().Should().Contain($"{GoogleAuthDefaults.AccessTokenCookieName}=jwt-token");
 
         _repositoryMock.Verify(repository => repository.FindByGoogleIdAsync(googleId, It.IsAny<CancellationToken>()), Times.Once);

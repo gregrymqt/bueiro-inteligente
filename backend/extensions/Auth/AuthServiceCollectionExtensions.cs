@@ -22,7 +22,8 @@ public static class AuthServiceCollectionExtensions
         GoogleSettings googleSettings = new(
             settings.GoogleClientId,
             settings.GoogleClientSecret,
-            ResolveFrontendRedirectUrl(settings.AllowedOrigins)
+            GoogleRedirectUrlResolver.ResolvePreferredFrontendRedirectUrl(settings.AllowedOrigins),
+            settings.AllowedOrigins
         );
 
         services.AddSingleton(settings);
@@ -68,18 +69,4 @@ public static class AuthServiceCollectionExtensions
         return services;
     }
 
-    private static string ResolveFrontendRedirectUrl(string[] allowedOrigins)
-    {
-        foreach (string origin in allowedOrigins)
-        {
-            if (string.IsNullOrWhiteSpace(origin) || string.Equals(origin, "*", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            return origin.Trim();
-        }
-
-        return "/";
-    }
 }

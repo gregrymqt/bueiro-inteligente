@@ -1,0 +1,86 @@
+export type BackendEnvironment = Pick<
+  ImportMetaEnv,
+  'VITE_BACKEND_URL' | 'VITE_BACKEND_LOCAL'
+>;
+
+export const LOCAL_BACKEND_URL = 'http://localhost:8000';
+
+export type UrlMode = 'local' | 'tunnel' | 'remote';
+
+function isTruthyFlag(value?: string): boolean {
+  return value?.trim().toUpperCase() === 'TRUE';
+}
+
+function normalizeUrl(value?: string): string | null {
+  const normalized = value?.trim().replace(/\/+$/, '');
+
+  return normalized ? normalized : null;
+}
+
+function getHostname(urlValue: string): string | null {
+  try {
+    return new URL(urlValue).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isLocalhostHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname.endsWith('.localhost')
+  );
+}
+
+function isTunnelHost(hostname: string): boolean {
+  return (
+    hostname.includes('ngrok')
+    || hostname.includes('grok')
+    || hostname.includes('localtunnel')
+    || hostname.includes('serveo')
+    || hostname.includes('pagekite')
+    || hostname.includes('tunnel')
+  );
+}
+
+export function resolveUrlMode(urlValue?: string): UrlMode {
+  const normalizedUrl = normalizeUrl(urlValue);
+
+  if (!normalizedUrl) {
+    return 'remote';
+  }
+
+  const hostname = getHostname(normalizedUrl);
+
+  if (!hostname) {
+    return 'remote';
+  }
+
+  if (isLocalhostHost(hostname)) {
+    return 'local';
+  }
+
+  if (isTunnelHost(hostname)) {
+    return 'tunnel';
+  }
+
+  return 'remote';
+}
+
+export function resolveBackendBaseUrl(
+  env: BackendEnvironment = import.meta.env,
+): string {
+  const backendUrl = normalizeUrl(env.VITE_BACKEND_URL);
+
+  if (!backendUrl) {
+    if (isTruthyFlag(env.VITE_BACKEND_LOCAL)) {
+      return LOCAL_BACKEND_URL;
+    }
+
+    return LOCAL_BACKEND_URL;
+  }
+
+  return backendUrl;
+}

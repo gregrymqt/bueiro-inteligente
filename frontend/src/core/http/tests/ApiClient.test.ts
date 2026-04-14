@@ -11,6 +11,7 @@ describe('ApiClient throttling', () => {
     saveToken: vi.fn(),
     removeToken: vi.fn(),
     isAuthenticated: vi.fn(() => false),
+    captureTokenFromUrl: vi.fn(() => null),
   };
 
   let rateLimitServiceMock: IRateLimitService;

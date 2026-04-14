@@ -1,4 +1,5 @@
 import { AlertService } from '../alert/AlertService';
+import { resolveBackendBaseUrl } from './environment';
 import {
   RATE_LIMIT_THROTTLED_EVENT,
   rateLimitService as defaultRateLimitService,
@@ -135,5 +136,5 @@ export class ApiClient implements IApiClient {
 }
 
 // Exportamos a instância já configurada com a URL base do seu ambiente
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BASE_URL = resolveBackendBaseUrl();
 export const apiClient = new ApiClient(API_BASE_URL, tokenService, defaultRateLimitService);
