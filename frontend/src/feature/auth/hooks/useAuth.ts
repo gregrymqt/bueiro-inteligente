@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { tokenService } from '@/core/http/TokenService';
@@ -11,6 +11,36 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let isActive = true;
+
+    const bootstrapSession = async () => {
+      try {
+        if (!tokenService.getToken()) {
+          return;
+        }
+
+        const userData = await AuthService.getMe();
+
+        if (isActive) {
+          setUser(userData);
+        }
+      } catch {
+        tokenService.removeToken();
+
+        if (isActive) {
+          setUser(null);
+        }
+      }
+    };
+
+    void bootstrapSession();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const register = async (data: RegisterRequestDTO): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -21,7 +51,9 @@ export const useAuth = () => {
       navigate('/login', { replace: true });
       return true;
     } catch (err) {
-      AlertService.error('Erro', err instanceof Error ? err.message : 'Falha ao realizar o cadastro.');
+      const message = err instanceof Error ? err.message : 'Falha ao realizar o cadastro.';
+      setError(message);
+      AlertService.error('Erro', message);
       return false;
     } finally {
       setLoading(false);
@@ -41,7 +73,9 @@ export const useAuth = () => {
 
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      AlertService.error('Erro', err instanceof Error ? err.message : 'Falha na autenticação.');
+      const message = err instanceof Error ? err.message : 'Falha na autenticação.';
+      setError(message);
+      AlertService.error('Erro', message);
     } finally {
       setLoading(false);
     }
@@ -53,6 +87,7 @@ export const useAuth = () => {
     } finally {
       tokenService.removeToken();
       setUser(null);
+      setError(null);
       navigate('/login', { replace: true });
     }
   }, [navigate]);

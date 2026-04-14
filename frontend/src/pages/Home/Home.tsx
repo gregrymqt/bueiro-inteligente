@@ -28,7 +28,7 @@ const Home: React.FC = () => {
         ) : (
           <Carousel
             slides={heroSlides.map((slide) => (
-              <div key={slide.id} className={styles.heroSlide} style={{ backgroundImage: "url()", backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={slide.id} className={styles.heroSlide} style={{ backgroundImage: `url(${slide.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className={styles.heroContent} style={{ backgroundColor: 'rgba(0,0,0,0.6)', padding: '2rem', borderRadius: '8px', color: '#fff', textAlign: 'center', maxWidth: '80%' }}>
                   <h2 style={{ fontSize: '2rem', margin: '0 0 1rem 0' }}>{slide.title}</h2>
                   {slide.subtitle && <p style={{ fontSize: '1.2rem', margin: '0 0 1.5rem 0' }}>{slide.subtitle}</p>}

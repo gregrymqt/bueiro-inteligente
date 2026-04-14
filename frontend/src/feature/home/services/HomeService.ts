@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/http/ApiClient';
+import { isMockDataSourceEnabled } from '@/core/http/environment';
 import type { 
   HomeDataResponse, 
   CarouselContent, 
@@ -8,6 +9,15 @@ import type {
   StatCardCreatePayload,
   StatCardUpdatePayload
 } from '../types';
+import {
+  createMockCarouselItem,
+  createMockStatCard,
+  deleteMockCarouselItem,
+  deleteMockStatCard,
+  getMockHomeData,
+  updateMockCarouselItem,
+  updateMockStatCard,
+} from '../mocks/homeMocks';
 
 export class HomeService {
   /**
@@ -15,7 +25,11 @@ export class HomeService {
    * Chama a rota pública otimizada por cache do backend.
    */
   public static async getHomeData(): Promise<HomeDataResponse> {
-    return apiClient.get<HomeDataResponse>('/home');
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.get<HomeDataResponse>('/home');
+    }
+
+    return getMockHomeData();
   }
 
   // ==========================================
@@ -26,21 +40,33 @@ export class HomeService {
    * [ADMIN] Cria uma nova imagem/alerta para o Carousel da Home.
    */
   public static async createCarouselItem(data: CarouselCreatePayload): Promise<CarouselContent> {
-    return apiClient.post<CarouselContent>('/admin/home/carousel', data);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.post<CarouselContent>('/admin/home/carousel', data);
+    }
+
+    return createMockCarouselItem(data);
   }
 
   /**
    * [ADMIN] Atualiza parcialmente um item do Carousel existente.
    */
   public static async updateCarouselItem(id: string, data: CarouselUpdatePayload): Promise<CarouselContent> {
-    return apiClient.patch<CarouselContent>(`/admin/home/carousel/${id}`, data);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.patch<CarouselContent>(`/admin/home/carousel/${id}`, data);
+    }
+
+    return updateMockCarouselItem(id, data);
   }
 
   /**
    * [ADMIN] Deleta um item do Carousel da Home.
    */
   public static async deleteCarouselItem(id: string): Promise<void> {
-    return apiClient.delete(`/admin/home/carousel/${id}`);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.delete(`/admin/home/carousel/${id}`);
+    }
+
+    return deleteMockCarouselItem(id);
   }
 
   // ==========================================
@@ -51,20 +77,32 @@ export class HomeService {
    * [ADMIN] Cria um novo Card Estatístico para a Home.
    */
   public static async createStatCard(data: StatCardCreatePayload): Promise<StatCardContent> {
-    return apiClient.post<StatCardContent>('/admin/home/stats', data);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.post<StatCardContent>('/admin/home/stats', data);
+    }
+
+    return createMockStatCard(data);
   }
 
   /**
    * [ADMIN] Atualiza parcialmente um Card Estatístico existente.
    */
   public static async updateStatCard(id: string, data: StatCardUpdatePayload): Promise<StatCardContent> {
-    return apiClient.patch<StatCardContent>(`/admin/home/stats/${id}`, data);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.patch<StatCardContent>(`/admin/home/stats/${id}`, data);
+    }
+
+    return updateMockStatCard(id, data);
   }
 
   /**
    * [ADMIN] Deleta um Card Estatístico da Home.
    */
   public static async deleteStatCard(id: string): Promise<void> {
-    return apiClient.delete(`/admin/home/stats/${id}`);
+    if (!isMockDataSourceEnabled()) {
+      return apiClient.delete(`/admin/home/stats/${id}`);
+    }
+
+    return deleteMockStatCard(id);
   }
 }

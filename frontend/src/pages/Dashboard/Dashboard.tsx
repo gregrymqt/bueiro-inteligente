@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
+import { isMockDataSourceEnabled, resolveRowsEmbedUrl } from '@/core/http/environment';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
@@ -36,6 +37,14 @@ export const Dashboard: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // useMemo garante que o array não seja recriado a cada renderização da página
+  const rowsEmbedUrl = useMemo(() => {
+    if (isMockDataSourceEnabled()) {
+      return 'mock:rows-dashboard';
+    }
+
+    return resolveRowsEmbedUrl() ?? '';
+  }, []);
+
   const navItems: NavigationItem[] = useMemo(() => [
     {
       id: 'tempo-real',
@@ -48,9 +57,9 @@ export const Dashboard: React.FC = () => {
       label: 'Análise de Histórico',
       icon: <ChartIcon />,
       // Aqui você colocará o embedUrl gerado pela sua conta do Rows
-      component: <RowsEmbed embedUrl="https://rows.com/embed/sua-planilha-aqui" title="Histórico de Obstrução" />
+      component: <RowsEmbed embedUrl={rowsEmbedUrl} title="Histórico de Obstrução" />
     }
-  ], []);
+  ], [rowsEmbedUrl]);
 
   // Encontra qual componente deve ser renderizado com base no ID ativo
   const activeItem = navItems.find(item => item.id === activeTabId) || navItems[0];

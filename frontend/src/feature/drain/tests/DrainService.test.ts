@@ -1,82 +1,65 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '@/core/http/ApiClient';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { resetMockDrains } from '../mocks/drainMocks';
 import { DrainService } from '../services/DrainService';
-
-vi.mock('@/core/http/ApiClient', () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-}));
-
-const mockedApiClient = vi.mocked(apiClient);
 
 describe('DrainService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetMockDrains();
   });
 
-  it('lista os bueiros usando o endpoint administrativo', async () => {
-    const drains = [
-      {
-        id: '1',
-        name: 'Bueiro Central',
-        address: 'Rua A',
-        latitude: -23.5,
-        longitude: -46.6,
-        hardware_id: 'HW-001',
-        is_active: true,
-      },
-    ];
+  it('lista os bueiros a partir do mock local', async () => {
+    const drains = await DrainService.getDrains();
 
-    mockedApiClient.get.mockResolvedValueOnce(drains);
-
-    await expect(DrainService.getDrains()).resolves.toEqual(drains);
-    expect(mockedApiClient.get).toHaveBeenCalledWith('/admin/drains');
+    expect(drains).toHaveLength(4);
+    expect(drains.map((drain) => drain.name)).toEqual([
+      'Bueiro Central',
+      'Bueiro Jardim Europa',
+      'Bueiro Terminal Norte',
+      'Bueiro Viaduto Sul',
+    ]);
   });
 
-  it('cria um bueiro com o payload esperado', async () => {
+  it('cria um bueiro e mantém o estado mockado atualizado', async () => {
     const payload = {
-      name: 'Bueiro Norte',
-      address: 'Rua B',
-      latitude: -23.4,
-      longitude: -46.5,
-      hardware_id: 'HW-002',
+      name: 'Bueiro Nova Esperança',
+      address: 'Rua das Flores, 99 - Centro',
+      latitude: -23.5489,
+      longitude: -46.6388,
+      hardware_id: 'ESP32-NEW-05',
       is_active: true,
     };
 
-    mockedApiClient.post.mockResolvedValueOnce({ id: '2', ...payload });
+    const createdDrain = await DrainService.createDrain(payload);
 
-    await expect(DrainService.createDrain(payload)).resolves.toEqual({ id: '2', ...payload });
-    expect(mockedApiClient.post).toHaveBeenCalledWith('/admin/drains', payload);
+    expect(createdDrain).toMatchObject({
+      id: expect.stringMatching(/^drain-/),
+      ...payload,
+    });
+    await expect(DrainService.getDrainById(createdDrain.id)).resolves.toMatchObject(payload);
+    await expect(DrainService.getDrains()).resolves.toHaveLength(5);
   });
 
   it('atualiza um bueiro por id', async () => {
-    const payload = {
-      name: 'Bueiro Atualizado',
-      hardware_id: 'HW-999',
-    };
-
-    mockedApiClient.patch.mockResolvedValueOnce({
-      id: '3',
-      name: 'Bueiro Atualizado',
-      address: 'Rua C',
-      latitude: -23.3,
-      longitude: -46.4,
-      hardware_id: 'HW-999',
-      is_active: false,
+    const updatedDrain = await DrainService.updateDrain('drain-03', {
+      name: 'Bueiro Jardim Europa Atualizado',
+      is_active: true,
     });
 
-    await DrainService.updateDrain('3', payload);
-    expect(mockedApiClient.patch).toHaveBeenCalledWith('/admin/drains/3', payload);
+    expect(updatedDrain).toMatchObject({
+      id: 'drain-03',
+      name: 'Bueiro Jardim Europa Atualizado',
+      is_active: true,
+    });
+    await expect(DrainService.getDrainById('drain-03')).resolves.toMatchObject({
+      name: 'Bueiro Jardim Europa Atualizado',
+      is_active: true,
+    });
   });
 
   it('remove um bueiro por id', async () => {
-    mockedApiClient.delete.mockResolvedValueOnce({});
+    await DrainService.deleteDrain('drain-04');
 
-    await DrainService.deleteDrain('4');
-    expect(mockedApiClient.delete).toHaveBeenCalledWith('/admin/drains/4');
+    await expect(DrainService.getDrainById('drain-04')).rejects.toThrow('não encontrado');
+    await expect(DrainService.getDrains()).resolves.toHaveLength(3);
   });
 });
