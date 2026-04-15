@@ -17,37 +17,33 @@ import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 
 export const router = createBrowserRouter([
-  // ==========================================
-  // 1. ROTAS PÚBLICAS (Sem verificação de JWT)
-  // ==========================================
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/register',
-    element: <RegisterForm />,
-  },
-  
-  // ==========================================
-  // 2. ROTAS PROTEGIDAS (A mágica acontece aqui)
-  // ==========================================
   {
     element: <AuthInterceptor />, // Ouve o evento de Unauthorized (Token expirado/inválido)
     children: [
+      // ==========================================
+      // 1. ROTAS PÚBLICAS (Sem verificação de JWT)
+      // ==========================================
       {
-        element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <RegisterForm />,
+      },
+      {
+        path: '/',
+        element: <MainLayout />, // Coloca a Navbar, Sidebar e Footer
         children: [
           {
-            path: '/',
-            element: <MainLayout />, // Coloca a Navbar, Sidebar e Footer
+            index: true, // Isso torna a rota '/' exata e renderiza a Home
+            element: <Home />,
+          },
+          {
+            element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
             children: [
               {
-                index: true, // Isso torna a rota '/' exata e renderiza a Home
-                element: <Home />,
-              },
-              {
-                path: '/dashboard',
+                path: 'dashboard',
                 element: <Dashboard />,
               },
               // ==========================================
@@ -57,18 +53,27 @@ export const router = createBrowserRouter([
                 element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
                 children: [
                   {
-                    path: '/configuracoes',
+                    path: 'configuracoes',
                     element: <h1>Página de Configurações (Apenas Admin e Manutenção)</h1>,
                   },
                 ],
               },
             ],
           },
+        ],
+      },
+      
+      // ==========================================
+      // 2. ROTAS PROTEGIDAS (A mágica acontece aqui)
+      // ==========================================
+      {
+        element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
+        children: [
           {
             element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
             children: [
               {
-                path: '/admin',
+                path: 'admin',
                 element: <AdminLayout />,
                 children: [
                   {
