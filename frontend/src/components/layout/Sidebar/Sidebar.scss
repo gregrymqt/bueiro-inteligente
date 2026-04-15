@@ -1,5 +1,51 @@
 @use "sass:color";
 
+// Sub-header mobile gerado automaticamente pela Sidebar
+.sidebar__mobile-subheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  width: 100%;
+  padding: $spacing-md $spacing-lg;
+  background-color: #ffffff;
+  border-bottom: 1px solid $color-border;
+  color: $color-text-main;
+
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+.sidebar__mobile-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: $color-text-main;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+
+  &:active {
+    background-color: $color-border;
+  }
+}
+
+.sidebar__mobile-title {
+  flex: 1;
+  min-width: 0;
+  font-family: $font-stack;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: $color-text-main;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 // Overlay escuro só aparece no mobile
 .sidebar-overlay {
   position: fixed;

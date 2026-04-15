@@ -1,0 +1,8 @@
+.dashboardSidebarContainer {
+  display: none;
+  flex-shrink: 0;
+
+  @include respond-to('md') {
+    display: block;
+  }
+}

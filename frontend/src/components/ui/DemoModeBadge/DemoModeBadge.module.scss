@@ -57,10 +57,14 @@
 
 @media (max-width: 640px) {
   .badge {
-    top: 0.75rem;
-    right: 0.75rem;
-    max-width: calc(100vw - 1.5rem);
+    top: auto;
+    right: auto;
+    bottom: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 2rem);
     padding: 0.6rem 0.8rem;
+    justify-content: center;
   }
 
   .label {

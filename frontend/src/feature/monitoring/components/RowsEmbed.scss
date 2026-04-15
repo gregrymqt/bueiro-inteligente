@@ -2,6 +2,9 @@
   // Mobile-first
   position: relative;
   width: 100%;
+  max-width: 1000px; /* Evita que o card estique bizarramente em telas grandes */
+  margin: 0 auto; /* Centraliza o próprio card caso o container seja maior */
+  box-sizing: border-box; /* OBRIGATÓRIO: impede que o padding empurre a div pra direita */
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);

@@ -53,7 +53,9 @@ public sealed class RoleChecker
 
             if (string.IsNullOrWhiteSpace(freshRole))
             {
-                throw new UnauthorizedAccessException("Usuário ou role não encontrados no sistema.");
+                throw new UnauthorizedAccessException(
+                    "Usuário ou role não encontrados no sistema."
+                );
             }
 
             userRole = freshRole;

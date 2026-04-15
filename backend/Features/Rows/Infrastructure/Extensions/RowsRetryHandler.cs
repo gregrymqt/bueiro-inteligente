@@ -34,8 +34,7 @@ internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : Deleg
         {
             try
             {
-                HttpResponseMessage response = await base
-                    .SendAsync(request, cancellationToken)
+                HttpResponseMessage response = await base.SendAsync(request, cancellationToken)
                     .ConfigureAwait(false);
 
                 if (!IsTransient(response) || attempt == RetryDelays.Length)
@@ -52,7 +51,8 @@ internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : Deleg
                 response.Dispose();
                 await DelayBeforeRetryAsync(attempt, cancellationToken).ConfigureAwait(false);
             }
-            catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+            catch (TaskCanceledException exception)
+                when (!cancellationToken.IsCancellationRequested)
             {
                 lastException = exception;
 
@@ -88,7 +88,8 @@ internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : Deleg
             }
         }
 
-        throw lastException ?? new HttpRequestException("Falha ao chamar a API Rows após as tentativas de retry.");
+        throw lastException
+            ?? new HttpRequestException("Falha ao chamar a API Rows após as tentativas de retry.");
     }
 
     private static bool IsTransient(HttpResponseMessage response)

@@ -7,6 +7,7 @@ import { isMockDataSourceEnabled, resolveRowsEmbedUrl } from '@/core/http/enviro
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
 
 // Importando o estilo do layout da página
+import styles from './DashboardLayout.module.scss';
 import './DashboardLayout.scss';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
@@ -23,18 +24,9 @@ const ChartIcon = () => (
   </svg>
 );
 
-const MenuIcon = () => (
-  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
-);
-
 export const Dashboard: React.FC = () => {
   // Estado para controlar a aba ativa (por padrão, a visão em tempo real)
   const [activeTabId, setActiveTabId] = useState<string>('tempo-real');
-  
-  // Estado para controlar o menu hambúrguer no mobile
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // useMemo garante que o array não seja recriado a cada renderização da página
   const rowsEmbedUrl = useMemo(() => {
@@ -77,36 +69,36 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard-layout">
-      {/* 1. A nossa Sidebar orientada a dados */}
-      <Sidebar 
-        items={navItems} 
-        activeId={activeTabId} 
-        onNavigate={setActiveTabId}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
-      />
+      <div className={styles.dashboardSidebarContainer}>
+        <Sidebar
+          id="dashboard-sidebar"
+          items={navItems}
+          activeId={activeTabId}
+          onNavigate={setActiveTabId}
+          isOpenMobile={false}
+          onCloseMobile={() => {}}
+        />
+      </div>
 
-      {/* 2. Área principal de conteúdo */}
       <div className="dashboard-main">
-        
-        {/* Topbar exclusiva para o Mobile (escondida no Desktop via SCSS) */}
-        <header className="mobile-topbar">
-          <button 
-            className="mobile-topbar__menu-btn"
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Abrir menu de navegação"
-          >
-            <MenuIcon />
-          </button>
-          <h2 className="mobile-topbar__title">{activeItem.label}</h2>
-        </header>
-
-        {/* O container onde a mágica acontece. O componente ativo é injetado aqui. */}
         <main className="dashboard-content">
           <div className="dashboard-content__header">
-            {/* Título visível apenas no Desktop */}
             <h1 className="desktop-title">{activeItem.label}</h1>
           </div>
+
+          <nav className="mobileTabs" aria-label="Abas do dashboard">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTabId(item.id)}
+                className={activeTabId === item.id ? 'tabActive' : 'tab'}
+                aria-current={activeTabId === item.id ? 'page' : undefined}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
           
           <div className="dashboard-content__body">
             {activeItem.component}

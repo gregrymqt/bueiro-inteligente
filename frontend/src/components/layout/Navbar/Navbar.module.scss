@@ -27,76 +27,119 @@
 }
 
 .hamburger {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: $color-text-main;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-sm;
-  
-  /* Mobile-first: sempre exibe no mobile, esconde no desktop */
-  @include respond-to('md') {
-    display: none;
-  }
+  display: none;
 }
 
 .navMenu {
-  /* Mobile-first: escondido por padrão, empilhado em absoluto */
-  display: none;
-  flex-direction: column;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: $spacing-md;
-  
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background-color: $color-bg-light;
-  border-bottom: 1px solid $color-border;
-  padding: $spacing-md $spacing-lg;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-
-  &.isOpen {
-    display: flex;
-  }
+  flex: 1;
+  min-width: 0;
 
   /* Desktop ajusta para flex-row na mesma linha do header */
   @include respond-to('md') {
     display: flex;
-    position: static;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    width: auto;
-    flex: 1;
-    // margin-left: map.get($breakpoints, 'md') * 0.05; /* espaçamento relativo orgânico para empurrar os links */
-    padding: 0;
-    border-bottom: none;
-    box-shadow: none;
     gap: $spacing-lg;
   }
+}
+
+.navLinks {
+  display: none;
+  align-items: center;
+  gap: $spacing-sm;
+
+  @include respond-to('md') {
+    display: flex;
+    margin-right: auto;
+  }
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  color: $color-text-main;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color $transition-speed ease, color $transition-speed ease, transform $transition-speed ease;
+
+  &:hover {
+    background-color: rgba($color-primary, 0.08);
+    color: $color-primary;
+  }
+}
+
+.navLinkActive {
+  background-color: rgba($color-primary, 0.12);
+  color: $color-primary;
 }
 
 .authSection {
   display: flex;
   align-items: center;
-  border-top: 1px solid $color-border;
-  padding-top: $spacing-md;
-
-  @include respond-to('md') {
-    border-top: none;
-    padding-top: 0;
-    margin-left: auto;
-  }
+  margin-left: auto;
 }
 
-.userInfo {
+.userDropdownContainer {
+  position: relative;
+}
+
+.userInfoBtn {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+  background: transparent;
+  border: none;
+  padding: 0;
   color: $color-text-main;
+  font: inherit;
   font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%; /* Força a abrir para baixo */
+  bottom: auto;
+  right: 0;
+  margin-top: $spacing-xs;
+  min-width: 12rem;
+  padding: $spacing-sm;
+  background-color: $color-background;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+}
+
+.logoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-radius: $border-radius-sm;
+  background: transparent;
+  color: $color-text-main;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color $transition-speed ease, color $transition-speed ease;
+
+  &:hover {
+    background-color: rgba($color-danger, 0.08);
+    color: $color-danger;
+  }
 }
 
 .loginButton {

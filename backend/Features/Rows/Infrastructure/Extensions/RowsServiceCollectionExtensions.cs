@@ -15,27 +15,31 @@ public static class RowsServiceCollectionExtensions
         services.AddSingleton(AppSettings.Current);
         services.AddTransient<RowsRetryHandler>();
 
-        services.AddHttpClient(RowsHttpClientDefaults.ClientName, (serviceProvider, client) =>
-        {
-            AppSettings settings = serviceProvider.GetRequiredService<AppSettings>();
+        services
+            .AddHttpClient(
+                RowsHttpClientDefaults.ClientName,
+                (serviceProvider, client) =>
+                {
+                    AppSettings settings = serviceProvider.GetRequiredService<AppSettings>();
 
-            if (string.IsNullOrWhiteSpace(settings.RowsApiKey))
-            {
-                throw new InvalidOperationException("ROWS_API_KEY não está definida.");
-            }
+                    if (string.IsNullOrWhiteSpace(settings.RowsApiKey))
+                    {
+                        throw new InvalidOperationException("ROWS_API_KEY não está definida.");
+                    }
 
-            client.BaseAddress = BuildBaseAddress(settings.RowsBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                settings.RowsApiKey
-            );
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/json")
-            );
-        })
-        .AddHttpMessageHandler<RowsRetryHandler>();
+                    client.BaseAddress = BuildBaseAddress(settings.RowsBaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                        "Bearer",
+                        settings.RowsApiKey
+                    );
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new MediaTypeWithQualityHeaderValue("application/json")
+                    );
+                }
+            )
+            .AddHttpMessageHandler<RowsRetryHandler>();
 
         services.AddScoped<IRowsService, RowsService>();
 

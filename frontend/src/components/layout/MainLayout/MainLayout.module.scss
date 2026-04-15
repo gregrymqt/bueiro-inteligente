@@ -8,12 +8,24 @@
   display: flex;
   flex: 1; // Faz o meio da página crescer e empurrar o footer
   position: relative;
+  min-width: 0;
+}
+
+.sidebarDesktop {
+  display: none;
+
+  @include respond-to('md') {
+    display: block;
+    flex-shrink: 0;
+  }
 }
 
 .content {
   flex: 1;
   padding: $spacing-md;
+  padding-bottom: calc($spacing-md + 5.5rem);
   background-color: #f9fafb; // Um fundo neutro para o conteúdo
+  min-width: 0;
 
   @include respond-to('md') {
     padding: $spacing-lg;

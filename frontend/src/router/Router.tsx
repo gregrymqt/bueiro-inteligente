@@ -5,6 +5,7 @@ import { AuthInterceptor } from '@/core/http/AuthInterceptor';
 import { ProtectedLayout } from './middleware/ProtectedLayout';
 import { RoleMiddleware } from './middleware/RoleMiddleware';
 import Home from '@/pages/Home/Home';
+import About from '@/pages/About/About';
 import { Login } from '@/pages/Auth/Login'; 
 import { HomeManagement } from '@/pages/Admin/HomeManagement'; 
 import { DrainManagement } from '@/pages/Admin/DrainManagement';
@@ -38,6 +39,10 @@ export const router = createBrowserRouter([
           {
             index: true, // Isso torna a rota '/' exata e renderiza a Home
             element: <Home />,
+          },
+          {
+            path: 'sobre',
+            element: <About />,
           },
           {
             element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada

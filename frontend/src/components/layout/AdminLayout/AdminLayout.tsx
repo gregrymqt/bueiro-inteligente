@@ -49,6 +49,7 @@ export const AdminLayout = () => {
   return (
     <div className={styles.layout}>
       <Sidebar
+        id="admin-sidebar"
         items={navItems}
         activeId={activeItem.id}
         onNavigate={handleNavigate}

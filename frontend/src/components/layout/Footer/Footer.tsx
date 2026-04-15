@@ -19,7 +19,7 @@ export const Footer: React.FC = () => {
         <nav className={styles.links} aria-label="Links rápidos do rodapé">
           <NavLink to="/" className={styles.link}>Home</NavLink>
           <NavLink to="/dashboard" className={styles.link}>Monitoramento</NavLink>
-          <NavLink to="/sobre" className={styles.link}>Sobre o Projeto</NavLink>
+          <NavLink to="/sobre" className={styles.link}>Sobre nós</NavLink>
         </nav>
 
         {/* Indicador de Versão */}

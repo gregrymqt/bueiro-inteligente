@@ -1,4 +1,5 @@
 using backend.Core;
+using backend.Features.Auth.Domain;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,6 +60,17 @@ public static class DatabaseServiceCollectionExtensions
 
         // Agora o MigrateAsync rodará na porta 5432, que permite criar tabelas
         await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+
+        if (!await dbContext.Roles.AnyAsync(cancellationToken).ConfigureAwait(false))
+        {
+            dbContext.Roles.AddRange(
+                new Role { Name = "User" },
+                new Role { Name = "Admin" },
+                new Role { Name = "Manager" }
+            );
+
+            await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     internal static class PostgreSqlConnectionStringFactory

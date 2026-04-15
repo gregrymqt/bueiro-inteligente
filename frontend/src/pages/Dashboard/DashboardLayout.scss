@@ -1,55 +1,81 @@
 .dashboard-layout {
   display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden; // Previne o scroll na página inteira; o scroll fica dentro do main
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
   background-color: $color-bg-light; // Puxando do default.scss
+
+  @include respond-to('md') {
+    flex-direction: row;
+  }
+}
+
+.dashboardSidebarContainer {
+  display: none;
+  flex-shrink: 0;
+
+  @include respond-to('md') {
+    display: block;
+  }
 }
 
 .dashboard-main {
-  flex: 1; // Ocupa todo o espaço restante ao lado da Sidebar
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; // Previne overflow de flexbox com iframes largos
+  min-width: 0;
+  min-height: 0;
 }
 
-// ==========================================
-// MOBILE TOPBAR
-// ==========================================
-.mobile-topbar {
+.mobileTabs {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
-  padding: $spacing-md;
-  background-color: #ffffff;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto $spacing-md;
+  padding: 0 0 $spacing-sm;
+  overflow-x: auto;
   border-bottom: 1px solid $color-border;
-  
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
   @include respond-to('md') {
-    display: none; // Esconde no Desktop, a Sidebar já cumpre esse papel
+    display: none;
   }
+}
 
-  &__menu-btn {
-    background: transparent;
-    border: none;
-    color: $color-text-main;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-    border-radius: 4px;
+.tab,
+.tabActive {
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: transparent;
+  color: $color-text-light;
+  font-family: $font-stack;
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color $transition-speed ease, color $transition-speed ease, transform $transition-speed ease;
 
-    &:active {
-      background-color: $color-border;
-    }
+  &:hover {
+    background-color: rgba($color-primary, 0.08);
+    color: $color-primary;
   }
+}
 
-  &__title {
-    font-family: $font-stack;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0;
-    color: $color-text-main;
+.tabActive {
+  background-color: rgba($color-primary, 0.12);
+  color: $color-primary;
+
+  &:hover {
+    background-color: rgba($color-primary, 0.14);
   }
 }
 
@@ -60,12 +86,17 @@
   flex: 1;
   overflow-y: auto; // O scroll acontece APENAS aqui dentro
   padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza tudo dentro do scroll */
 
   @include respond-to('md') {
     padding: $spacing-lg 2rem;
   }
 
   &__header {
+    width: 100%;
+    max-width: 1000px; /* Mesmo tamanho do card */
     margin-bottom: $spacing-lg;
     display: none; // Escondido no mobile (a topbar já mostra o título)
 
@@ -83,9 +114,10 @@
   }
 
   &__body {
-    // Aqui é onde o RealTimeMonitor ou o RowsEmbed são renderizados
     width: 100%;
-    max-width: 1200px; // Limita a largura máxima para não esticar demais em monitores ultrawide
-    margin: 0 auto;
+    max-width: 1000px; /* Mesmo tamanho do card */
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xl;
   }
 }

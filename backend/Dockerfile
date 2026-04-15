@@ -49,6 +49,7 @@ COPY --from=publish /app/publish .
 
 # Copia o script de entrada e dá permissão de execução
 COPY --from=build /tmp/backend-work/entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # O entrypoint gerencia migrations e o início da app
