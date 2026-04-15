@@ -7,7 +7,7 @@ import { LayoutDashboard, Info, Home } from 'lucide-react'; // Ícones para a si
 import styles from './MainLayout.module.scss';
 
 export const MainLayout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,7 +18,7 @@ export const MainLayout: React.FC = () => {
     { id: 'about', label: 'Sobre o Projeto', path: '/sobre', icon: <Info size={20} />, component: <></> },
   ];
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const activeItem = navItems.find(item => item.path === location.pathname) || navItems[0];
 
@@ -31,15 +31,15 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className={styles.layoutWrapper}>
-      <Navbar onOpenMenu={toggleSidebar} />
+      <Navbar onOpenMenu={toggleMobileMenu} isMobileMenuOpen={isMobileMenuOpen} />
       
       <div className={styles.container}>
         <Sidebar 
           items={navItems} 
           activeId={activeItem.id}
           onNavigate={handleNavigate}
-          isOpenMobile={isSidebarOpen} 
-          onCloseMobile={() => setIsSidebarOpen(false)} 
+          isOpenMobile={isMobileMenuOpen} 
+          onCloseMobile={() => setIsMobileMenuOpen(false)} 
         />
         
         <main className={styles.content}>

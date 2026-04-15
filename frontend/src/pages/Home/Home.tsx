@@ -1,44 +1,24 @@
 ﻿import React from 'react';
 import { Carousel } from '@/components/ui/Carousel/Carousel';
+import { HeroSlide } from '@/feature/home/components/HeroSlide/HeroSlide';
+import { HeroSkeleton, StatsSkeleton } from '@/feature/home/components/HomeSkeletons/HomeSkeletons';
 import { StatCardCarousel } from '@/feature/home/components/StatCardCarousel';
 import styles from './Home.module.scss';
 import { MapPin } from 'lucide-react';
-import { type StatCardContent } from '@/feature/home/types';
 import { useHomeCarousel } from '@/feature/home/hooks/useHomeCarousel';
 
 const Home: React.FC = () => {
-  const { items: heroSlides, loading: heroLoading } = useHomeCarousel('hero');
-  const { items: rawStatItems, loading: statLoading } = useHomeCarousel('stats');
-
-  const statItems: StatCardContent[] = rawStatItems.map((item) => ({
-    id: item.id,
-    title: item.title,
-    value: item.subtitle || "0",
-    description: item.title || "Visão Geral",
-    icon_name: 'Target',
-    color: 'warning',
-    order: item.order
-  }));
+  const { heroSlides, statItems, loading } = useHomeCarousel();
 
   return (
     <div className={styles.homeContainer}>
-      <section className={` `}>
-        {heroLoading ? (
-          <div className={styles.skeleton}>Carregando destaques...</div>
+      <section className={styles.section}>
+        {loading ? (
+          <HeroSkeleton />
         ) : (
           <Carousel
             slides={heroSlides.map((slide) => (
-              <div key={slide.id} className={styles.heroSlide} style={{ backgroundImage: `url(${slide.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className={styles.heroContent} style={{ backgroundColor: 'rgba(0,0,0,0.6)', padding: '2rem', borderRadius: '8px', color: '#fff', textAlign: 'center', maxWidth: '80%' }}>
-                  <h2 style={{ fontSize: '2rem', margin: '0 0 1rem 0' }}>{slide.title}</h2>
-                  {slide.subtitle && <p style={{ fontSize: '1.2rem', margin: '0 0 1.5rem 0' }}>{slide.subtitle}</p>}
-                  {slide.action_url && (
-                    <a href={slide.action_url} style={{ display: 'inline-block', padding: '0.8rem 1.5rem', backgroundColor: '#0056b3', color: '#fff', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
-                      Saiba Mais
-                    </a>
-                  )}
-                </div>
-              </div>
+              <HeroSlide key={slide.id} slide={slide} />
             ))}
             pagination={true}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
@@ -46,16 +26,16 @@ const Home: React.FC = () => {
         )}
       </section>
 
-      <section className={` `}>
+      <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Panorama Geral do Ecossistema</h2>
-        {statLoading ? (
-          <div className={styles.skeletonStats}>Carregando métricas...</div>
+        {loading ? (
+          <StatsSkeleton />
         ) : (
           <StatCardCarousel items={statItems} />
         )}
       </section>
 
-      <section className={` `}>
+      <section className={styles.section}>
         <div className={styles.mapMock}>
           <MapPin size={32} color="#ffffff" />
           <span>Mapa Interativo (Em Breve)</span>

@@ -78,33 +78,6 @@
   }
 }
 
-.links {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-
-  @include respond-to('md') {
-    flex-direction: row;
-    gap: $spacing-lg;
-  }
-}
-
-.navLink {
-  color: $color-text-main;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #0b5fb4; /* Primary color hint */
-  }
-
-  &.active {
-    font-weight: 700;
-    color: #0b5fb4;
-  }
-}
-
 .authSection {
   display: flex;
   align-items: center;

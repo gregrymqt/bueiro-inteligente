@@ -7,8 +7,9 @@ import styles from './Navbar.module.scss';
 
 interface NavbarProps {
   onOpenMenu: () => void;
+  isMobileMenuOpen: boolean;
 }
-export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu, isMobileMenuOpen }) => {
   const { user } = useAuth();
 
 
@@ -21,21 +22,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
         </NavLink>
 
         {/* BOTÃO MOBILE (HAMBÚRGUER) */}
-        <button className={styles.hamburger} onClick={onOpenMenu} aria-label="Abrir Menu">
+        <button className={styles.hamburger} type="button" onClick={onOpenMenu} aria-label="Abrir Menu" aria-expanded={isMobileMenuOpen}>
           <Menu size={24} />
         </button>
 
         {/* NAV MENU E AUTENTICAÇÃO */}
-        <nav className={styles.desktopNav}>
-          <div className={styles.links}>
-            <NavLink to="/" className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-              Home
-            </NavLink>
-            <NavLink to="/dashboard" className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-              Monitoramento
-            </NavLink>
-          </div>
-
+        <nav className={`${styles.navMenu} ${isMobileMenuOpen ? styles.isOpen : ''}`} aria-label="Menu da conta">
           <div className={styles.authSection}>
             {user ? (
               <span className={styles.userInfo}>Olá, {user.full_name}</span>

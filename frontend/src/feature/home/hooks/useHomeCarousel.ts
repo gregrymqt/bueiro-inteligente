@@ -1,33 +1,43 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
-import type { CarouselContent } from '../types';
+import type { CarouselContent, StatCardContent } from '../types';
 
-export function useHomeCarousel(section: 'hero' | 'stats') {
-  const [items, setItems] = useState<CarouselContent[]>([]);
+interface UseHomeCarouselResult {
+  heroSlides: CarouselContent[];
+  statItems: StatCardContent[];
+  loading: boolean;
+}
+
+export function useHomeCarousel(): UseHomeCarouselResult {
+  const [heroSlides, setHeroSlides] = useState<CarouselContent[]>([]);
+  const [statItems, setStatItems] = useState<StatCardContent[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
+
     try {
       const data = await HomeService.getHomeData();
-      if (section === 'hero') {
-        const heroItems = data.carousels?.filter(c => c.section === 'hero') || [];
-        setItems(heroItems.sort((a, b) => a.order - b.order));
-      } else if (section === 'stats') {
-        const statsCarousels = data.carousels?.filter(c => c.section === 'stats') || [];
-        setItems(statsCarousels.sort((a, b) => a.order - b.order));
-      }
+      const filteredHeroSlides = [...data.carousels]
+        .filter((carousel) => carousel.section === 'hero')
+        .sort((a, b) => a.order - b.order);
+      const orderedStatItems = [...data.stats].sort((a, b) => a.order - b.order);
+
+      setHeroSlides(filteredHeroSlides);
+      setStatItems(orderedStatItems);
     } catch {
-      AlertService.error('Erro', 'Erro ao carregar banners da seção.');
-      setItems([]);
+      AlertService.error('Erro', 'Erro ao carregar dados da Home.');
+      setHeroSlides([]);
+      setStatItems([]);
     } finally {
       setLoading(false);
     }
-  }, [section]);
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { items, loading };
+  return { heroSlides, statItems, loading };
 }

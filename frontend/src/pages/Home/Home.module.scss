@@ -1,16 +1,23 @@
 
 .homeContainer {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
+  display: grid;
+  gap: $spacing-lg;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   padding-bottom: $spacing-lg;
 }
 
 .section {
-  background-color: #ffffff;
-  border-radius: 8px;
+  display: grid;
+  gap: $spacing-md;
+  width: 100%;
+  min-width: 0;
+  background-color: $color-background;
+  border-radius: $border-radius-md;
   border: 1px solid $color-border;
   padding: $spacing-md;
+  box-shadow: 0 12px 32px rgba($color-text, 0.04);
 
   @include respond-to('md') {
     padding: $spacing-lg;
@@ -20,14 +27,175 @@
     color: $color-text-main;
     font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: $spacing-md;
+    margin: 0 0 $spacing-md;
   }
+}
+
+.heroSlide {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  height: 400px;
+  overflow: hidden;
+  border-radius: $border-radius-lg;
+  background-color: $color-secondary;
+  isolation: isolate;
+}
+
+.heroMedia {
+  position: absolute;
+  inset: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba($color-text, 0.15) 0%, rgba($color-text, 0.78) 100%);
+  }
+}
+
+.heroImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  gap: $spacing-md;
+  width: min(100%, 42rem);
+  min-height: inherit;
+  margin: 0 auto;
+  padding: clamp($spacing-lg, 4vw, 3rem);
+  color: $color-background;
+  text-align: center;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.heroSubtitle {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.6;
+  color: rgba($color-background, 0.9);
+}
+
+.heroButton {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  background-color: $color-primary;
+  color: $color-background;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 14px 28px rgba($color-primary, 0.26);
+  transition: transform $transition-speed ease, background-color $transition-speed ease, box-shadow $transition-speed ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background-color: $color-secondary;
+    box-shadow: 0 16px 32px rgba($color-secondary, 0.24);
+  }
+}
+
+.heroSkeleton {
+  width: 100%;
+  height: 400px;
+  margin: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: $border-radius-lg;
+  background-color: $color-secondary;
+  background: linear-gradient(90deg, rgba($color-secondary, 0.82) 0%, rgba($color-primary, 0.68) 50%, rgba($color-secondary, 0.82) 100%);
+  background-size: 200% 100%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.statsSkeletonGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $spacing-md;
+  align-items: stretch;
+  padding-bottom: 30px;
+}
+
+.statsSkeletonCard {
+  display: grid;
+  gap: $spacing-md;
+  height: 100%;
+  min-height: 10rem;
+  padding: $spacing-md;
+  border-radius: $border-radius-md;
+  border: 1px solid $color-border;
+  background: linear-gradient(180deg, rgba($color-bg-light, 0.96) 0%, rgba($color-background, 0.96) 100%);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.statsSkeletonHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.statsSkeletonIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background-color: rgba($color-border, 0.9);
+}
+
+.statsSkeletonMeta {
+  flex: 1;
+  display: grid;
+  gap: $spacing-xs;
+}
+
+.statsSkeletonLine {
+  height: 0.75rem;
+  border-radius: 999px;
+  background-color: rgba($color-border, 0.9);
+}
+
+.statsSkeletonLineShort {
+  width: 65%;
+}
+
+.statsSkeletonValue {
+  width: 42%;
+  height: 2rem;
+  border-radius: $border-radius-sm;
+  background-color: rgba($color-border, 0.9);
+}
+
+.statsSkeletonLineWide {
+  width: 85%;
+  height: 0.9rem;
 }
 
 // Estilo para o Mock do Mapa
 .mapMock {
   height: 200px;
-  background-color: $color-text-main; // Cor primária
+  background-color: $color-text-main;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -42,16 +210,12 @@
   }
 }
 
-// Skeletons para Loading (UX)
-.skeleton {
-  height: 150px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: 8px;
-}
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.72;
+  }
 
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  50% {
+    opacity: 1;
+  }
 }
