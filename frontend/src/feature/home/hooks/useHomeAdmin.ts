@@ -10,6 +10,8 @@ import type {
   StatCardUpdatePayload
 } from '../types';
 
+const USE_HOME_ADMIN_MOCK = true;
+
 export function useHomeAdmin() {
   const [carousels, setCarousels] = useState<CarouselContent[]>([]);
   const [stats, setStats] = useState<StatCardContent[]>([]);
@@ -19,7 +21,7 @@ export function useHomeAdmin() {
   const fetchHomeData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await HomeService.getHomeData();
+      const data = await HomeService.getHomeData(USE_HOME_ADMIN_MOCK);
       setCarousels(data.carousels || []);
       setStats(data.stats || []);
     } catch {
@@ -40,7 +42,7 @@ export function useHomeAdmin() {
   const addBanner = async (payload: CarouselCreatePayload) => {
     setIsSaving(true);
     try {
-      const newItem = await HomeService.createCarouselItem(payload);
+      const newItem = await HomeService.createCarouselItem(payload, USE_HOME_ADMIN_MOCK);
       // Atualização otimista: insere o novo item na lista sem recarregar a página
       setCarousels((prev) => [...prev, newItem].sort((a, b) => a.order - b.order));
       AlertService.success('Banner criado com sucesso!');
@@ -56,7 +58,7 @@ export function useHomeAdmin() {
   const updateBanner = async (id: string, payload: CarouselUpdatePayload) => {
     setIsSaving(true);
     try {
-      const updatedItem = await HomeService.updateCarouselItem(id, payload);
+      const updatedItem = await HomeService.updateCarouselItem(id, payload, USE_HOME_ADMIN_MOCK);
       // Atualização otimista
       setCarousels((prev) => 
         prev.map(item => item.id === id ? updatedItem : item).sort((a, b) => a.order - b.order)
@@ -74,7 +76,7 @@ export function useHomeAdmin() {
   const removeBanner = async (id: string) => {
     setIsSaving(true);
     try {
-      await HomeService.deleteCarouselItem(id);
+      await HomeService.deleteCarouselItem(id, USE_HOME_ADMIN_MOCK);
       // Atualização otimista: remove localmente o id deletado
       setCarousels((prev) => prev.filter(item => item.id !== id));
       AlertService.success('Banner excluído com sucesso!');
@@ -94,7 +96,7 @@ export function useHomeAdmin() {
   const addStatCard = async (payload: StatCardCreatePayload) => {
     setIsSaving(true);
     try {
-      const newStat = await HomeService.createStatCard(payload);
+      const newStat = await HomeService.createStatCard(payload, USE_HOME_ADMIN_MOCK);
       setStats((prev) => [...prev, newStat].sort((a, b) => a.order - b.order));
       AlertService.success('Estatística criada com sucesso!');
       return true;
@@ -109,7 +111,7 @@ export function useHomeAdmin() {
   const updateStatCard = async (id: string, payload: StatCardUpdatePayload) => {
     setIsSaving(true);
     try {
-      const updatedStat = await HomeService.updateStatCard(id, payload);
+      const updatedStat = await HomeService.updateStatCard(id, payload, USE_HOME_ADMIN_MOCK);
       setStats((prev) => 
         prev.map(stat => stat.id === id ? updatedStat : stat).sort((a, b) => a.order - b.order)
       );
@@ -126,7 +128,7 @@ export function useHomeAdmin() {
   const removeStatCard = async (id: string) => {
     setIsSaving(true);
     try {
-      await HomeService.deleteStatCard(id);
+      await HomeService.deleteStatCard(id, USE_HOME_ADMIN_MOCK);
       setStats((prev) => prev.filter(stat => stat.id !== id));
       AlertService.success('Estatística excluída com sucesso!');
       return true;
@@ -143,6 +145,7 @@ export function useHomeAdmin() {
     stats,
     loading,
     isSaving,
+    isMockMode: USE_HOME_ADMIN_MOCK,
     refreshData: fetchHomeData,
     addBanner,
     updateBanner,

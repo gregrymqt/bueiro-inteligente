@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertService } from '@/core/alert/AlertService';
-import { isMockDataSourceEnabled } from '@/core/http/environment';
 import { MonitoringService } from '../services/MonitoringService';
 import { withMockLatency } from '@/core/mock/mockDelay';
 import {
@@ -10,6 +9,8 @@ import {
   getNextMockDrainStatus,
 } from '../mocks/monitoringMocks';
 import type { DrainStatus } from '../types';
+
+const USE_MONITORING_MOCK = true;
 
 export const useDrainStatus = (bueiroId: string) => {
   const [data, setData] = useState<DrainStatus | null>(null);
@@ -61,7 +62,7 @@ export const useDrainStatus = (bueiroId: string) => {
       clearRealtimeConnections();
       currentFrameRef.current = 0;
 
-      if (isMockDataSourceEnabled()) {
+      if (USE_MONITORING_MOCK) {
         await withMockLatency(() => undefined, MONITORING_MOCK_INITIAL_DELAY_MS);
 
         if (!isMountedRef.current) {

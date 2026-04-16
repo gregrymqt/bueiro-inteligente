@@ -2,7 +2,6 @@ using System.Security.Claims;
 using backend.Core;
 using backend.Extensions.Auth;
 using backend.Extensions.Auth.Models;
-using backend.Features;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Application.Services;
 using backend.Features.Auth.Infrastructure.Authentication;
@@ -16,286 +15,90 @@ namespace backend.Features.Auth.Presentation.Controllers;
 
 public sealed class AuthController(IAuthService authService, GoogleSettings googleSettings) : ApiControllerBase
 {
-    private readonly IAuthService _authService =
-        authService ?? throw new ArgumentNullException(nameof(authService));
-    private readonly GoogleSettings _googleSettings =
-        googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
+    // C# 12: Campos capturados diretamente do construtor primário
+    private readonly IAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly GoogleSettings _googleSettings = googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<ActionResult<TokenResponse>> Login(
-        [FromBody] LoginRequest request,
-        CancellationToken cancellationToken
-    )
-    {
-        try
+    public async Task<ActionResult<TokenResponse>> Login([FromBody] LoginRequest request, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
         {
-            TokenResponse? token = await _authService
-                .LoginAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (token is null)
-            {
-                return Unauthorized(
-                    new ProblemDetails
-                    {
-                        Title = "Unauthorized",
-                        Detail = "Incorrect email or password.",
-                        Status = StatusCodes.Status401Unauthorized,
-                    }
-                );
-            }
-
-            return Ok(token);
-        }
-        catch (ConnectionException exception)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                new ProblemDetails
-                {
-                    Title = "Connection error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                }
-            );
-        }
-        catch (LogicException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Validation error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-    }
+            var token = await _authService.LoginAsync(request, ct).ConfigureAwait(false);
+            return token is null 
+                ? Unauthorized(CreateProblem("Unauthorized", "Incorrect email or password.", 401)) 
+                : Ok(token);
+        });
 
     [HttpGet("google-login")]
     [AllowAnonymous]
-    public IActionResult GoogleLogin(
-        [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl = null
-    )
+    public IActionResult GoogleLogin([FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl = null)
     {
-        string resolvedFrontendRedirectUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
-            frontendRedirectUrl,
-            _googleSettings.AllowedOrigins,
-            _googleSettings.FrontendRedirectUrl
-        );
-
-        return Challenge(
-            new AuthenticationProperties
-            {
-                RedirectUri =
-                    $"{GoogleAuthDefaults.RedirectPath}?frontend_redirect={Uri.EscapeDataString(resolvedFrontendRedirectUrl)}",
-            },
-            GoogleDefaults.AuthenticationScheme
-        );
+        var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(frontendRedirectUrl, _googleSettings.AllowedOrigins, _googleSettings.FrontendRedirectUrl);
+        
+        return Challenge(new AuthenticationProperties 
+        { 
+            RedirectUri = $"{GoogleAuthDefaults.RedirectPath}?frontend_redirect={Uri.EscapeDataString(resolvedUrl)}" 
+        }, GoogleDefaults.AuthenticationScheme);
     }
 
     [HttpGet("google-callback")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallback(
-        [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl,
-        CancellationToken cancellationToken
-    )
-    {
-        try
+    public async Task<IActionResult> GoogleCallback([FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
         {
-            AuthenticateResult authenticateResult = await HttpContext
-                .AuthenticateAsync(IdentityConstants.ExternalScheme)
-                .ConfigureAwait(false);
+            var authResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme).ConfigureAwait(false);
 
-            if (!authenticateResult.Succeeded || authenticateResult.Principal is null)
-            {
-                return Unauthorized(
-                    new ProblemDetails
-                    {
-                        Title = "Unauthorized",
-                        Detail = "Google authentication failed.",
-                        Status = StatusCodes.Status401Unauthorized,
-                    }
-                );
-            }
+            if (!authResult.Succeeded || authResult.Principal is null)
+                return Unauthorized(CreateProblem("Unauthorized", "Google authentication failed.", 401));
 
-            string accessToken = await _authService
-                .SignInWithGoogleAsync(authenticateResult.Principal, HttpContext)
-                .ConfigureAwait(false);
+            var accessToken = await _authService.SignInWithGoogleAsync(authResult.Principal, HttpContext).ConfigureAwait(false);
+            var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(frontendRedirectUrl, _googleSettings.AllowedOrigins, _googleSettings.FrontendRedirectUrl);
 
-            string resolvedFrontendRedirectUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
-                frontendRedirectUrl,
-                _googleSettings.AllowedOrigins,
-                _googleSettings.FrontendRedirectUrl
-            );
-
-            string redirectUrl =
-                $"{resolvedFrontendRedirectUrl}#token={Uri.EscapeDataString(accessToken)}";
-
-            return Redirect(redirectUrl);
-        }
-        catch (ConnectionException exception)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                new ProblemDetails
-                {
-                    Title = "Connection error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                }
-            );
-        }
-        catch (LogicException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Validation error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-    }
+            return Redirect($"{resolvedUrl}#token={Uri.EscapeDataString(accessToken)}");
+        });
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult<UserResponse>> Register(
-        [FromBody] UserCreateRequest request,
-        CancellationToken cancellationToken
-    )
-    {
-        try
+    public async Task<ActionResult<UserResponse>> Register([FromBody] UserCreateRequest request, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
         {
-            UserResponse result = await _authService
-                .RegisterAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-
+            var result = await _authService.RegisterAsync(request, ct).ConfigureAwait(false);
             return Created("/auth/users/me", result);
-        }
-        catch (ConnectionException exception)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                new ProblemDetails
-                {
-                    Title = "Connection error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                }
-            );
-        }
-        catch (LogicException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Validation error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-    }
+        });
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
-    {
-        try
+    public async Task<IActionResult> Logout(CancellationToken ct) =>
+        await ExecuteAsync(async () =>
         {
-            string? tokenJti = User.FindFirstValue("jti");
-
-            if (string.IsNullOrWhiteSpace(tokenJti))
-            {
-                throw LogicException.NullValue("jti");
-            }
-
-            await _authService.LogoutAsync(tokenJti, cancellationToken).ConfigureAwait(false);
-
+            var jti = User.FindFirstValue("jti") ?? throw LogicException.NullValue("jti");
+            await _authService.LogoutAsync(jti, ct).ConfigureAwait(false);
             return Ok(new { message = "Logout successful" });
-        }
-        catch (ConnectionException exception)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                new ProblemDetails
-                {
-                    Title = "Connection error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                }
-            );
-        }
-        catch (LogicException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Validation error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-    }
+        });
 
     [HttpGet("users/me")]
-    public async Task<ActionResult<UserResponse>> GetMe(CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> GetMe(CancellationToken ct) =>
+        await ExecuteAsync(async () =>
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") 
+                        ?? throw LogicException.NullValue("email");
+
+            var result = await _authService.GetMeAsync(email, ct).ConfigureAwait(false);
+            return result is null ? NotFound(CreateProblem("Not found", "User not found.", 404)) : Ok(result);
+        });
+
+    #region Helpers Enxutos
+
+    // Centraliza o tratamento de exceções para remover o excesso de try-catch
+    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
     {
-        try
-        {
-            string? email =
-                User.FindFirstValue(ClaimTypes.Email)
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                throw LogicException.NullValue("email");
-            }
-
-            UserResponse? result = await _authService
-                .GetMeAsync(email, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (result is null)
-            {
-                return NotFound(
-                    new ProblemDetails
-                    {
-                        Title = "Not found",
-                        Detail = "User not found.",
-                        Status = StatusCodes.Status404NotFound,
-                    }
-                );
-            }
-
-            return Ok(result);
-        }
-        catch (ConnectionException exception)
-        {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                new ProblemDetails
-                {
-                    Title = "Connection error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                }
-            );
-        }
-        catch (LogicException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Validation error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
+        try { return await action(); }
+        catch (ConnectionException ex) { return StatusCode(503, CreateProblem("Connection error", ex.Message, 503)); }
+        catch (LogicException ex) { return BadRequest(CreateProblem("Validation error", ex.Message, 400)); }
     }
+
+    private static ProblemDetails CreateProblem(string title, string detail, int status) => 
+        new() { Title = title, Detail = detail, Status = status };
+
+    #endregion
 }

@@ -3,10 +3,13 @@ import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
 import type { CarouselContent, StatCardContent } from '../types';
 
+const USE_HOME_CAROUSEL_MOCK = true;
+
 interface UseHomeCarouselResult {
   heroSlides: CarouselContent[];
   statItems: StatCardContent[];
   loading: boolean;
+  isMockMode: boolean;
 }
 
 export function useHomeCarousel(): UseHomeCarouselResult {
@@ -18,7 +21,7 @@ export function useHomeCarousel(): UseHomeCarouselResult {
     setLoading(true);
 
     try {
-      const data = await HomeService.getHomeData();
+      const data = await HomeService.getHomeData(USE_HOME_CAROUSEL_MOCK);
       const filteredHeroSlides = [...data.carousels]
         .filter((carousel) => carousel.section === 'hero')
         .sort((a, b) => a.order - b.order);
@@ -39,5 +42,5 @@ export function useHomeCarousel(): UseHomeCarouselResult {
     fetchData();
   }, [fetchData]);
 
-  return { heroSlides, statItems, loading };
+  return { heroSlides, statItems, loading, isMockMode: USE_HOME_CAROUSEL_MOCK };
 }

@@ -5,6 +5,8 @@ import { tokenService } from '@/core/http/TokenService';
 import { AlertService } from '@/core/alert/AlertService';
 import type { LoginRequestDTO, UserDTO, RegisterRequestDTO } from '../types';
 
+const USE_AUTH_MOCK = true;
+
 export const useAuth = () => {
   const [user, setUser] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -20,7 +22,7 @@ export const useAuth = () => {
           return;
         }
 
-        const userData = await AuthService.getMe();
+        const userData = await AuthService.getMe(USE_AUTH_MOCK);
 
         if (isActive) {
           setUser(userData);
@@ -45,7 +47,7 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      await AuthService.register(data);
+      await AuthService.register(data, USE_AUTH_MOCK);
       AlertService.success('Cadastro realizado com sucesso!');
       // Redireciona para o login após o cadastro bem sucedido
       navigate('/login', { replace: true });
@@ -64,11 +66,11 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await AuthService.login(credentials);
+      const response = await AuthService.login(credentials, USE_AUTH_MOCK);
       tokenService.saveToken(response.access_token);
       
       // Busca os dados do usuário logo após o login para validar roles
-      const userData = await AuthService.getMe();
+      const userData = await AuthService.getMe(USE_AUTH_MOCK);
       setUser(userData);
 
       navigate('/dashboard', { replace: true });
@@ -83,7 +85,7 @@ export const useAuth = () => {
 
   const logout = useCallback(async () => {
     try {
-      await AuthService.logout(); // Avisa o back-end (Blacklist JTI)
+      await AuthService.logout(USE_AUTH_MOCK); // Avisa o back-end (Blacklist JTI)
     } finally {
       tokenService.removeToken();
       setUser(null);
@@ -92,5 +94,5 @@ export const useAuth = () => {
     }
   }, [navigate]);
 
-  return { user, register, login, logout, loading, error };
+  return { user, register, login, logout, loading, error, isMockMode: USE_AUTH_MOCK };
 };

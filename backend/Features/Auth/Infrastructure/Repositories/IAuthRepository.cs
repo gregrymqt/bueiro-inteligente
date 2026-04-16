@@ -4,11 +4,8 @@ namespace backend.Features.Auth.Infrastructure.Repositories;
 
 public interface IAuthRepository
 {
-    Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken cancellationToken = default);
-
-    Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
-
-    Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken cancellationToken = default);
-
-    Task AddUserAsync(User user, CancellationToken cancellationToken = default);
+    Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken ct = default);
+    Task<User?> GetUserByEmailAsync(string email, CancellationToken ct = default);
+    Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken ct = default);
+    Task AddUserAsync(User user, CancellationToken ct = default);
 }

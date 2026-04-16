@@ -3,6 +3,8 @@ import { AlertService } from '@/core/alert/AlertService';
 import { DrainService } from '../services/DrainService';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 
+const USE_DRAIN_ADMIN_MOCK = true;
+
 const sortDrains = (drains: Drain[]): Drain[] => {
   return [...drains].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' }));
 };
@@ -20,7 +22,7 @@ export function useDrainAdmin() {
     setLoading(true);
 
     try {
-      const items = await DrainService.getDrains();
+      const items = await DrainService.getDrains(USE_DRAIN_ADMIN_MOCK);
       setDrains(sortDrains(items));
     } catch (error: unknown) {
       AlertService.error('Erro', getErrorMessage(error, 'Falha ao carregar os bueiros.'));
@@ -37,7 +39,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      const createdDrain = await DrainService.createDrain(payload);
+      const createdDrain = await DrainService.createDrain(payload, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) => sortDrains([...previousDrains, createdDrain]));
       AlertService.success('Bueiro criado com sucesso!');
       return true;
@@ -53,7 +55,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      const updatedDrain = await DrainService.updateDrain(id, payload);
+      const updatedDrain = await DrainService.updateDrain(id, payload, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) =>
         sortDrains(previousDrains.map((item) => (item.id === id ? updatedDrain : item)))
       );
@@ -71,7 +73,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      await DrainService.deleteDrain(id);
+      await DrainService.deleteDrain(id, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) => previousDrains.filter((item) => item.id !== id));
       AlertService.success('Bueiro excluído com sucesso!');
       return true;

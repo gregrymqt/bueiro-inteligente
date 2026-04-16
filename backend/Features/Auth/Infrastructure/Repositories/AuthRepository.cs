@@ -6,113 +6,79 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Auth.Infrastructure.Repositories;
 
+// C# 12: O construtor primário já define o escopo dos campos privados necessários.
 public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepository> logger)
     : IAuthRepository
 {
-    private readonly AppDbContext _dbContext =
-        dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-    private readonly ILogger<AuthRepository> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
-    public async Task<User?> FindByGoogleIdAsync(
-        string googleId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken ct = default)
     {
         try
         {
-            return await _dbContext
-                .Users.AsNoTracking()
-                .Include(user => user.Roles)
-                .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken)
+            return await dbContext.Users
+                .AsNoTracking()
+                .Include(u => u.Roles)
+                .FirstOrDefaultAsync(u => u.GoogleId == googleId, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving user by Google id {GoogleId}", googleId);
-            throw new ConnectionException(
-                "AuthRepository.FindByGoogleIdAsync",
-                $"Failed to query user by Google id '{googleId}'.",
-                exception
-            );
+            logger.LogError(ex, "Error retrieving user by Google id {GoogleId}", googleId);
+            throw new ConnectionException("AuthRepository.FindByGoogleIdAsync", $"Failed to query user by Google id '{googleId}'.", ex);
         }
     }
 
-    public async Task<User?> GetUserByEmailAsync(
-        string email,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<User?> GetUserByEmailAsync(string email, CancellationToken ct = default)
     {
         try
         {
-            return await _dbContext
-                .Users.AsNoTracking()
-                .Include(user => user.Roles)
-                .FirstOrDefaultAsync(user => user.Email == email, cancellationToken)
+            return await dbContext.Users
+                .AsNoTracking()
+                .Include(u => u.Roles)
+                .FirstOrDefaultAsync(u => u.Email == email, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving user by email {Email}", email);
-            throw new ConnectionException(
-                "AuthRepository.GetUserByEmailAsync",
-                $"Failed to query user by email '{email}'.",
-                exception
-            );
+            logger.LogError(ex, "Error retrieving user by email {Email}", email);
+            throw new ConnectionException("AuthRepository.GetUserByEmailAsync", $"Failed to query user by email '{email}'.", ex);
         }
     }
 
-    public async Task<Role?> GetRoleByNameAsync(
-        string roleName,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken ct = default)
     {
         try
         {
-            return await _dbContext
-                .Roles.AsNoTracking()
-                .FirstOrDefaultAsync(role => role.Name == roleName, cancellationToken)
+            return await dbContext.Roles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Name == roleName, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving role by name {RoleName}", roleName);
-            throw new ConnectionException(
-                "AuthRepository.GetRoleByNameAsync",
-                $"Failed to query role '{roleName}'.",
-                exception
-            );
+            logger.LogError(ex, "Error retrieving role by name {RoleName}", roleName);
+            throw new ConnectionException("AuthRepository.GetRoleByNameAsync", $"Failed to query role '{roleName}'.", ex);
         }
     }
 
-    public async Task AddUserAsync(User user, CancellationToken cancellationToken = default)
+    public async Task AddUserAsync(User user, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(user);
 
         try
         {
-            foreach (
-                Role role in user.Roles
-                    .Where(role => role is not null)
-                    .DistinctBy(role => role.Id)
-            )
+            // C# 12: Simplificação do anexo de entidades relacionadas (Roles)
+            foreach (var role in user.Roles.Where(r => r is not null).DistinctBy(r => r.Id))
             {
-                if (_dbContext.Entry(role).State == EntityState.Detached)
-                {
-                    _dbContext.Attach(role);
-                }
+                if (dbContext.Entry(role).State == EntityState.Detached)
+                    dbContext.Attach(role);
             }
 
-            await _dbContext.Users.AddAsync(user, cancellationToken).ConfigureAwait(false);
+            await dbContext.Users.AddAsync(user, ct).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error adding user {Email}", user.Email);
-            throw new ConnectionException(
-                "AuthRepository.AddUserAsync",
-                $"Failed to add user '{user.Email}'.",
-                exception
-            );
+            logger.LogError(ex, "Error adding user {Email}", user.Email);
+            throw new ConnectionException("AuthRepository.AddUserAsync", $"Failed to add user '{user.Email}'.", ex);
         }
     }
 }

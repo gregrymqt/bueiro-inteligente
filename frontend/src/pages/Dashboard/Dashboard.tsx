@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
-import { isMockDataSourceEnabled, resolveRowsEmbedUrl } from '@/core/http/environment';
+import { resolveRowsEmbedUrl } from '@/core/http/environment';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
@@ -10,6 +10,8 @@ import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor
 import styles from './DashboardLayout.module.scss';
 import './DashboardLayout.scss';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
+
+const USE_DASHBOARD_MOCK = true;
 
 // SVGs simples para os ícones (Em produção, você pode usar Lucide ou Phosphor Icons)
 const MonitorIcon = () => (
@@ -83,7 +85,7 @@ export const Dashboard: React.FC = () => {
 
   // useMemo garante que o array não seja recriado a cada renderização da página
   const rowsEmbedUrl = useMemo(() => {
-    if (isMockDataSourceEnabled()) {
+    if (USE_DASHBOARD_MOCK) {
       return 'mock:rows-dashboard';
     }
 

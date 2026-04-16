@@ -11,6 +11,7 @@ export const HomeManagement: React.FC = () => {
     carousels,
     stats,
     loading,
+    isMockMode,
     refreshData,
     removeBanner,
     removeStatCard
@@ -67,6 +68,7 @@ export const HomeManagement: React.FC = () => {
             {activeCarouselForm ? (
               <CarouselForm 
                 initialData={activeCarouselForm.data} 
+                useMock={isMockMode}
                 onSuccess={() => {
                   setActiveCarouselForm(null);
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form
@@ -121,6 +123,7 @@ export const HomeManagement: React.FC = () => {
             {activeStatCardForm ? (
               <StatCardForm 
                 initialData={activeStatCardForm.data}
+                useMock={isMockMode}
                 onSuccess={() => {
                   setActiveStatCardForm(null);
                   refreshData(); // Atualiza a lista com as mudanças feitas pelo form

@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
-import  { HomeService } from '../../services/HomeService';
-import type { CarouselContent, CarouselCreatePayload } from '../../types';import './AdminForms.scss';
+import { HomeService } from '../../services/HomeService';
+import type { CarouselContent, CarouselCreatePayload } from '../../types';
+import './AdminForms.scss';
 import { AlertService } from '@/core/alert/AlertService';
 
 interface CarouselFormProps {
   initialData?: CarouselContent;
   onSuccess?: () => void;
   onCancel?: () => void;
+  useMock: boolean;
 }
 
-export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSuccess, onCancel }) => {
+export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSuccess, onCancel, useMock }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const isEditing = !!initialData?.id;
@@ -77,9 +79,9 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
 
     try {
       if (isEditing && initialData.id) {
-        await HomeService.updateCarouselItem(initialData.id, payload);
+        await HomeService.updateCarouselItem(initialData.id, payload, useMock);
       } else {
-        await HomeService.createCarouselItem(payload);
+        await HomeService.createCarouselItem(payload, useMock);
       }
       
       if (onSuccess) {

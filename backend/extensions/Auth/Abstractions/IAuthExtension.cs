@@ -8,6 +8,8 @@ public interface IAuthExtension
 
     Task<string> GetPasswordHashAsync(string password);
 
+    Task<UserTokenData> GetCurrentUserAsync(string token, CancellationToken cancellationToken = default);
+
     string CreateAccessToken(TokenPayload payload);
 
     Task AddToBlacklistAsync(string jti);

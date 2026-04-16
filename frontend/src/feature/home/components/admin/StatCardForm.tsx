@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
-import  { HomeService } from '../../services/HomeService';
-import type { StatCardContent, StatCardCreatePayload } from '../../types';import './AdminForms.scss';
+import { HomeService } from '../../services/HomeService';
+import type { StatCardContent, StatCardCreatePayload } from '../../types';
+import './AdminForms.scss';
 import { AlertService } from '@/core/alert/AlertService';
 
 interface StatCardFormProps {
   initialData?: StatCardContent;
   onSuccess?: () => void;
   onCancel?: () => void;
+  useMock: boolean;
 }
 
-export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSuccess, onCancel }) => {
+export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSuccess, onCancel, useMock }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const isEditing = !!initialData?.id;
@@ -80,9 +82,9 @@ export const StatCardForm: React.FC<StatCardFormProps> = ({ initialData, onSucce
 
     try {
       if (isEditing && initialData.id) {
-        await HomeService.updateStatCard(initialData.id, payload);
+        await HomeService.updateStatCard(initialData.id, payload, useMock);
       } else {
-        await HomeService.createStatCard(payload);
+        await HomeService.createStatCard(payload, useMock);
       }
       
       if (onSuccess) {

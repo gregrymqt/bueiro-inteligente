@@ -4,10 +4,10 @@ import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 import { useDrainAdmin } from './useDrainAdmin';
 
 const drainServiceMocks = vi.hoisted(() => {
-  const getDrains = vi.fn<() => Promise<Drain[]>>();
-  const createDrain = vi.fn<(payload: DrainCreatePayload) => Promise<Drain>>();
-  const updateDrain = vi.fn<(id: string, payload: DrainUpdatePayload) => Promise<Drain>>();
-  const deleteDrain = vi.fn<(id: string) => Promise<void>>();
+  const getDrains = vi.fn<(useMock: boolean) => Promise<Drain[]>>();
+  const createDrain = vi.fn<(payload: DrainCreatePayload, useMock: boolean) => Promise<Drain>>();
+  const updateDrain = vi.fn<(id: string, payload: DrainUpdatePayload, useMock: boolean) => Promise<Drain>>();
+  const deleteDrain = vi.fn<(id: string, useMock: boolean) => Promise<void>>();
 
   return {
     getDrains,
@@ -85,6 +85,7 @@ describe('useDrainAdmin', () => {
       expect(result.current.drains).toEqual(drains);
     });
 
+    expect(drainServiceMocks.getDrains).toHaveBeenCalledWith(true);
     expect(alertServiceMocks.error).not.toHaveBeenCalled();
   });
 
@@ -124,7 +125,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload);
+    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload, true);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro criado com sucesso!');
     expect(result.current.drains).toEqual([createdDrain]);
   });
@@ -151,7 +152,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(false);
-    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload);
+    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload, true);
     expect(alertServiceMocks.error).toHaveBeenCalledWith('Erro', 'Falha ao atualizar bueiro');
     expect(result.current.drains).toEqual([existingDrain]);
   });
@@ -175,7 +176,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id);
+    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id, true);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro excluído com sucesso!');
     expect(result.current.drains).toEqual([]);
   });

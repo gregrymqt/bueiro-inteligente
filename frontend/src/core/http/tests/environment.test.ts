@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LOCAL_BACKEND_URL, isMockDataSourceEnabled, resolveBackendBaseUrl, resolveDataSourceMode, resolveUrlMode } from '../environment';
+import { LOCAL_BACKEND_URL, resolveBackendBaseUrl, resolveUrlMode } from '../environment';
 
 describe('resolveBackendBaseUrl', () => {
   it('prioriza o túnel público quando configurado', () => {
@@ -41,26 +41,5 @@ describe('resolveUrlMode', () => {
 
   it('classifica urls remotas como remote', () => {
     expect(resolveUrlMode('https://api.example.com')).toBe('remote');
-  });
-});
-
-describe('resolveDataSourceMode', () => {
-  it('usa mock por padrão quando a flag nao esta definida', () => {
-    expect(resolveDataSourceMode({})).toBe('mock');
-    expect(isMockDataSourceEnabled({})).toBe(true);
-  });
-
-  it('ativa backend quando a flag recebe backend', () => {
-    expect(
-      resolveDataSourceMode({
-        VITE_DATA_SOURCE: 'backend',
-      }),
-    ).toBe('backend');
-
-    expect(
-      isMockDataSourceEnabled({
-        VITE_DATA_SOURCE: 'backend',
-      }),
-    ).toBe(false);
   });
 });

@@ -1,5 +1,4 @@
 import { apiClient } from '@/core/http/ApiClient';
-import { isMockDataSourceEnabled } from '@/core/http/environment';
 import type { LoginRequestDTO, LoginResponseDTO, UserDTO, RegisterRequestDTO } from '../types';
 import { getMockAuthenticatedUser, loginWithMockCredentials, logoutMockSession, registerWithMockData } from '../mocks/authMocks';
 
@@ -7,8 +6,8 @@ export class AuthService {
   /**
    * Realiza o cadastro de um novo usuário.
    */
-  public static async register(data: RegisterRequestDTO): Promise<UserDTO> {
-    if (!isMockDataSourceEnabled()) {
+  public static async register(data: RegisterRequestDTO, useMock: boolean): Promise<UserDTO> {
+    if (!useMock) {
       return apiClient.post<UserDTO, RegisterRequestDTO>('/auth/register', data);
     }
 
@@ -18,8 +17,8 @@ export class AuthService {
   /**
    * Realiza o login e obtém o token.
    */
-  public static async login(credentials: LoginRequestDTO): Promise<LoginResponseDTO> {
-    if (!isMockDataSourceEnabled()) {
+  public static async login(credentials: LoginRequestDTO, useMock: boolean): Promise<LoginResponseDTO> {
+    if (!useMock) {
       return apiClient.post<LoginResponseDTO, LoginRequestDTO>('/auth/login', credentials);
     }
 
@@ -29,8 +28,8 @@ export class AuthService {
   /**
    * Invalida o token atual no servidor (Blacklist via Redis).
    */
-  public static async logout(): Promise<void> {
-    if (!isMockDataSourceEnabled()) {
+  public static async logout(useMock: boolean): Promise<void> {
+    if (!useMock) {
       return apiClient.post<void, void>('/auth/logout');
     }
 
@@ -40,8 +39,8 @@ export class AuthService {
   /**
    * Obtém os dados do usuário logado (Perfil e Roles).
    */
-  public static async getMe(): Promise<UserDTO> {
-    if (!isMockDataSourceEnabled()) {
+  public static async getMe(useMock: boolean): Promise<UserDTO> {
+    if (!useMock) {
       return apiClient.get<UserDTO>('/auth/users/me');
     }
 

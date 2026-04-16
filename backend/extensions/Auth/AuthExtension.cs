@@ -61,6 +61,49 @@ public sealed class AuthExtension(
     public Task<string> GetPasswordHashAsync(string password) =>
         Task.FromResult(passwordHasher.HashPassword(new object(), password));
 
+    public async Task<UserTokenData> GetCurrentUserAsync(
+        string token,
+        CancellationToken cancellationToken = default
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        string normalizedToken = NormalizeBearerToken(token) ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            throw new UnauthorizedAccessException("Token JWT vazio.");
+        }
+
+        Dictionary<string, object?> claims = JwtTokenHelper.Decode(
+            normalizedToken,
+            settings.SecretKey!,
+            settings.Algorithm
+        );
+
+        string email = GetRequiredClaim(claims, "sub", "email");
+        string jti = GetRequiredClaim(claims, "jti");
+
+        if (await IsBlacklistedAsync(jti).ConfigureAwait(false))
+        {
+            throw new UnauthorizedAccessException("Token revogado.");
+        }
+
+        IReadOnlyList<string> roles = TryGetClaimAsStringList(claims, "roles");
+
+        if (roles.Count == 0)
+        {
+            roles = TryGetClaimAsStringList(claims, "role");
+        }
+
+        if (roles.Count == 0)
+        {
+            roles = ["User"];
+        }
+
+        return new UserTokenData(email, roles, jti);
+    }
+
     public string VerifyHardwareToken(string? auth = null, string? query = null)
     {
         var token = NormalizeBearerToken(auth) ?? NormalizeBearerToken(query);
@@ -124,11 +167,42 @@ public sealed class AuthExtension(
 
     public Task AddToBlacklistAsync(string jti)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(jti))
+        {
+            throw LogicException.NullValue(nameof(jti));
+        }
+
+        return blacklistStore.AddAsync(jti.Trim(), _blacklistTtl);
     }
 
     public Task<bool> IsBlacklistedAsync(string jti)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(jti))
+        {
+            throw LogicException.NullValue(nameof(jti));
+        }
+
+        return blacklistStore.IsBlacklistedAsync(jti.Trim());
+    }
+
+    private static string GetRequiredClaim(
+        Dictionary<string, object?> claims,
+        params string[] keys
+    )
+    {
+        foreach (string key in keys)
+        {
+            if (claims.TryGetValue(key, out object? value) && value is not null)
+            {
+                string text = value.ToString()?.Trim() ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return text;
+                }
+            }
+        }
+
+        throw new UnauthorizedAccessException($"Claim JWT obrigatória ausente: {keys[0]}.");
     }
 }
