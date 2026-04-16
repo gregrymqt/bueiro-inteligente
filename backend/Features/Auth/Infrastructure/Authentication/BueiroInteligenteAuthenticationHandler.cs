@@ -72,9 +72,14 @@ public sealed class BueiroInteligenteAuthenticationHandler
                 new(ClaimTypes.NameIdentifier, currentUser.Email),
                 new(ClaimTypes.Email, currentUser.Email),
                 new(ClaimTypes.Name, currentUser.Email),
-                new(ClaimTypes.Role, currentUser.Role),
                 new("jti", currentUser.Jti),
             };
+
+            IReadOnlyList<string> roles = currentUser.Roles.Count > 0
+                ? currentUser.Roles
+                : new[] { currentUser.Role };
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var identity = new ClaimsIdentity(
                 claims,

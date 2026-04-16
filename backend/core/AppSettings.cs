@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 
 namespace backend.Core
@@ -30,7 +31,8 @@ namespace backend.Core
             string googleClientId,
             string googleClientSecret,
             string[] allowedOrigins,
-            bool dotnetSystemGlobalizationInvariant
+            bool dotnetSystemGlobalizationInvariant,
+            string[]? emailUsersAdmin = null
         )
         {
             ProjectName = projectName;
@@ -55,6 +57,7 @@ namespace backend.Core
             GoogleClientSecret = googleClientSecret;
             AllowedOrigins = allowedOrigins;
             DotNetSystemGlobalizationInvariant = dotnetSystemGlobalizationInvariant;
+            EmailUsersAdmin = emailUsersAdmin ?? Array.Empty<string>();
         }
 
         public AppSettings(
@@ -101,7 +104,8 @@ namespace backend.Core
                 string.Empty,
                 string.Empty,
                 allowedOrigins,
-                dotnetSystemGlobalizationInvariant
+                dotnetSystemGlobalizationInvariant,
+                Array.Empty<string>()
             ) { }
 
         public string ProjectName { get; }
@@ -146,6 +150,8 @@ namespace backend.Core
 
         public string[] AllowedOrigins { get; }
 
+        public string[] EmailUsersAdmin { get; }
+
         public bool DotNetSystemGlobalizationInvariant { get; }
 
         public static AppSettings Reload()
@@ -186,7 +192,8 @@ namespace backend.Core
                 dotnetSystemGlobalizationInvariant: GetBool(
                     "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
                     true
-                )
+                ),
+                emailUsersAdmin: GetDelimitedStrings("EMAIL_USERS_ADMIN")
             );
         }
 
@@ -343,6 +350,23 @@ namespace backend.Core
             );
 
             return splitOrigins.Length > 0 ? splitOrigins : defaultValue;
+        }
+
+        private static string[] GetDelimitedStrings(string key)
+        {
+            string? rawValue = Environment.GetEnvironmentVariable(key);
+
+            if (string.IsNullOrWhiteSpace(rawValue))
+            {
+                return Array.Empty<string>();
+            }
+
+            string trimmedValue = rawValue.Trim();
+
+            return trimmedValue.Split(
+                new[] { ',', ';', '\r', '\n' },
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
         }
     }
 }

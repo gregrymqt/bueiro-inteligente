@@ -133,14 +133,20 @@ public sealed class AuthExtension : IAuthExtension
 
         string email = GetClaimAsString(claims, "sub");
         string jti = GetClaimAsString(claims, "jti");
-        string role = TryGetClaimAsString(claims, "role") ?? "User";
+        IReadOnlyList<string> roles = TryGetClaimAsStringList(claims, "roles");
+
+        if (roles.Count == 0)
+        {
+            string role = TryGetClaimAsString(claims, "role") ?? "User";
+            roles = new[] { role };
+        }
 
         if (await _blacklistStore.IsBlacklistedAsync(jti, cancellationToken).ConfigureAwait(false))
         {
             throw new UnauthorizedAccessException("Token foi revogado.");
         }
 
-        return new UserTokenData(email, role, jti);
+        return new UserTokenData(email, roles, jti);
     }
 
     public string VerifyHardwareToken(string? authorizationToken = null, string? queryToken = null)
@@ -211,5 +217,139 @@ public sealed class AuthExtension : IAuthExtension
                 jsonElement.GetString(),
             _ => value.ToString(),
         };
+    }
+
+    private static IReadOnlyList<string> TryGetClaimAsStringList(
+        Dictionary<string, object?> claims,
+        string key
+    )
+    {
+        if (!claims.TryGetValue(key, out object? value) || value is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        if (value is JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == JsonValueKind.Array)
+            {
+                List<string> roles = new();
+
+                foreach (JsonElement element in jsonElement.EnumerateArray())
+                {
+                    string? role =
+                        element.ValueKind == JsonValueKind.String
+                            ? element.GetString()
+                            : element.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(role))
+                    {
+                        roles.Add(role.Trim());
+                    }
+                }
+
+                return NormalizeRoles(roles);
+            }
+
+            if (jsonElement.ValueKind == JsonValueKind.String)
+            {
+                return NormalizeRoles(new[] { jsonElement.GetString() ?? string.Empty });
+            }
+        }
+
+        if (value is string stringValue)
+        {
+            if (TryParseRolesJson(stringValue, out IReadOnlyList<string> roles))
+            {
+                return roles;
+            }
+
+            return NormalizeRoles(new[] { stringValue });
+        }
+
+        if (value is IEnumerable<string> stringRoles)
+        {
+            return NormalizeRoles(stringRoles);
+        }
+
+        if (value is IEnumerable<object?> objectRoles)
+        {
+            List<string> roles = new();
+
+            foreach (object? role in objectRoles)
+            {
+                string? roleText = role?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(roleText))
+                {
+                    roles.Add(roleText);
+                }
+            }
+
+            return NormalizeRoles(roles);
+        }
+
+        return NormalizeRoles(new[] { value.ToString() ?? string.Empty });
+    }
+
+    private static bool TryParseRolesJson(string value, out IReadOnlyList<string> roles)
+    {
+        roles = Array.Empty<string>();
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        string trimmedValue = value.Trim();
+
+        if (!trimmedValue.StartsWith('['))
+        {
+            return false;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(trimmedValue);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            List<string> parsedRoles = new();
+
+            foreach (JsonElement element in document.RootElement.EnumerateArray())
+            {
+                string role = element.ToString();
+
+                if (!string.IsNullOrWhiteSpace(role))
+                {
+                    parsedRoles.Add(role);
+                }
+            }
+
+            roles = NormalizeRoles(parsedRoles);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static IReadOnlyList<string> NormalizeRoles(IEnumerable<string> roles)
+    {
+        List<string> normalizedRoles = new();
+
+        foreach (string role in roles)
+        {
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                normalizedRoles.Add(role.Trim());
+            }
+        }
+
+        return normalizedRoles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 }

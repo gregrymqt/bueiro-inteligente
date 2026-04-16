@@ -23,7 +23,7 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         {
             return await _dbContext
                 .Users.AsNoTracking()
-                .Include(user => user.Role)
+                .Include(user => user.Roles)
                 .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -47,7 +47,7 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         {
             return await _dbContext
                 .Users.AsNoTracking()
-                .Include(user => user.Role)
+                .Include(user => user.Roles)
                 .FirstOrDefaultAsync(user => user.Email == email, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -91,6 +91,18 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
 
         try
         {
+            foreach (
+                Role role in user.Roles
+                    .Where(role => role is not null)
+                    .DistinctBy(role => role.Id)
+            )
+            {
+                if (_dbContext.Entry(role).State == EntityState.Detached)
+                {
+                    _dbContext.Attach(role);
+                }
+            }
+
             await _dbContext.Users.AddAsync(user, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception)

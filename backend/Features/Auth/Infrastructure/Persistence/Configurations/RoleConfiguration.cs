@@ -19,11 +19,5 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(x => x.Description).HasColumnName("description").HasMaxLength(255);
 
         builder.HasIndex(x => x.Name).IsUnique();
-
-        builder
-            .HasMany(x => x.Users)
-            .WithOne(x => x.Role)
-            .HasForeignKey(x => x.RoleId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -34,16 +34,34 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(255)
             .IsRequired();
 
-        builder.Property(x => x.RoleId).HasColumnName("role_id").HasColumnType("uuid").IsRequired();
-
         builder.HasIndex(x => x.Email).IsUnique();
         builder.HasIndex(x => x.GoogleId).IsUnique();
-        builder.HasIndex(x => x.RoleId);
 
         builder
-            .HasOne(x => x.Role)
+            .HasMany(x => x.Roles)
             .WithMany(x => x.Users)
-            .HasForeignKey(x => x.RoleId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .UsingEntity<Dictionary<string, object>>(
+                "user_roles",
+                right =>
+                    right
+                        .HasOne<Role>()
+                        .WithMany()
+                        .HasForeignKey("role_id")
+                        .OnDelete(DeleteBehavior.Cascade),
+                left =>
+                    left
+                        .HasOne<User>()
+                        .WithMany()
+                        .HasForeignKey("user_id")
+                        .OnDelete(DeleteBehavior.Cascade),
+                join =>
+                {
+                    join.ToTable("user_roles");
+                    join.HasKey("user_id", "role_id");
+                    join.Property<Guid>("user_id").HasColumnName("user_id").HasColumnType("uuid");
+                    join.Property<Guid>("role_id").HasColumnName("role_id").HasColumnType("uuid");
+                    join.HasIndex("role_id");
+                }
+            );
     }
 }

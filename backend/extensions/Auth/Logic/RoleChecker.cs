@@ -36,7 +36,7 @@ public sealed class RoleChecker
             throw LogicException.NullValue(nameof(currentUser));
         }
 
-        string userRole = currentUser.Role;
+        IReadOnlyList<string> userRoles = currentUser.Roles;
 
         if (_strictDbCheck)
         {
@@ -47,27 +47,27 @@ public sealed class RoleChecker
                 );
             }
 
-            string? freshRole = await _roleProvider
-                .GetRoleByEmailAsync(currentUser.Email, cancellationToken)
+            IReadOnlyList<string>? freshRoles = await _roleProvider
+                .GetRolesByEmailAsync(currentUser.Email, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(freshRole))
+            if (freshRoles is null || freshRoles.Count == 0)
             {
                 throw new UnauthorizedAccessException(
                     "Usuário ou role não encontrados no sistema."
                 );
             }
 
-            userRole = freshRole;
-            currentUser.Role = freshRole;
+            userRoles = freshRoles;
+            currentUser.Roles = freshRoles;
         }
 
-        if (!_allowedRoles.Contains(userRole))
+        if (!userRoles.Any(role => _allowedRoles.Contains(role)))
         {
             string allowedRolesText = string.Join(", ", _allowedRoles);
 
             throw new UnauthorizedAccessException(
-                $"Acesso negado: este recurso exige uma das roles [{allowedRolesText}], mas você possui a role '{userRole}'."
+                $"Acesso negado: este recurso exige uma das roles [{allowedRolesText}], mas você possui as roles [{string.Join(", ", userRoles)}]."
             );
         }
 

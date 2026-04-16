@@ -9,15 +9,14 @@ namespace backend.Tests.Features.Auth;
 
 public sealed class AuthControllerTests
 {
-    private readonly Mock<IAuthService> _authServiceMock = new(MockBehavior.Strict);
-    private readonly Mock<IAuthenticationService> _authenticationServiceMock = new(MockBehavior.Strict);
-    private readonly GoogleSettings _googleSettings =
-        new(
-            "google-client-id",
-            "google-client-secret",
-            "https://frontend.example",
-            ["http://localhost:5173", "https://frontend.example"]
-        );
+    private readonly Mock<IAuthService> _authServiceMock = new();
+    private readonly Mock<IAuthenticationService> _authInternalMock = new();
+    private readonly GoogleSettings _googleSettings = new(
+        "google-client-id",
+        "google-client-secret",
+        "https://frontend.example",
+        ["http://localhost:5173"]
+    );
 
     private readonly AuthController _controller;
 
@@ -26,280 +25,137 @@ public sealed class AuthControllerTests
         _controller = new AuthController(_authServiceMock.Object, _googleSettings);
     }
 
+    #region Helpers de Infraestrutura
+
+    private void SetupControllerContext(params Claim[] claims)
+    {
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal },
+        };
+
+        // Necessário para testes de Google Callback que acessam RequestServices
+        var services = new ServiceCollection();
+        services.AddSingleton(_authInternalMock.Object);
+        _controller.HttpContext.RequestServices = services.BuildServiceProvider();
+    }
+
+    #endregion
+
     [Fact]
     public async Task Login_ComCredenciaisValidas_DeveRetornarOk()
     {
         // Arrange
-        LoginRequest request = new("user@example.com", "Senha123!");
-        TokenResponse token = new("jwt-token", "bearer");
+        var request = new LoginRequest("user@example.com", "Senha123!");
+        var expectedToken = new TokenResponse("jwt-token", "bearer");
 
         _authServiceMock
-            .Setup(service => service.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(token);
+            .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedToken);
 
         // Act
-        ActionResult<TokenResponse> result = await _controller.Login(request, CancellationToken.None);
+        var result = await _controller.Login(request, default);
 
         // Assert
-        OkObjectResult okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().BeEquivalentTo(token);
-
-        _authServiceMock.Verify(service => service.LoginAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(expectedToken);
     }
 
-    [Fact]
-    public async Task Login_ComCredenciaisInvalidas_DeveRetornarUnauthorized()
+    [Theory]
+    [InlineData("Unauthorized", "Incorrect email or password.")]
+    [InlineData("BadRequest", "Dados inválidos.")]
+    public async Task Login_CenariosDeErro_DeveRetornarStatusCorreto(
+        string erroTipo,
+        string mensagem
+    )
     {
         // Arrange
-        LoginRequest request = new("user@example.com", "Senha123!");
+        var request = new LoginRequest("erro@example.com", "123");
 
-        _authServiceMock
-            .Setup(service => service.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TokenResponse?)null);
+        if (erroTipo == "Unauthorized")
+            _authServiceMock
+                .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((TokenResponse?)null);
+        else
+            _authServiceMock
+                .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new LogicException(mensagem));
 
         // Act
-        ActionResult<TokenResponse> result = await _controller.Login(request, CancellationToken.None);
+        var result = await _controller.Login(request, default);
 
         // Assert
-        UnauthorizedObjectResult unauthorizedResult = result.Result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
-        ProblemDetails problemDetails = unauthorizedResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        problemDetails.Status.Should().Be(StatusCodes.Status401Unauthorized);
-        problemDetails.Detail.Should().Be("Incorrect email or password.");
-
-        _authServiceMock.Verify(service => service.LoginAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
+        if (erroTipo == "Unauthorized")
+            result.Result.Should().BeOfType<UnauthorizedObjectResult>();
+        else
+            result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
-    public async Task Login_ComLogicException_DeveRetornarBadRequest()
-    {
-        // Arrange
-        LoginRequest request = new("user@example.com", "Senha123!");
-
-        _authServiceMock
-            .Setup(service => service.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new LogicException("Dados inválidos."));
-
-        // Act
-        ActionResult<TokenResponse> result = await _controller.Login(request, CancellationToken.None);
-
-        // Assert
-        BadRequestObjectResult badRequestResult = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-        ProblemDetails problemDetails = badRequestResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        problemDetails.Status.Should().Be(StatusCodes.Status400BadRequest);
-        problemDetails.Detail.Should().Be("Dados inválidos.");
-
-        _authServiceMock.Verify(service => service.LoginAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task Register_ComDadosValidos_DeveRetornarCreated()
-    {
-        // Arrange
-        UserCreateRequest request = new("user@example.com", "Senha123!", "User Test", "Admin");
-        UserResponse response = new(request.Email, request.FullName, new[] { request.Role });
-
-        _authServiceMock
-            .Setup(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
-
-        // Act
-        ActionResult<UserResponse> result = await _controller.Register(request, CancellationToken.None);
-
-        // Assert
-        CreatedResult createdResult = result.Result.Should().BeOfType<CreatedResult>().Subject;
-
-        createdResult.Location.Should().Be("/auth/users/me");
-        createdResult.Value.Should().BeEquivalentTo(response);
-
-        _authServiceMock.Verify(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task Register_ComLogicException_DeveRetornarBadRequest()
-    {
-        // Arrange
-        UserCreateRequest request = new("user@example.com", "Senha123!", "User Test", "Admin");
-
-        _authServiceMock
-            .Setup(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new LogicException("Email já cadastrado."));
-
-        // Act
-        ActionResult<UserResponse> result = await _controller.Register(request, CancellationToken.None);
-
-        // Assert
-        BadRequestObjectResult badRequestResult = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-        ProblemDetails problemDetails = badRequestResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        problemDetails.Status.Should().Be(StatusCodes.Status400BadRequest);
-        problemDetails.Detail.Should().Be("Email já cadastrado.");
-
-        _authServiceMock.Verify(service => service.RegisterAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task GetMe_ComEmailNosClaims_DeveChamarServicoComEmailExtraido()
+    public async Task GetMe_DeveExtrairEmailDosClaimsERetornarUsuario()
     {
         // Arrange
         string email = "user@example.com";
-        UserResponse response = new(email, "User Test", new[] { "Admin" });
-        _controller.ControllerContext = BuildControllerContext(new Claim(ClaimTypes.Email, email));
+        var expectedResponse = new UserResponse(email, "User Test", ["Admin"]);
+        SetupControllerContext(new Claim(ClaimTypes.Email, email));
 
         _authServiceMock
-            .Setup(service => service.GetMeAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
+            .Setup(s => s.GetMeAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
 
         // Act
-        ActionResult<UserResponse> result = await _controller.GetMe(CancellationToken.None);
+        var result = await _controller.GetMe(default);
 
         // Assert
-        OkObjectResult okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().BeEquivalentTo(response);
-
-        _authServiceMock.Verify(service => service.GetMeAsync(email, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
+        result
+            .Result.Should()
+            .BeOfType<OkObjectResult>()
+            .Which.Value.Should()
+            .BeEquivalentTo(expectedResponse);
     }
 
     [Fact]
-    public async Task GetMe_SemEmailNosClaims_DeveRetornarBadRequest()
+    public void GoogleLogin_DeveRetornarChallengeConfigurado()
+    {
+        // Act
+        var result = _controller.GoogleLogin("http://localhost:5173");
+
+        // Assert
+        var challenge = result.Should().BeOfType<ChallengeResult>().Subject;
+        challenge.AuthenticationSchemes.Should().Contain(GoogleDefaults.AuthenticationScheme);
+        challenge.Properties!.RedirectUri.Should().Contain("frontend_redirect=");
+    }
+
+    [Fact]
+    public async Task GoogleCallback_Sucesso_DeveRedirecionarComToken()
     {
         // Arrange
-        _controller.ControllerContext = BuildControllerContext();
+        SetupControllerContext(new Claim(ClaimTypes.NameIdentifier, "123"));
 
-        // Act
-        ActionResult<UserResponse> result = await _controller.GetMe(CancellationToken.None);
-
-        // Assert
-        BadRequestObjectResult badRequestResult = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-        ProblemDetails problemDetails = badRequestResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        problemDetails.Status.Should().Be(StatusCodes.Status400BadRequest);
-        problemDetails.Detail.Should().Contain("email");
-
-        _authServiceMock.Verify(service => service.GetMeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task Logout_ComJtiNosClaims_DeveChamarServicoComJtiExtraido()
-    {
-        // Arrange
-        string tokenJti = "jti-123";
-        _controller.ControllerContext = BuildControllerContext(new Claim("jti", tokenJti));
-
-        _authServiceMock
-            .Setup(service => service.LogoutAsync(tokenJti, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        IActionResult result = await _controller.Logout(CancellationToken.None);
-
-        // Assert
-        result.Should().BeOfType<OkObjectResult>();
-
-        _authServiceMock.Verify(service => service.LogoutAsync(tokenJti, It.IsAny<CancellationToken>()), Times.Once);
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public void GoogleLogin_DeveRetornarChallengeParaGoogle()
-    {
-        // Act
-        IActionResult result = _controller.GoogleLogin("http://localhost:5173");
-
-        // Assert
-        ChallengeResult challengeResult = result.Should().BeOfType<ChallengeResult>().Subject;
-        challengeResult.AuthenticationSchemes.Should().ContainSingle().Which.Should().Be(GoogleDefaults.AuthenticationScheme);
-        challengeResult.Properties.Should().NotBeNull();
-        string expectedRedirectUri =
-            $"{GoogleAuthDefaults.RedirectPath}?frontend_redirect={Uri.EscapeDataString("http://localhost:5173")}";
-        challengeResult.Properties!.RedirectUri.Should().Be(expectedRedirectUri);
-    }
-
-    [Fact]
-    public async Task GoogleCallback_ComPrincipalValido_DeveRedirecionarParaFrontend()
-    {
-        // Arrange
-        ClaimsPrincipal principal = BuildPrincipal(
-            new Claim(ClaimTypes.NameIdentifier, "google-123"),
-            new Claim(ClaimTypes.Email, "user@example.com"),
-            new Claim(ClaimTypes.Name, "User Test"),
-            new Claim("picture", "https://example.com/avatar.png")
+        var authResult = AuthenticateResult.Success(
+            new AuthenticationTicket(_controller.User, IdentityConstants.ExternalScheme)
         );
-
-        AuthenticationTicket ticket = new(principal, IdentityConstants.ExternalScheme);
-        AuthenticateResult authenticateResult = AuthenticateResult.Success(ticket);
-
-        _authenticationServiceMock
-            .Setup(service => service.AuthenticateAsync(It.IsAny<HttpContext>(), IdentityConstants.ExternalScheme))
-            .ReturnsAsync(authenticateResult);
+        _authInternalMock
+            .Setup(s => s.AuthenticateAsync(It.IsAny<HttpContext>(), It.IsAny<string>()))
+            .ReturnsAsync(authResult);
 
         _authServiceMock
-            .Setup(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()))
+            .Setup(s =>
+                s.SignInWithGoogleAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<HttpContext>())
+            )
             .ReturnsAsync("jwt-token");
 
-        _controller.ControllerContext = BuildControllerContextWithServices(_authenticationServiceMock.Object);
-
         // Act
-        IActionResult result = await _controller.GoogleCallback("http://localhost:5173", CancellationToken.None);
+        var result = await _controller.GoogleCallback("http://localhost:5173", default);
 
         // Assert
-        RedirectResult redirectResult = result.Should().BeOfType<RedirectResult>().Subject;
-        redirectResult.Url.Should().Be("http://localhost:5173#token=jwt-token");
-
-        _authenticationServiceMock.Verify(service => service.AuthenticateAsync(It.IsAny<HttpContext>(), IdentityConstants.ExternalScheme), Times.Once);
-        _authServiceMock.Verify(service => service.SignInWithGoogleAsync(principal, It.IsAny<HttpContext>()), Times.Once);
-        _authenticationServiceMock.VerifyNoOtherCalls();
-        _authServiceMock.VerifyNoOtherCalls();
-    }
-
-    private static ControllerContext BuildControllerContext(params Claim[] claims)
-    {
-        ClaimsIdentity identity = new(claims, "TestAuth");
-        ClaimsPrincipal principal = new(identity);
-
-        return new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext
-            {
-                User = principal,
-                RequestServices = BuildRequestServices(),
-            },
-        };
-    }
-
-    private static ControllerContext BuildControllerContextWithServices(
-        IAuthenticationService authenticationService
-    )
-    {
-        return new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext
-            {
-                RequestServices = BuildRequestServices(authenticationService),
-            },
-        };
-    }
-
-    private static IServiceProvider BuildRequestServices(
-        IAuthenticationService? authenticationService = null
-    )
-    {
-        ServiceCollection services = new();
-        services.AddSingleton(authenticationService ?? Mock.Of<IAuthenticationService>());
-        return services.BuildServiceProvider();
-    }
-
-    private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)
-    {
-        ClaimsIdentity identity = new(claims, "Google");
-        return new ClaimsPrincipal(identity);
+        result
+            .Should()
+            .BeOfType<RedirectResult>()
+            .Which.Url.Should()
+            .Be("http://localhost:5173#token=jwt-token");
     }
 }

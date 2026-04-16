@@ -4,7 +4,6 @@ public sealed class User(
     Guid id = default,
     string email = "",
     string hashedPassword = "",
-    Guid roleId = default,
     string? fullName = null,
     string? googleId = null,
     string? avatarUrl = null,
@@ -25,8 +24,6 @@ public sealed class User(
 
     public required string HashedPassword { get; set; } = hashedPassword;
 
-    public Guid RoleId { get; set; } = roleId;
-
-    public Role? Role { get; set; }
+    public ICollection<Role> Roles { get; set; } = new List<Role>();
 }
 

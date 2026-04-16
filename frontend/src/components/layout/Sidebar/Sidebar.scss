@@ -127,6 +127,25 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-sm;
+
+    &--nested {
+      padding-left: 1.5rem;
+      margin-top: $spacing-xs;
+      gap: $spacing-xs;
+      border-left: 1px solid rgba($color-border, 0.85);
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: max-height 0.25s ease, opacity 0.25s ease;
+      will-change: max-height, opacity;
+
+      &--expanded {
+        max-height: 40rem;
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
   }
 
   &__item {
@@ -137,6 +156,7 @@
     width: 100%;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: $spacing-md;
     padding: 0.75rem 1rem;
     background: transparent;
@@ -154,6 +174,14 @@
       color: $color-text-main;
     }
 
+    &--parent {
+      justify-content: space-between;
+    }
+
+    &--child {
+      font-size: 0.9rem;
+    }
+
     &--active {
       background-color: rgba($color-success, 0.1); // Usando a cor de sucesso do nosso token
       color: color.adjust($color-success, $lightness: -10%);
@@ -165,11 +193,31 @@
     }
   }
 
+  &__btn-content {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    min-width: 0;
+    flex: 1;
+  }
+
   &__icon {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 24px;
     height: 24px;
+  }
+
+  &__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+
+    &--expanded {
+      transform: rotate(180deg);
+    }
   }
 }

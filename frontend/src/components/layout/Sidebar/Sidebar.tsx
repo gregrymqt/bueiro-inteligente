@@ -1,6 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { NavigationItem } from './types';
 import './Sidebar.scss';
+
+const findNavigationItem = (
+  items: NavigationItem[],
+  targetId: string,
+): NavigationItem | undefined => {
+  for (const item of items) {
+    if (item.id === targetId) {
+      return item;
+    }
+
+    const nestedItem = item.children ? findNavigationItem(item.children, targetId) : undefined;
+
+    if (nestedItem) {
+      return nestedItem;
+    }
+  }
+
+  return undefined;
+};
+
+const containsItemId = (items: NavigationItem[] | undefined, targetId: string): boolean => {
+  if (!items) {
+    return false;
+  }
+
+  return items.some((item) => item.id === targetId || containsItemId(item.children, targetId));
+};
 
 interface SidebarProps {
   id: string;
@@ -23,7 +50,102 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleMobile,
   showMobileSubheader = false,
 }) => {
-  const activeItemLabel = items.find((item) => item.id === activeId)?.label || 'Menu';
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
+
+  const activeItemLabel = findNavigationItem(items, activeId)?.label || 'Menu';
+
+  const toggleExpandedItem = (itemId: string) => {
+    setExpandedItems((currentExpandedItems) => {
+      const nextExpandedItems = new Set(currentExpandedItems);
+
+      if (nextExpandedItems.has(itemId)) {
+        nextExpandedItems.delete(itemId);
+      } else {
+        nextExpandedItems.add(itemId);
+      }
+
+      return nextExpandedItems;
+    });
+  };
+
+  const renderNavigationItems = (
+    navigationItems: NavigationItem[],
+    isChildLevel = false,
+    isVisible = true,
+  ) => (
+    <>
+      {navigationItems.map((item) => {
+        const hasChildren = Boolean(item.children?.length);
+        const hasActiveDescendant = containsItemId(item.children, activeId);
+        const isCurrent = item.id === activeId;
+        const isActive = isCurrent || hasActiveDescendant;
+        const isExpanded = expandedItems.has(item.id) || hasActiveDescendant;
+        const isNestedVisible = isVisible && isExpanded;
+
+        return (
+          <li key={item.id} className="sidebar__item">
+            <button
+              type="button"
+              className={[
+                'sidebar__btn',
+                isActive ? 'sidebar__btn--active' : '',
+                hasChildren ? 'sidebar__btn--parent' : '',
+                isChildLevel ? 'sidebar__btn--child' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              tabIndex={isVisible ? 0 : -1}
+              onClick={(e) => {
+                e.stopPropagation();
+
+                if (hasChildren) {
+                  toggleExpandedItem(item.id);
+                  return;
+                }
+
+                onNavigate(item.id);
+                onCloseMobile();
+              }}
+              aria-current={isCurrent ? 'page' : undefined}
+              aria-expanded={hasChildren ? isExpanded : undefined}
+              aria-haspopup={hasChildren ? 'true' : undefined}
+            >
+              <span className="sidebar__btn-content">
+                <span className="sidebar__icon">{item.icon}</span>
+                <span className="sidebar__label">{item.label}</span>
+              </span>
+
+              {hasChildren && (
+                <span
+                  className={`sidebar__chevron ${isExpanded ? 'sidebar__chevron--expanded' : ''}`}
+                  aria-hidden="true"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              )}
+            </button>
+
+            {hasChildren && (
+              <ul
+                className={[
+                  'sidebar__list',
+                  'sidebar__list--nested',
+                  isExpanded ? 'sidebar__list--nested--expanded' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-hidden={!isNestedVisible}
+              >
+                {renderNavigationItems(item.children ?? [], true, isNestedVisible)}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </>
+  );
 
   return (
     <>
@@ -63,6 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <h1 className="sidebar__logo">Bueiro Inteligente</h1>
           {/* Opcional: botão de fechar para mobile */}
           <button
+            type="button"
             className="sidebar__close-btn"
             onClick={(e) => {
               e.stopPropagation();
@@ -75,26 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav className="sidebar__nav">
           <ul className="sidebar__list">
-            {items.map((item) => {
-              const isActive = item.id === activeId;
-
-              return (
-                <li key={item.id} className="sidebar__item">
-                  <button
-                    className={`sidebar__btn ${isActive ? 'sidebar__btn--active' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigate(item.id);
-                      onCloseMobile(); // Fecha o menu no mobile após clicar
-                    }}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <span className="sidebar__icon">{item.icon}</span>
-                    <span className="sidebar__label">{item.label}</span>
-                  </button>
-                </li>
-              );
-            })}
+            {renderNavigationItems(items)}
           </ul>
         </nav>
       </aside>

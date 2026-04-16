@@ -8,11 +8,7 @@ public sealed class GoogleRedirectUrlResolverTests
     public void ResolvePreferredFrontendRedirectUrl_DevePriorizarLocalQuandoDisponivel()
     {
         string result = GoogleRedirectUrlResolver.ResolvePreferredFrontendRedirectUrl(
-            [
-                "https://frontend.example.com",
-                "http://localhost:5173",
-                "https://abc.ngrok-free.app",
-            ]
+            ["https://frontend.example.com", "http://localhost:5173", "https://abc.ngrok-free.app"]
         );
 
         result.Should().Be("http://localhost:5173");
@@ -22,10 +18,7 @@ public sealed class GoogleRedirectUrlResolverTests
     public void ResolvePreferredFrontendRedirectUrl_DevePriorizarTunelQuandoNaoHaLocal()
     {
         string result = GoogleRedirectUrlResolver.ResolvePreferredFrontendRedirectUrl(
-            [
-                "https://frontend.example.com",
-                "https://abc.ngrok-free.app",
-            ]
+            ["https://frontend.example.com", "https://abc.ngrok-free.app"]
         );
 
         result.Should().Be("https://abc.ngrok-free.app");

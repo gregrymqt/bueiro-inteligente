@@ -17,6 +17,7 @@ public sealed class AuthService(
     IAuthRepository repository,
     IAuthExtension authExtension,
     IUnitOfWork unitOfWork,
+    AppSettings settings,
     ILogger<AuthService> logger
 ) : IAuthService
 {
@@ -26,8 +27,13 @@ public sealed class AuthService(
         authExtension ?? throw new ArgumentNullException(nameof(authExtension));
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+    private readonly AppSettings _settings =
+        settings ?? throw new ArgumentNullException(nameof(settings));
     private readonly ILogger<AuthService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+
+    private static readonly string[] PrivilegedRoleNames = new[] { "Admin", "Manager", "User" };
+    private const string DefaultRoleName = "User";
 
     public async Task<TokenResponse?> LoginAsync(
         LoginRequest request,
@@ -61,9 +67,9 @@ public sealed class AuthService(
             return null;
         }
 
-        string role = user.Role?.Name ?? "User";
+        IReadOnlyList<string> roleNames = ResolveUserRoleNames(user.Email, user.Roles);
         string accessToken = _authExtension.CreateAccessToken(
-            new SharedTokenPayload(user.Email, role)
+            BuildTokenPayload(user.Email, roleNames)
         );
 
         return new TokenResponse(accessToken, "bearer");
@@ -90,26 +96,15 @@ public sealed class AuthService(
             throw new LogicException($"Email already registered: {request.Email}");
         }
 
-        Role? role = await _repository
-            .GetRoleByNameAsync(request.Role, cancellationToken)
+        IReadOnlyList<string> assignedRoleNames = await ResolveAssignedRoleNamesAsync(
+                request.Email,
+                request.Role,
+                cancellationToken
+            )
             .ConfigureAwait(false);
 
-        if (
-            role is null
-            && !string.Equals(request.Role, "User", StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            role = await _repository
-                .GetRoleByNameAsync("User", cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        if (role is null)
-        {
-            throw new LogicException(
-                $"Role '{request.Role}' was not found and fallback role 'User' is unavailable."
-            );
-        }
+        IReadOnlyList<Role> roles = await GetRolesByNamesAsync(assignedRoleNames, cancellationToken)
+            .ConfigureAwait(false);
 
         string hashedPassword = await _authExtension
             .GetPasswordHashAsync(request.Password)
@@ -119,15 +114,14 @@ public sealed class AuthService(
         {
             Email = request.Email,
             HashedPassword = hashedPassword,
-            RoleId = role.Id,
             FullName = request.FullName,
-            Role = role,
+            Roles = roles.ToList(),
         };
 
         await _repository.AddUserAsync(user, cancellationToken).ConfigureAwait(false);
         await _unitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-        return new UserResponse(user.Email, user.FullName, [role.Name]);
+        return new UserResponse(user.Email, user.FullName, assignedRoleNames);
     }
 
     public async Task<string> SignInWithGoogleAsync(
@@ -158,14 +152,18 @@ public sealed class AuthService(
 
         if (user is null)
         {
-            Role? role = await _repository
-                .GetRoleByNameAsync("User", httpContext.RequestAborted)
+            IReadOnlyList<string> assignedRoleNames = await ResolveAssignedRoleNamesAsync(
+                    email,
+                    DefaultRoleName,
+                    httpContext.RequestAborted
+                )
                 .ConfigureAwait(false);
 
-            if (role is null)
-            {
-                throw new LogicException("Role 'User' was not found.");
-            }
+            IReadOnlyList<Role> roles = await GetRolesByNamesAsync(
+                    assignedRoleNames,
+                    httpContext.RequestAborted
+                )
+                .ConfigureAwait(false);
 
             string hashedPassword = await _authExtension
                 .GetPasswordHashAsync(Guid.NewGuid().ToString("N"))
@@ -176,20 +174,19 @@ public sealed class AuthService(
                 Email = email,
                 FullName = fullName,
                 HashedPassword = hashedPassword,
-                RoleId = role.Id,
-                Role = role,
                 GoogleId = googleId,
                 AvatarUrl = avatarUrl,
                 EmailConfirmed = true,
+                Roles = roles.ToList(),
             };
 
             await _repository.AddUserAsync(user, httpContext.RequestAborted).ConfigureAwait(false);
             await _unitOfWork.CommitAsync(httpContext.RequestAborted).ConfigureAwait(false);
         }
 
-        string roleName = user.Role?.Name ?? "User";
+        IReadOnlyList<string> roleNames = ResolveUserRoleNames(email, user.Roles);
         string accessToken = _authExtension.CreateAccessToken(
-            new SharedTokenPayload(user.Email, roleName)
+            BuildTokenPayload(user.Email, roleNames)
         );
 
         httpContext.Response.Cookies.Append(
@@ -205,6 +202,127 @@ public sealed class AuthService(
         );
 
         return accessToken;
+    }
+
+    private async Task<IReadOnlyList<string>> ResolveAssignedRoleNamesAsync(
+        string email,
+        string requestedRole,
+        CancellationToken cancellationToken
+    )
+    {
+        if (IsPrivilegedUser(email))
+        {
+            return PrivilegedRoleNames;
+        }
+
+        Role? role = await _repository
+            .GetRoleByNameAsync(requestedRole, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (
+            role is null
+            && !string.Equals(requestedRole, DefaultRoleName, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            role = await _repository
+                .GetRoleByNameAsync(DefaultRoleName, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (role is null)
+        {
+            throw new LogicException(
+                $"Role '{requestedRole}' was not found and fallback role 'User' is unavailable."
+            );
+        }
+
+        return new[] { role.Name };
+    }
+
+    private async Task<IReadOnlyList<Role>> GetRolesByNamesAsync(
+        IReadOnlyList<string> roleNames,
+        CancellationToken cancellationToken
+    )
+    {
+        List<Role> roles = new(roleNames.Count);
+
+        foreach (string roleName in NormalizeRoleNames(roleNames))
+        {
+            Role? role = await _repository
+                .GetRoleByNameAsync(roleName, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (role is null)
+            {
+                throw new LogicException($"Role '{roleName}' was not found.");
+            }
+
+            roles.Add(role);
+        }
+
+        return roles;
+    }
+
+    private IReadOnlyList<string> ResolveUserRoleNames(string email, IEnumerable<Role> roles)
+    {
+        if (IsPrivilegedUser(email))
+        {
+            return PrivilegedRoleNames;
+        }
+
+        return NormalizeRoleNames(roles.Select(role => role.Name));
+    }
+
+    private bool IsPrivilegedUser(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || _settings.EmailUsersAdmin.Length == 0)
+        {
+            return false;
+        }
+
+        string normalizedEmail = email.Trim();
+
+        return _settings.EmailUsersAdmin.Any(adminEmail =>
+            !string.IsNullOrWhiteSpace(adminEmail)
+            && string.Equals(adminEmail.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    private static IReadOnlyList<string> NormalizeRoleNames(IEnumerable<string> roleNames)
+    {
+        return roleNames
+            .Where(roleName => !string.IsNullOrWhiteSpace(roleName))
+            .Select(roleName => roleName.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(GetRolePriority)
+            .ToArray();
+    }
+
+    private static int GetRolePriority(string roleName)
+    {
+        return roleName.ToUpperInvariant() switch
+        {
+            "ADMIN" => 0,
+            "MANAGER" => 1,
+            "USER" => 2,
+            _ => 3,
+        };
+    }
+
+    private static SharedTokenPayload BuildTokenPayload(
+        string email,
+        IReadOnlyList<string> roleNames
+    )
+    {
+        IReadOnlyList<string> normalizedRoleNames = NormalizeRoleNames(roleNames);
+        string primaryRole = normalizedRoleNames.FirstOrDefault() ?? DefaultRoleName;
+
+        Dictionary<string, object?> additionalClaims = new(StringComparer.Ordinal)
+        {
+            ["roles"] = normalizedRoleNames.ToArray(),
+        };
+
+        return new SharedTokenPayload(email, primaryRole, additionalClaims);
     }
 
     public async Task LogoutAsync(string tokenJti, CancellationToken cancellationToken = default)
@@ -237,8 +355,8 @@ public sealed class AuthService(
             return null;
         }
 
-        string role = user.Role?.Name ?? "User";
-        return new UserResponse(user.Email, user.FullName, new List<string> { role });
+        IReadOnlyList<string> roleNames = ResolveUserRoleNames(email, user.Roles);
+        return new UserResponse(user.Email, user.FullName, roleNames);
     }
 
     private static string GetRequiredClaim(ClaimsPrincipal principal, params string[] claimTypes)
