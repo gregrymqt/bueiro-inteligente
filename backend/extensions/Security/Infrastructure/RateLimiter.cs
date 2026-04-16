@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using backend.Core;
 using backend.Extensions.Security.Abstractions;
 using backend.Extensions.Security.Exceptions;
+using backend.Extensions.Security.Utils;
 
 namespace backend.Extensions.Security.Infrastructure;
 
@@ -22,7 +22,7 @@ public sealed class RateLimiter(
         try
         {
             var key =
-                $"rate_limit:{ResolveIdentifier(context)}:{context.Request.Path.Value ?? "/"}";
+                $"rate_limit:{SecurityUtils.ResolveIdentifier(context)}:{context.Request.Path.Value ?? "/"}";
             var currentCount = await rateLimitStore.GetCountAsync(key, ct);
 
             if (currentCount >= times)
@@ -43,22 +43,4 @@ public sealed class RateLimiter(
         }
     }
 
-    // Método simplificado e reaproveitável
-    public static string ResolveIdentifier(HttpContext context)
-    {
-        var forwarded = context.Request.Headers["X-Forwarded-For"].ToString();
-        if (!string.IsNullOrWhiteSpace(forwarded))
-            return forwarded.Split(',')[0].Trim();
-
-        if (context.User?.Identity?.IsAuthenticated == true)
-            return context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.User.FindFirstValue("sub")
-                ?? context.User.FindFirstValue(ClaimTypes.Name)
-                ?? "auth-user";
-
-        return context.Items["user_id"]?.ToString()
-            ?? context.Items["user"]?.ToString()
-            ?? context.Connection.RemoteIpAddress?.ToString()
-            ?? "127.0.0.1";
-    }
 }
