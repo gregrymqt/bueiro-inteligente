@@ -32,9 +32,7 @@ public sealed class RedisCacheService(
         {
             IDatabase database = _connectionMultiplexer.GetDatabase();
             string payload = JsonSerializer.Serialize(value, JsonOptions);
-            await database
-                .StringSetAsync(key, payload, expiry, false)
-                .ConfigureAwait(false);
+            await database.StringSetAsync(key, payload, expiry, false).ConfigureAwait(false);
         }
         catch (Exception exception)
         {

@@ -5,7 +5,9 @@ namespace backend.Extensions.Auth.Infrastructure;
 
 public sealed class InMemoryTokenBlacklistStore : ITokenBlacklistStore
 {
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _entries = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _entries = new(
+        StringComparer.Ordinal
+    );
 
     public Task AddAsync(string jti, TimeSpan ttl, CancellationToken cancellationToken = default)
     {

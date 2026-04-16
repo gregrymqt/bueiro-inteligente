@@ -6,4 +6,3 @@ public sealed record GoogleSettings(
     string FrontendRedirectUrl,
     string[] AllowedOrigins
 );
-

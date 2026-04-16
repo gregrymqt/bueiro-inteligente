@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using backend.Core;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Infrastructure;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
 
 namespace backend.Extensions.Auth;
 
@@ -41,13 +41,16 @@ public static class AuthServiceCollectionExtensions
                 options.DefaultChallengeScheme = BueiroInteligenteAuthenticationDefaults.Scheme;
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
             })
-            .AddCookie(IdentityConstants.ExternalScheme, options =>
-            {
-                options.Cookie.Name = ".BueiroInteligente.External";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            })
+            .AddCookie(
+                IdentityConstants.ExternalScheme,
+                options =>
+                {
+                    options.Cookie.Name = ".BueiroInteligente.External";
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                }
+            )
             .AddScheme<AuthenticationSchemeOptions, BueiroInteligenteAuthenticationHandler>(
                 BueiroInteligenteAuthenticationDefaults.Scheme,
                 _ => { }
@@ -68,5 +71,4 @@ public static class AuthServiceCollectionExtensions
         services.AddAuthorization();
         return services;
     }
-
 }

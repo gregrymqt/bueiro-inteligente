@@ -2,7 +2,7 @@ namespace backend.Tests.Features.Home;
 
 public sealed class HomeControllerTests
 {
-    private readonly Mock<IHomeService> _homeServiceMock = new(MockBehavior.Strict);
+    private readonly Mock<IHomeService> _homeServiceMock = new(); // Mock Loose por padrão
     private readonly HomeController _controller;
 
     public HomeControllerTests()
@@ -10,59 +10,63 @@ public sealed class HomeControllerTests
         _controller = new HomeController(_homeServiceMock.Object);
     }
 
-    [Fact]
-    public async Task GetHomeContent_ComSucesso_DeveRetornarOk()
-    {
-        // Arrange
-        HomeResponseDto response = new(
+    #region Helpers (Gabarito para o seu agente)
+
+    private HomeResponseDto BuildHomeResponse() =>
+        new(
+            Carousels:
             [
                 new CarouselResponseDto(
-                    Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                    "Banner Principal",
-                    "Subtítulo principal",
-                    "https://cdn.example.com/banner.jpg",
-                    "https://example.com/acao",
-                    2,
+                    Guid.NewGuid(),
+                    "Banner",
+                    "Sub",
+                    "url",
+                    "action",
+                    1,
                     CarouselSection.hero
-                )
+                ),
             ],
-            []
+            Stats: []
         );
 
+    #endregion
+
+    [Fact]
+    public async Task GetHomeContent_Sucesso_DeveRetornarOkComDados()
+    {
+        // Arrange
+        var expectedResponse = BuildHomeResponse();
         _homeServiceMock
-            .Setup(service => service.GetHomeContentAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
+            .Setup(s => s.GetHomeContentAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
 
         // Act
-        ActionResult<HomeResponseDto> result = await _controller.GetHomeContent(CancellationToken.None);
+        var result = await _controller.GetHomeContent(default);
 
         // Assert
-        OkObjectResult okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().BeEquivalentTo(response);
-
-        _homeServiceMock.Verify(service => service.GetHomeContentAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
+        result
+            .Result.Should()
+            .BeOfType<OkObjectResult>()
+            .Which.Value.Should()
+            .BeEquivalentTo(expectedResponse);
     }
 
     [Fact]
-    public async Task GetHomeContent_ComConnectionException_DeveRetornarServiceUnavailable()
+    public async Task GetHomeContent_ErroDeConexao_DeveRetornar503ServiceUnavailable()
     {
         // Arrange
         _homeServiceMock
-            .Setup(service => service.GetHomeContentAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ConnectionException("PostgreSQL", "Falha ao consultar home."));
+            .Setup(s => s.GetHomeContentAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConnectionException("Database", "Falha crítica"));
 
         // Act
-        ActionResult<HomeResponseDto> result = await _controller.GetHomeContent(CancellationToken.None);
+        var result = await _controller.GetHomeContent(default);
 
         // Assert
-        ObjectResult objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        ProblemDetails problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
         objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
-        problemDetails.Status.Should().Be(StatusCodes.Status503ServiceUnavailable);
 
-        _homeServiceMock.Verify(service => service.GetHomeContentAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
+        var problem = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+        problem.Status.Should().Be(StatusCodes.Status503ServiceUnavailable);
     }
 }

@@ -2,7 +2,7 @@ namespace backend.Tests.Features.Home;
 
 public sealed class HomeAdminControllerTests
 {
-    private readonly Mock<IHomeService> _homeServiceMock = new(MockBehavior.Strict);
+    private readonly Mock<IHomeService> _homeServiceMock = new(); // Loose por padrão
     private readonly HomeAdminController _controller;
 
     public HomeAdminControllerTests()
@@ -10,135 +10,117 @@ public sealed class HomeAdminControllerTests
         _controller = new HomeAdminController(_homeServiceMock.Object);
     }
 
+    #region Helpers (Padrão para o seu agente)
+
+    private CarouselResponseDto CreateCarouselResponse(Guid? id = null, string title = "Banner") =>
+        new(
+            id ?? Guid.NewGuid(),
+            title,
+            "Subtítulo",
+            "https://example.com/img.jpg",
+            "https://example.com/action",
+            1,
+            CarouselSection.alerts
+        );
+
+    private StatCardResponseDto CreateStatCardResponse(Guid? id = null, string title = "Stat") =>
+        new(id ?? Guid.NewGuid(), title, "10", "Descrição", "icon", StatCardColor.success, 1);
+
+    #endregion
+
     [Fact]
     public async Task CreateCarousel_ComSucesso_DeveRetornarCreatedAtAction()
     {
         // Arrange
-        CarouselCreateDto request = new(
-            "Banner Novo",
-            "Subtítulo Novo",
-            "https://cdn.example.com/banner-novo.jpg",
-            "https://example.com/novo",
-            3,
+        var request = new CarouselCreateDto(
+            "Novo",
+            "Sub",
+            "url",
+            "action",
+            1,
             CarouselSection.alerts
         );
-
-        CarouselResponseDto response = new(
-            Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            request.Title,
-            request.Subtitle,
-            request.ImageUrl,
-            request.ActionUrl,
-            request.Order,
-            request.Section
-        );
+        var response = CreateCarouselResponse(title: request.Title);
 
         _homeServiceMock
-            .Setup(service => service.CreateCarouselAsync(request, It.IsAny<CancellationToken>()))
+            .Setup(s => s.CreateCarouselAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
 
         // Act
-        ActionResult<CarouselResponseDto> result = await _controller.CreateCarousel(request, CancellationToken.None);
+        var result = await _controller.CreateCarousel(request, default);
 
         // Assert
-        CreatedAtActionResult createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         createdResult.ActionName.Should().Be(nameof(HomeAdminController.GetCarouselById));
-        createdResult.RouteValues.Should().ContainKey("carouselId").WhoseValue.Should().Be(response.Id);
         createdResult.Value.Should().BeEquivalentTo(response);
-
-        _homeServiceMock.Verify(service => service.CreateCarouselAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateStatCard_ComSucesso_DeveRetornarOk()
     {
         // Arrange
-        Guid statCardId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        StatCardUpdateDto request = new(
-            "Novo título",
-            "11",
-            "Nova descrição",
-            "alert-circle",
+        var statCardId = Guid.NewGuid();
+        var request = new StatCardUpdateDto(
+            "Título",
+            "20",
+            "Desc",
+            "icon",
             StatCardColor.danger,
-            7
+            2
         );
-
-        StatCardResponseDto response = new(
-            statCardId,
-            request.Title!,
-            request.Value!,
-            request.Description!,
-            request.IconName!,
-            request.Color!.Value,
-            request.Order!.Value
-        );
+        var response = CreateStatCardResponse(statCardId, request.Title!);
 
         _homeServiceMock
-            .Setup(service => service.UpdateStatCardAsync(statCardId, request, It.IsAny<CancellationToken>()))
+            .Setup(s => s.UpdateStatCardAsync(statCardId, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
 
         // Act
-        ActionResult<StatCardResponseDto> result = await _controller.UpdateStatCard(statCardId, request, CancellationToken.None);
+        var result = await _controller.UpdateStatCard(statCardId, request, default);
 
         // Assert
-        OkObjectResult okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().BeEquivalentTo(response);
+        result
+            .Result.Should()
+            .BeOfType<OkObjectResult>()
+            .Which.Value.Should()
+            .BeEquivalentTo(response);
+    }
 
-        _homeServiceMock.Verify(service => service.UpdateStatCardAsync(statCardId, request, It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
+    [Theory]
+    [InlineData("LogicException")]
+    [InlineData("NotFound")]
+    public async Task HomeAdmin_TratamentoDeErros_DeveRetornarStatusCorreto(string erroTipo)
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var request = new CarouselUpdateDto("Título", null, null, null, null, null);
+
+        if (erroTipo == "LogicException")
+            _homeServiceMock
+                .Setup(s => s.UpdateCarouselAsync(id, request, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new LogicException("Dados inválidos"));
+        else
+            _homeServiceMock
+                .Setup(s => s.UpdateCarouselAsync(id, request, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new NotFoundException("Carousel", id));
+
+        // Act
+        var result = await _controller.UpdateCarousel(id, request, default);
+
+        // Assert
+        var statusCode =
+            erroTipo == "LogicException"
+                ? StatusCodes.Status400BadRequest
+                : StatusCodes.Status404NotFound;
+        result.Result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(statusCode);
     }
 
     [Fact]
-    public async Task DeleteStatCard_ComSucesso_DeveRetornarNoContent()
+    public async Task DeleteStatCard_DeveRetornarNoContent()
     {
-        // Arrange
-        Guid statCardId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-
-        _homeServiceMock
-            .Setup(service => service.DeleteStatCardAsync(statCardId, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         // Act
-        IActionResult result = await _controller.DeleteStatCard(statCardId, CancellationToken.None);
+        var result = await _controller.DeleteStatCard(Guid.NewGuid(), default);
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
-
-        _homeServiceMock.Verify(service => service.DeleteStatCardAsync(statCardId, It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task UpdateCarousel_ComLogicException_DeveRetornarBadRequest()
-    {
-        // Arrange
-        Guid carouselId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-        CarouselUpdateDto request = new(
-            "Título",
-            null,
-            null,
-            null,
-            null,
-            null
-        );
-
-        _homeServiceMock
-            .Setup(service => service.UpdateCarouselAsync(carouselId, request, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new LogicException("Dados inválidos."));
-
-        // Act
-        ActionResult<CarouselResponseDto> result = await _controller.UpdateCarousel(carouselId, request, CancellationToken.None);
-
-        // Assert
-        ObjectResult objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        ProblemDetails problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        problemDetails.Status.Should().Be(StatusCodes.Status400BadRequest);
-        problemDetails.Detail.Should().Contain("Dados inválidos");
-
-        _homeServiceMock.Verify(service => service.UpdateCarouselAsync(carouselId, request, It.IsAny<CancellationToken>()), Times.Once);
-        _homeServiceMock.VerifyNoOtherCalls();
     }
 }

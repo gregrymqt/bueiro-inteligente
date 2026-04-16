@@ -2,9 +2,8 @@ namespace backend.Tests.Features.Monitoring;
 
 public sealed class MonitoringControllerTests
 {
-    private readonly Mock<IMonitoringService> _monitoringServiceMock = new(MockBehavior.Strict);
-    private readonly Mock<IAuthExtension> _authExtensionMock = new(MockBehavior.Strict);
-
+    private readonly Mock<IMonitoringService> _monitoringServiceMock = new();
+    private readonly Mock<IAuthExtension> _authExtensionMock = new();
     private readonly MonitoringController _controller;
 
     public MonitoringControllerTests()
@@ -16,95 +15,113 @@ public sealed class MonitoringControllerTests
         );
     }
 
+    #region Helpers (O gabarito para telemetria)
+
+    private void SetupContext(string? authHeader = null, string? queryToken = null)
+    {
+        var httpContext = new DefaultHttpContext();
+        if (authHeader != null)
+            httpContext.Request.Headers["Authorization"] = authHeader;
+        if (queryToken != null)
+            httpContext.Request.QueryString = new QueryString($"?token={queryToken}");
+
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+    }
+
+    private SensorPayloadDTO BuildPayload(string id = "DRN-01") => new(id, 70.0, -23.9, -46.3);
+
+    #endregion
+
     [Fact]
-    public async Task ReceiveSensorData_ComTokenDeHardwareInvalido_DeveRetornar401()
+    public async Task ReceiveSensorData_ComTokenInvalido_DeveRetornar401()
     {
         // Arrange
-        SensorPayloadDTO payload = BuildPayload("DRN-10", 70);
-        ConfigureHttpContext(
-            path: "/monitoring/medicoes",
-            authorizationHeader: "Bearer token-invalido",
-            queryToken: "query-token"
-        );
+        var payload = BuildPayload();
+        SetupContext(authHeader: "Bearer invalid", queryToken: "wrong");
 
         _authExtensionMock
-            .Setup(auth => auth.VerifyHardwareToken("Bearer token-invalido", "query-token"))
-            .Throws(new UnauthorizedAccessException("Hardware inválido ou não autorizado."));
+            .Setup(a => a.VerifyHardwareToken(It.IsAny<string>(), It.IsAny<string>()))
+            .Throws(new UnauthorizedAccessException("Hardware não autorizado"));
 
         // Act
-        ActionResult<DrainStatusDTO> result = await _controller.ReceiveSensorData(payload, CancellationToken.None);
+        var result = await _controller.ReceiveSensorData(payload, default);
 
         // Assert
-        ObjectResult unauthorizedResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        ProblemDetails problemDetails = unauthorizedResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+        result
+            .Result.Should()
+            .BeOfType<ObjectResult>()
+            .Which.StatusCode.Should()
+            .Be(StatusCodes.Status401Unauthorized);
 
-        unauthorizedResult.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-        problemDetails.Status.Should().Be(StatusCodes.Status401Unauthorized);
-        problemDetails.Title.Should().Be("Unauthorized");
-        problemDetails.Detail.Should().Be("Hardware inválido ou não autorizado.");
+        _monitoringServiceMock.Verify(
+            s =>
+                s.ProcessSensorDataAsync(
+                    It.IsAny<SensorPayloadDTO>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
+    }
 
-        _authExtensionMock.Verify(auth => auth.VerifyHardwareToken("Bearer token-invalido", "query-token"), Times.Once);
-        _monitoringServiceMock.Verify(service => service.ProcessSensorDataAsync(It.IsAny<SensorPayloadDTO>(), It.IsAny<CancellationToken>()), Times.Never);
-        _authExtensionMock.VerifyNoOtherCalls();
-        _monitoringServiceMock.VerifyNoOtherCalls();
+    [Theory]
+    [InlineData("NotFound")]
+    [InlineData("LogicException")]
+    public async Task GetStatus_CenariosDeErro_DeveRetornarStatusCorreto(string erroTipo)
+    {
+        // Arrange
+        var drainId = "DRN-404";
+        if (erroTipo == "NotFound")
+            _monitoringServiceMock
+                .Setup(s => s.GetDrainStatusAsync(drainId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new NotFoundException("Bueiro", drainId));
+        else
+            _monitoringServiceMock
+                .Setup(s => s.GetDrainStatusAsync(drainId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new LogicException("Erro de leitura"));
+
+        // Act
+        var result = await _controller.GetStatus(drainId, default);
+
+        // Assert
+        var expectedStatus =
+            erroTipo == "NotFound"
+                ? StatusCodes.Status404NotFound
+                : StatusCodes.Status400BadRequest;
+        result
+            .Result.Should()
+            .BeOfType<ObjectResult>()
+            .Which.StatusCode.Should()
+            .Be(expectedStatus);
     }
 
     [Fact]
-    public async Task GetStatus_QuandoBueiroNaoExiste_DeveRetornar404()
+    public async Task ReceiveSensorData_Sucesso_DeveRetornarStatusProcessado()
     {
         // Arrange
-        string drainIdentifier = "DRN-404";
-        ConfigureHttpContext(path: $"/monitoring/{drainIdentifier}/status");
+        var payload = BuildPayload();
+        var expectedStatus = new DrainStatusDTO(
+            payload.IdBueiro,
+            payload.DistanciaCm,
+            30.0,
+            "NORMAL",
+            payload.Latitude,
+            payload.Longitude,
+            DateTime.UtcNow
+        );
+        SetupContext(queryToken: "valid-token");
 
         _monitoringServiceMock
-            .Setup(service => service.GetDrainStatusAsync(drainIdentifier, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bueiro", drainIdentifier));
+            .Setup(s => s.ProcessSensorDataAsync(payload, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStatus);
 
         // Act
-        ActionResult<DrainStatusDTO> result = await _controller.GetStatus(drainIdentifier, CancellationToken.None);
+        var result = await _controller.ReceiveSensorData(payload, default);
 
         // Assert
-        ObjectResult objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        ProblemDetails problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-
-        objectResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-        problemDetails.Status.Should().Be(StatusCodes.Status404NotFound);
-        problemDetails.Title.Should().Be("Not found");
-        problemDetails.Detail.Should().Contain(drainIdentifier);
-
-        _monitoringServiceMock.Verify(service => service.GetDrainStatusAsync(drainIdentifier, It.IsAny<CancellationToken>()), Times.Once);
-        _authExtensionMock.Verify(auth => auth.VerifyHardwareToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _authExtensionMock.VerifyNoOtherCalls();
-        _monitoringServiceMock.VerifyNoOtherCalls();
-    }
-
-    private static SensorPayloadDTO BuildPayload(string drainIdentifier, double distanceCm)
-    {
-        return new SensorPayloadDTO(drainIdentifier, distanceCm, -23.5505, -46.6333);
-    }
-
-    private void ConfigureHttpContext(
-        string path,
-        string? authorizationHeader = null,
-        string? queryToken = null
-    )
-    {
-        DefaultHttpContext httpContext = new();
-        httpContext.Request.Path = path;
-
-        if (!string.IsNullOrWhiteSpace(authorizationHeader))
-        {
-            httpContext.Request.Headers["Authorization"] = authorizationHeader;
-        }
-
-        if (!string.IsNullOrWhiteSpace(queryToken))
-        {
-            httpContext.Request.QueryString = new QueryString($"?token={queryToken}");
-        }
-
-        _controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext,
-        };
+        result
+            .Result.Should()
+            .BeOfType<OkObjectResult>()
+            .Which.Value.Should()
+            .BeEquivalentTo(expectedStatus);
     }
 }

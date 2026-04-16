@@ -5,33 +5,26 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Extensions.Realtime.Infrastructure;
 
-/// <summary>
-/// Default SignalR implementation used to push monitoring updates to clients.
-/// </summary>
 public sealed class RealtimeService(IHubContext<MonitoringHub> hubContext) : IRealtimeService
 {
-    private const string MonitoringStatusChangedEventName = "BUEIRO_STATUS_MUDOU";
-
-    private readonly IHubContext<MonitoringHub> _hubContext =
-        hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+    private const string EventName = "BUEIRO_STATUS_MUDOU";
 
     public async Task BroadcastMonitoringData(object data)
     {
-        if (data is null)
-        {
-            throw LogicException.NullValue(nameof(data));
-        }
+        // Validação rápida de nulidade
+        _ = data ?? throw LogicException.NullValue(nameof(data));
 
         try
         {
-            await _hubContext.Clients.All.SendAsync(MonitoringStatusChangedEventName, data);
+            // O parâmetro 'hubContext' já está disponível no escopo da classe pelo Primary Constructor
+            await hubContext.Clients.All.SendAsync(EventName, data);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
             throw new ConnectionException(
                 "SignalR",
-                "Falha ao transmitir dados de monitoring para os clientes.",
-                exception
+                "Falha ao transmitir dados de monitoramento em tempo real.",
+                ex
             );
         }
     }

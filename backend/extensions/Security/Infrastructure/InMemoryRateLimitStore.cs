@@ -9,45 +9,31 @@ public sealed class InMemoryRateLimitStore : IRateLimitStore
         StringComparer.Ordinal
     );
 
-    public Task<int?> GetCountAsync(string key, CancellationToken cancellationToken = default)
+    public Task<int?> GetCountAsync(string key, CancellationToken ct = default)
     {
-        if (!_entries.TryGetValue(key, out RateLimitEntry? entry))
-        {
+        if (!_entries.TryGetValue(key, out var entry))
             return Task.FromResult<int?>(null);
-        }
 
-        if (entry.ExpiresAt <= DateTimeOffset.UtcNow)
-        {
-            _entries.TryRemove(key, out _);
-            return Task.FromResult<int?>(null);
-        }
+        if (entry.ExpiresAt > DateTimeOffset.UtcNow)
+            return Task.FromResult<int?>(entry.Count);
 
-        return Task.FromResult<int?>(entry.Count);
+        _entries.TryRemove(key, out _);
+        return Task.FromResult<int?>(null);
     }
 
-    public Task IncrementAsync(
-        string key,
-        TimeSpan ttl,
-        CancellationToken cancellationToken = default
-    )
+    public Task IncrementAsync(string key, TimeSpan ttl, CancellationToken ct = default)
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-
+        var now = DateTimeOffset.UtcNow;
         _entries.AddOrUpdate(
             key,
             _ => new RateLimitEntry(1, now.Add(ttl)),
             (_, existing) =>
-            {
-                if (existing.ExpiresAt <= now)
-                {
-                    return new RateLimitEntry(1, now.Add(ttl));
-                }
-
-                return existing with
-                {
-                    Count = existing.Count + 1,
-                };
-            }
+                existing.ExpiresAt <= now
+                    ? new RateLimitEntry(1, now.Add(ttl))
+                    : existing with
+                    {
+                        Count = existing.Count + 1,
+                    }
         );
 
         return Task.CompletedTask;

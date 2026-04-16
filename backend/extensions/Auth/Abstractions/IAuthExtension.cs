@@ -14,7 +14,5 @@ public interface IAuthExtension
 
     Task<bool> IsBlacklistedAsync(string jti);
 
-    Task<UserTokenData> GetCurrentUserAsync(string token, CancellationToken cancellationToken = default);
-
     string VerifyHardwareToken(string? authorizationToken = null, string? queryToken = null);
 }

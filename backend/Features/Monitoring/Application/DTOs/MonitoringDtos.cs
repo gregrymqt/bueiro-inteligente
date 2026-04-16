@@ -16,26 +16,13 @@ public sealed record SensorPayloadDTO(
 /// <summary>
 /// Monitoring status exposed to dashboards and external consumers.
 /// </summary>
-public sealed record DrainStatusDTO
-{
-    [JsonPropertyName("id_bueiro"), Required, StringLength(100)]
-    public required string IdBueiro { get; init; }
-
-    [JsonPropertyName("distancia_cm"), Required]
-    public required double DistanciaCm { get; init; }
-
-    [JsonPropertyName("nivel_obstrucao"), Required]
-    public required double NivelObstrucao { get; init; }
-
-    [JsonPropertyName("status"), Required, StringLength(32)]
-    public required string Status { get; init; }
-
-    [JsonPropertyName("latitude"), Range(-90, 90)]
-    public double? Latitude { get; init; }
-
-    [JsonPropertyName("longitude"), Range(-180, 180)]
-    public double? Longitude { get; init; }
-
-    [JsonPropertyName("ultima_atualizacao"), Required]
-    public required DateTimeOffset UltimaAtualizacao { get; init; }
-}
+public sealed record DrainStatusDTO(
+    [property: JsonPropertyName("id_bueiro"), Required, StringLength(100)] string IdBueiro,
+    [property: JsonPropertyName("distancia_cm"), Required] double DistanciaCm,
+    [property: JsonPropertyName("nivel_obstrucao"), Required] double NivelObstrucao,
+    [property: JsonPropertyName("status"), Required, StringLength(32)] string Status,
+    [property: JsonPropertyName("latitude"), Range(-90, 90)] double? Latitude = null,
+    [property: JsonPropertyName("longitude"), Range(-180, 180)] double? Longitude = null,
+    [property: JsonPropertyName("ultima_atualizacao"), Required]
+        DateTimeOffset UltimaAtualizacao = default
+);

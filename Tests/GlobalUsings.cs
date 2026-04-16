@@ -1,11 +1,7 @@
 global using System.Security.Claims;
 global using backend.Core;
-global using backend.Extensions;
 global using backend.Extensions.Auth.Abstractions;
 global using backend.Extensions.Realtime.Abstractions;
-global using backend.Extensions.Security.Abstractions;
-global using backend.Extensions.Security.Exceptions;
-global using backend.Extensions.Security.Infrastructure;
 global using backend.Features.Auth.Application.DTOs;
 global using backend.Features.Auth.Application.Services;
 global using backend.Features.Auth.Domain;

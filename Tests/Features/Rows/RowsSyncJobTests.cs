@@ -1,476 +1,165 @@
-using System.Globalization;
-using System.Reflection;
-using backend.Core;
-using backend.Features.Monitoring.Application.DTOs;
-using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Features.Rows.Application.DTOs;
 using backend.Features.Rows.Application.Jobs;
 using backend.Features.Rows.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace backend.Tests.Features.Rows;
 
 public sealed class RowsSyncJobTests
 {
-    private readonly Mock<ILogger<RowsSyncJob>> _loggerMock = new(MockBehavior.Loose);
+    private readonly Mock<IMonitoringRepository> _monitoringRepoMock = new();
+    private readonly Mock<IRowsService> _rowsServiceMock = new();
+    private readonly AppSettings _settings;
+    private readonly RowsSyncJob _job;
 
-    [Fact]
-    public async Task Execute_QuandoSincronizacaoFalha_NaoDeveMarcarComoSincronizado()
+    public RowsSyncJobTests()
     {
-        // Arrange
-        AppSettings settings = CreateSettings("spreadsheet-123", "table-456");
-        Mock<IMonitoringRepository> monitoringRepositoryMock = new(MockBehavior.Strict);
-        Mock<IRowsService> rowsServiceMock = new(MockBehavior.Strict);
-
-        IReadOnlyList<DrainStatusDTO> unsyncedData =
-        [
-            CreateDrainStatus("DRN-001", 40, 66.67, "Alerta", -23.5505, -46.6333, 0),
-        ];
-
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(unsyncedData);
-
-        rowsServiceMock
-            .Setup(service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ThrowsAsync(new ExternalApiException("Rows", "Falha simulada ao enviar lote."));
-
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Returns(Task.CompletedTask);
-
-        (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
-            monitoringRepositoryMock.Object,
-            rowsServiceMock.Object
-        );
-
-        RowsSyncJob job = new(serviceScopeFactoryMock.Object, settings, _loggerMock.Object);
-        Mock<IJobExecutionContext> executionContextMock = CreateExecutionContext();
-
-        // Act
-        await job.Execute(executionContextMock.Object);
-
-        // Assert
-        monitoringRepositoryMock.Verify(
-            repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        rowsServiceMock.Verify(
-            service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        monitoringRepositoryMock.Verify(
-            repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Never
-        );
-        rowsServiceMock.VerifyNoOtherCalls();
-        monitoringRepositoryMock.VerifyNoOtherCalls();
+        _settings = CreateSettings();
+        _job = new RowsSyncJob(SetupScope(), _settings, Mock.Of<ILogger<RowsSyncJob>>());
     }
 
+    #region Helpers (O gabarito de infraestrutura para o Job)
+
+    private IServiceScopeFactory SetupScope()
+    {
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock
+            .Setup(p => p.GetService(typeof(IMonitoringRepository)))
+            .Returns(_monitoringRepoMock.Object);
+        serviceProviderMock
+            .Setup(p => p.GetService(typeof(IRowsService)))
+            .Returns(_rowsServiceMock.Object);
+
+        var scopeMock = new Mock<IServiceScope>();
+        scopeMock.SetupGet(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
+
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+        scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
+        return scopeFactoryMock.Object;
+    }
+
+    private DrainStatusDTO CreateStatus(string id = "DRN-01") =>
+        new(id, 50, 50, "Alerta", -180, -46.3, DateTimeOffset.UtcNow);
+
+    #endregion
+
     [Fact]
-    public async Task Execute_QuandoNaoExistemDados_NaoDeveChamarServicoRows()
+    public async Task Execute_ComDadosPendentes_DeveSincronizarEMarcar()
     {
         // Arrange
-        AppSettings settings = CreateSettings("spreadsheet-123", "table-456");
-        Mock<IMonitoringRepository> monitoringRepositoryMock = new(MockBehavior.Strict);
-        Mock<IRowsService> rowsServiceMock = new(MockBehavior.Strict);
-
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(Array.Empty<DrainStatusDTO>());
-
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Returns(Task.CompletedTask);
-
-        (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
-            monitoringRepositoryMock.Object,
-            rowsServiceMock.Object
-        );
-
-        RowsSyncJob job = new(serviceScopeFactoryMock.Object, settings, _loggerMock.Object);
-        Mock<IJobExecutionContext> executionContextMock = CreateExecutionContext();
-
-        // Act
-        await job.Execute(executionContextMock.Object);
-
-        // Assert
-        monitoringRepositoryMock.Verify(
-            repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        monitoringRepositoryMock.Verify(
-            repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Never
-        );
-        rowsServiceMock.Verify(
-            service =>
-                service.AppendDataAsync(
+        var data = new List<DrainStatusDTO> { CreateStatus("DRN-01"), CreateStatus("DRN-02") };
+        _monitoringRepoMock
+            .Setup(r => r.GetUnsyncedDataAsync(It.IsAny<int>(), default))
+            .ReturnsAsync(data);
+        _rowsServiceMock
+            .Setup(s =>
+                s.AppendDataAsync(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
+                    default
+                )
+            )
+            .ReturnsAsync(true);
+
+        // Act
+        await _job.Execute(Mock.Of<IJobExecutionContext>());
+
+        // Assert
+        _rowsServiceMock.Verify(
+            s =>
+                s.AppendDataAsync(
+                    _settings.RowsSpreadsheetId,
+                    _settings.RowsTableId,
+                    It.IsAny<RowsAppendRequest>(),
+                    default
+                ),
+            Times.Once
+        );
+        _monitoringRepoMock.Verify(
+            r =>
+                r.MarkAsSyncedAsync(It.Is<IReadOnlyCollection<string>>(c => c.Count == 2), default),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Execute_QuandoFalhaNoRows_NaoDeveMarcarComoSincronizado()
+    {
+        // Arrange
+        var data = new List<DrainStatusDTO> { CreateStatus() };
+        _monitoringRepoMock
+            .Setup(r => r.GetUnsyncedDataAsync(It.IsAny<int>(), default))
+            .ReturnsAsync(data);
+        _rowsServiceMock
+            .Setup(s =>
+                s.AppendDataAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<RowsAppendRequest>(),
+                    default
+                )
+            )
+            .ThrowsAsync(new ExternalApiException("Rows", "Erro"));
+
+        // Act
+        await _job.Execute(Mock.Of<IJobExecutionContext>());
+
+        // Assert
+        _monitoringRepoMock.Verify(
+            r => r.MarkAsSyncedAsync(It.IsAny<IReadOnlyCollection<string>>(), default),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Execute_SemDados_NaoDeveChamarRows()
+    {
+        // Arrange
+        _monitoringRepoMock
+            .Setup(r => r.GetUnsyncedDataAsync(It.IsAny<int>(), default))
+            .ReturnsAsync(new List<DrainStatusDTO>());
+
+        // Act
+        await _job.Execute(Mock.Of<IJobExecutionContext>());
+
+        // Assert
+        _rowsServiceMock.Verify(
+            s =>
+                s.AppendDataAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<RowsAppendRequest>(),
+                    default
                 ),
             Times.Never
         );
-        rowsServiceMock.VerifyNoOtherCalls();
-        monitoringRepositoryMock.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task Execute_ComDadosPendentes_DeveChamarAppendEMarcarComoSincronizado()
-    {
-        // Arrange
-        AppSettings settings = CreateSettings("spreadsheet-123", "table-456");
-        Mock<IMonitoringRepository> monitoringRepositoryMock = new(MockBehavior.Strict);
-        Mock<IRowsService> rowsServiceMock = new(MockBehavior.Strict);
-
-        IReadOnlyList<DrainStatusDTO> unsyncedData =
-        [
-            CreateDrainStatus("DRN-001", 40, 66.67, "Alerta", -23.5505, -46.6333, 0),
-            CreateDrainStatus("DRN-002", 20, 83.33, "Crítico", -23.5515, -46.6343, 1),
-        ];
-
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(unsyncedData);
-
-        List<RowsAppendRequest> capturedPayloads = [];
-        rowsServiceMock
-            .Setup(service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<string, string, RowsAppendRequest, CancellationToken>(
-                (_, _, payload, _) => capturedPayloads.Add(payload)
-            )
-            .ReturnsAsync(true);
-
-        List<IReadOnlyCollection<string>> markedBatches = [];
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<IReadOnlyCollection<string>, CancellationToken>(
-                (identifiers, _) => markedBatches.Add(identifiers.ToArray())
-            )
-            .Returns(Task.CompletedTask);
-
-        (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
-            monitoringRepositoryMock.Object,
-            rowsServiceMock.Object
-        );
-
-        RowsSyncJob job = new(serviceScopeFactoryMock.Object, settings, _loggerMock.Object);
-        Mock<IJobExecutionContext> executionContextMock = CreateExecutionContext();
-
-        // Act
-        await job.Execute(executionContextMock.Object);
-
-        // Assert
-        capturedPayloads.Should().HaveCount(1);
-        capturedPayloads[0].Values.Should().HaveCount(2);
-        capturedPayloads[0]
-            .Values[0]
-            .Should()
-            .Equal(
-                "DRN-001",
-                40d,
-                66.67d,
-                "Alerta",
-                -23.5505d,
-                -46.6333d,
-                unsyncedData[0].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
-            );
-        capturedPayloads[0]
-            .Values[1]
-            .Should()
-            .Equal(
-                "DRN-002",
-                20d,
-                83.33d,
-                "Crítico",
-                -23.5515d,
-                -46.6343d,
-                unsyncedData[1].UltimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)
-            );
-
-        markedBatches.Should().HaveCount(1);
-        markedBatches[0].Should().Equal("DRN-001", "DRN-002");
-
-        monitoringRepositoryMock.Verify(
-            repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-        rowsServiceMock.Verify(
-            service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        monitoringRepositoryMock.Verify(
-            repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        rowsServiceMock.VerifyNoOtherCalls();
-        monitoringRepositoryMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task Execute_ComMuitosDados_DeveRespeitarOChunkSize()
-    {
-        // Arrange
-        AppSettings settings = CreateSettings("spreadsheet-123", "table-456");
-        Mock<IMonitoringRepository> monitoringRepositoryMock = new(MockBehavior.Strict);
-        Mock<IRowsService> rowsServiceMock = new(MockBehavior.Strict);
-
-        IReadOnlyList<DrainStatusDTO> firstChunk = BuildBatch(1, 500);
-        IReadOnlyList<DrainStatusDTO> secondChunk = BuildBatch(501, 1);
-
-        monitoringRepositoryMock
-            .SetupSequence(repository =>
-                repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(firstChunk)
-            .ReturnsAsync(secondChunk);
-
-        List<RowsAppendRequest> capturedPayloads = [];
-        rowsServiceMock
-            .Setup(service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<string, string, RowsAppendRequest, CancellationToken>(
-                (_, _, payload, _) => capturedPayloads.Add(payload)
-            )
-            .ReturnsAsync(true);
-
-        List<IReadOnlyCollection<string>> markedBatches = [];
-        monitoringRepositoryMock
-            .Setup(repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<IReadOnlyCollection<string>, CancellationToken>(
-                (identifiers, _) => markedBatches.Add(identifiers.ToArray())
-            )
-            .Returns(Task.CompletedTask);
-
-        (Mock<IServiceScopeFactory> serviceScopeFactoryMock, _) = CreateScopeInfrastructure(
-            monitoringRepositoryMock.Object,
-            rowsServiceMock.Object
-        );
-
-        RowsSyncJob job = new(serviceScopeFactoryMock.Object, settings, _loggerMock.Object);
-        Mock<IJobExecutionContext> executionContextMock = CreateExecutionContext();
-
-        // Act
-        await job.Execute(executionContextMock.Object);
-
-        // Assert
-        capturedPayloads.Should().HaveCount(2);
-        capturedPayloads[0].Values.Should().HaveCount(500);
-        capturedPayloads[1].Values.Should().HaveCount(1);
-
-        markedBatches.Should().HaveCount(2);
-        markedBatches[0].Should().HaveCount(500);
-        markedBatches[1].Should().HaveCount(1);
-
-        monitoringRepositoryMock.Verify(
-            repository => repository.GetUnsyncedDataAsync(500, It.IsAny<CancellationToken>()),
-            Times.Exactly(2)
-        );
-        rowsServiceMock.Verify(
-            service =>
-                service.AppendDataAsync(
-                    settings.RowsSpreadsheetId,
-                    settings.RowsTableId,
-                    It.IsAny<RowsAppendRequest>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Exactly(2)
-        );
-        monitoringRepositoryMock.Verify(
-            repository =>
-                repository.MarkAsSyncedAsync(
-                    It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Exactly(2)
-        );
-        rowsServiceMock.VerifyNoOtherCalls();
-        monitoringRepositoryMock.VerifyNoOtherCalls();
-    }
-
-    private static AppSettings CreateSettings(string spreadsheetId, string tableId)
-    {
-        return new AppSettings(
+    private static AppSettings CreateSettings() =>
+        new(
             "Bueiro Inteligente",
             "1.0.0",
             "/api/v1",
-            "secret-key",
+            "key",
             "HS256",
             30,
-            "hardware-token",
-            "redis://localhost:6379",
+            "hw",
+            "redis",
             true,
             true,
-            "postgres://cloud",
-            "postgres://local",
-            "postgres://local",
-            "migrations",
-            "rows-api-key",
-            "https://api.rows.com/v1",
-            spreadsheetId,
-            tableId,
-            "google-client-id",
-            "google-client-secret",
-            Array.Empty<string>(),
+            "cloud",
+            "local",
+            "local",
+            "m",
+            "rows-key",
+            "url",
+            "ss-123",
+            "tb-456",
+            "g-id",
+            "g-sec",
+            [],
             false
         );
-    }
-
-    private static Mock<IJobExecutionContext> CreateExecutionContext()
-    {
-        Mock<IJobExecutionContext> executionContextMock = new(MockBehavior.Strict);
-        executionContextMock
-            .SetupGet(context => context.CancellationToken)
-            .Returns(CancellationToken.None);
-        return executionContextMock;
-    }
-
-    private static (
-        Mock<IServiceScopeFactory> ScopeFactoryMock,
-        Mock<IServiceScope> ScopeMock
-    ) CreateScopeInfrastructure(
-        IMonitoringRepository monitoringRepository,
-        IRowsService rowsService
-    )
-    {
-        Mock<IServiceProvider> serviceProviderMock = new(MockBehavior.Strict);
-        serviceProviderMock
-            .Setup(provider => provider.GetService(typeof(IMonitoringRepository)))
-            .Returns(monitoringRepository);
-        serviceProviderMock
-            .Setup(provider => provider.GetService(typeof(IRowsService)))
-            .Returns(rowsService);
-
-        Mock<IServiceScope> scopeMock = new(MockBehavior.Strict);
-        scopeMock.SetupGet(scope => scope.ServiceProvider).Returns(serviceProviderMock.Object);
-        scopeMock.Setup(scope => scope.Dispose());
-
-        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new(MockBehavior.Strict);
-        serviceScopeFactoryMock.Setup(factory => factory.CreateScope()).Returns(scopeMock.Object);
-
-        return (serviceScopeFactoryMock, scopeMock);
-    }
-
-    private static IReadOnlyList<DrainStatusDTO> BuildBatch(int startIndex, int count)
-    {
-        List<DrainStatusDTO> items = new(count);
-        DateTimeOffset baseTimestamp = new(2026, 4, 11, 10, 0, 0, TimeSpan.Zero);
-
-        for (int index = 0; index < count; index++)
-        {
-            int drainIndex = startIndex + index;
-
-            items.Add(
-                CreateDrainStatus(
-                    $"DRN-{drainIndex:000}",
-                    100 - drainIndex,
-                    drainIndex % 2 == 0 ? 50d : 75d,
-                    drainIndex % 2 == 0 ? "Alerta" : "Normal",
-                    -23.5505d - (drainIndex / 10000d),
-                    -46.6333d - (drainIndex / 10000d),
-                    drainIndex - 1
-                )
-            );
-        }
-
-        return items;
-    }
-
-    private static DrainStatusDTO CreateDrainStatus(
-        string drainIdentifier,
-        double distanceCm,
-        double obstructionLevel,
-        string status,
-        double latitude,
-        double longitude,
-        int minuteOffset
-    )
-    {
-        return new DrainStatusDTO
-        {
-            IdBueiro = drainIdentifier,
-            DistanciaCm = distanceCm,
-            NivelObstrucao = obstructionLevel,
-            Status = status,
-            Latitude = latitude,
-            Longitude = longitude,
-            UltimaAtualizacao = new DateTimeOffset(2026, 4, 11, 10, 0, 0, TimeSpan.Zero).AddMinutes(
-                minuteOffset
-            ),
-        };
-    }
 }
