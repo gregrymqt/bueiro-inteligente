@@ -7,373 +7,145 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Home.Application.Services;
 
-/// <summary>
-/// Implements the Home use-cases.
-/// </summary>
-public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeService> logger)
-    : IHomeService
+public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeService> logger) : IHomeService
 {
-    private readonly IHomeRepository _homeRepository =
-        homeRepository ?? throw new ArgumentNullException(nameof(homeRepository));
+    private readonly IHomeRepository _homeRepository = homeRepository ?? throw new ArgumentNullException(nameof(homeRepository));
+    private readonly ILogger<HomeService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    private readonly ILogger<HomeService> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
-    public async Task<HomeDtos.HomeResponseDto> GetHomeContentAsync(
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.HomeResponseDto> GetHomeContentAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Loading home content.");
-
-        HomeDomain.HomeContent content = await _homeRepository
-            .GetAllContentAsync(cancellationToken)
-            .ConfigureAwait(false);
-
+        var content = await _homeRepository.GetAllContentAsync(ct).ConfigureAwait(false);
         return new HomeDtos.HomeResponseDto(
-            content.Carousels.Select(MapToCarouselResponse).ToList(),
-            content.Stats.Select(MapToStatCardResponse).ToList()
+            [.. content.Carousels.Select(MapToCarouselResponse)],
+            [.. content.Stats.Select(MapToStatCardResponse)]
         );
     }
 
-    public async Task<IReadOnlyList<HomeDtos.CarouselResponseDto>> GetAllCarouselsAsync(
-        CancellationToken cancellationToken = default
-    )
-    {
-        IReadOnlyList<HomeDomain.CarouselModel> carousels = await _homeRepository
-            .GetAllCarouselsAsync(cancellationToken)
-            .ConfigureAwait(false);
+    #region Carousel Operations
 
-        return carousels.Select(MapToCarouselResponse).ToList();
+    public async Task<IReadOnlyList<HomeDtos.CarouselResponseDto>> GetAllCarouselsAsync(CancellationToken ct = default)
+    {
+        var carousels = await _homeRepository.GetAllCarouselsAsync(ct).ConfigureAwait(false);
+        return [.. carousels.Select(MapToCarouselResponse)];
     }
 
-    public async Task<HomeDtos.CarouselResponseDto> GetCarouselByIdAsync(
-        Guid carouselId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.CarouselResponseDto> GetCarouselByIdAsync(Guid carouselId, CancellationToken ct = default)
     {
-        HomeDomain.CarouselModel? carousel = await _homeRepository
-            .GetCarouselByIdAsync(carouselId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (carousel is null)
-        {
-            throw new NotFoundException("Carousel", carouselId);
-        }
-
+        var carousel = await _homeRepository.GetCarouselByIdAsync(carouselId, ct).ConfigureAwait(false) 
+                       ?? throw new NotFoundException("Carousel", carouselId);
         return MapToCarouselResponse(carousel);
     }
 
-    public async Task<HomeDtos.CarouselResponseDto> CreateCarouselAsync(
-        HomeDtos.CarouselCreateDto request,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.CarouselResponseDto> CreateCarouselAsync(HomeDtos.CarouselCreateDto request, CancellationToken ct = default)
     {
-        if (request is null)
-        {
-            throw LogicException.NullValue(nameof(request));
-        }
-
-        HomeDomain.CarouselModel carousel = MapToCarouselModel(request);
-
-        HomeDomain.CarouselModel createdCarousel = await _homeRepository
-            .CreateCarouselAsync(carousel, cancellationToken)
-            .ConfigureAwait(false);
-
-        _logger.LogInformation("Created home carousel item {CarouselId}.", createdCarousel.Id);
-        return MapToCarouselResponse(createdCarousel);
+        ArgumentNullException.ThrowIfNull(request);
+        var created = await _homeRepository.CreateCarouselAsync(MapToCarouselModel(request), ct).ConfigureAwait(false);
+        _logger.LogInformation("Carousel created: {CarouselId}", created.Id);
+        return MapToCarouselResponse(created);
     }
 
-    public async Task<HomeDtos.CarouselResponseDto> UpdateCarouselAsync(
-        Guid carouselId,
-        HomeDtos.CarouselUpdateDto request,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.CarouselResponseDto> UpdateCarouselAsync(Guid id, HomeDtos.CarouselUpdateDto req, CancellationToken ct = default)
     {
-        if (request is null)
-        {
-            throw LogicException.NullValue(nameof(request));
-        }
+        ArgumentNullException.ThrowIfNull(req);
+        var c = await _homeRepository.GetCarouselByIdAsync(id, ct).ConfigureAwait(false) ?? throw new NotFoundException("Carousel", id);
 
-        HomeDomain.CarouselModel? carousel = await _homeRepository
-            .GetCarouselByIdAsync(carouselId, cancellationToken)
-            .ConfigureAwait(false);
+        c.Order = req.Order ?? c.Order;
+        if (req.Section.HasValue) c.Section = MapEnum<HomeDomain.CarouselSection>(req.Section.Value);
+        if (req.Title is not null) c.Title = Normalize(req.Title, nameof(req.Title));
+        if (req.ImageUrl is not null) c.ImageUrl = Normalize(req.ImageUrl, nameof(req.ImageUrl));
+        c.Subtitle = req.Subtitle is not null ? req.Subtitle.Trim() : c.Subtitle;
+        c.ActionUrl = req.ActionUrl is not null ? req.ActionUrl.Trim() : c.ActionUrl;
 
-        if (carousel is null)
-        {
-            throw new NotFoundException("Carousel", carouselId);
-        }
-
-        if (request.Title is not null)
-        {
-            carousel.Title = NormalizeRequiredText(request.Title, nameof(request.Title));
-        }
-
-        if (request.Subtitle is not null)
-        {
-            carousel.Subtitle = NormalizeOptionalText(request.Subtitle);
-        }
-
-        if (request.ImageUrl is not null)
-        {
-            carousel.ImageUrl = NormalizeRequiredText(request.ImageUrl, nameof(request.ImageUrl));
-        }
-
-        if (request.ActionUrl is not null)
-        {
-            carousel.ActionUrl = NormalizeOptionalText(request.ActionUrl);
-        }
-
-        if (request.Order.HasValue)
-        {
-            carousel.Order = request.Order.Value;
-        }
-
-        if (request.Section.HasValue)
-        {
-            carousel.Section = MapToDomainSection(request.Section.Value);
-        }
-
-        HomeDomain.CarouselModel updatedCarousel = await _homeRepository
-            .UpdateCarouselAsync(carousel, cancellationToken)
-            .ConfigureAwait(false);
-
-        _logger.LogInformation("Updated home carousel item {CarouselId}.", updatedCarousel.Id);
-        return MapToCarouselResponse(updatedCarousel);
+        var updated = await _homeRepository.UpdateCarouselAsync(c, ct).ConfigureAwait(false);
+        return MapToCarouselResponse(updated);
     }
 
-    public async Task DeleteCarouselAsync(
-        Guid carouselId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task DeleteCarouselAsync(Guid id, CancellationToken ct = default)
     {
-        HomeDomain.CarouselModel? carousel = await _homeRepository
-            .GetCarouselByIdAsync(carouselId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (carousel is null)
-        {
-            throw new NotFoundException("Carousel", carouselId);
-        }
-
-        await _homeRepository.DeleteCarouselAsync(carousel, cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Deleted home carousel item {CarouselId}.", carouselId);
+        var c = await _homeRepository.GetCarouselByIdAsync(id, ct).ConfigureAwait(false) ?? throw new NotFoundException("Carousel", id);
+        await _homeRepository.DeleteCarouselAsync(c, ct).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<HomeDtos.StatCardResponseDto>> GetAllStatCardsAsync(
-        CancellationToken cancellationToken = default
-    )
-    {
-        IReadOnlyList<HomeDomain.StatCardModel> statCards = await _homeRepository
-            .GetAllStatCardsAsync(cancellationToken)
-            .ConfigureAwait(false);
+    #endregion
 
-        return statCards.Select(MapToStatCardResponse).ToList();
+    #region StatCard Operations
+
+    public async Task<IReadOnlyList<HomeDtos.StatCardResponseDto>> GetAllStatCardsAsync(CancellationToken ct = default)
+    {
+        var stats = await _homeRepository.GetAllStatCardsAsync(ct).ConfigureAwait(false);
+        return [.. stats.Select(MapToStatCardResponse)];
     }
 
-    public async Task<HomeDtos.StatCardResponseDto> GetStatCardByIdAsync(
-        Guid statCardId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.StatCardResponseDto> GetStatCardByIdAsync(Guid id, CancellationToken ct = default)
     {
-        HomeDomain.StatCardModel? statCard = await _homeRepository
-            .GetStatCardByIdAsync(statCardId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (statCard is null)
-        {
-            throw new NotFoundException("StatCard", statCardId);
-        }
-
-        return MapToStatCardResponse(statCard);
+        var stat = await _homeRepository.GetStatCardByIdAsync(id, ct).ConfigureAwait(false) ?? throw new NotFoundException("StatCard", id);
+        return MapToStatCardResponse(stat);
     }
 
-    public async Task<HomeDtos.StatCardResponseDto> CreateStatCardAsync(
-        HomeDtos.StatCardCreateDto request,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.StatCardResponseDto> CreateStatCardAsync(HomeDtos.StatCardCreateDto request, CancellationToken ct = default)
     {
-        if (request is null)
-        {
-            throw LogicException.NullValue(nameof(request));
-        }
-
-        HomeDomain.StatCardModel statCard = MapToStatCardModel(request);
-
-        HomeDomain.StatCardModel createdStatCard = await _homeRepository
-            .CreateStatCardAsync(statCard, cancellationToken)
-            .ConfigureAwait(false);
-
-        _logger.LogInformation("Created home stat card {StatCardId}.", createdStatCard.Id);
-        return MapToStatCardResponse(createdStatCard);
+        ArgumentNullException.ThrowIfNull(request);
+        var created = await _homeRepository.CreateStatCardAsync(MapToStatCardModel(request), ct).ConfigureAwait(false);
+        return MapToStatCardResponse(created);
     }
 
-    public async Task<HomeDtos.StatCardResponseDto> UpdateStatCardAsync(
-        Guid statCardId,
-        HomeDtos.StatCardUpdateDto request,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeDtos.StatCardResponseDto> UpdateStatCardAsync(Guid id, HomeDtos.StatCardUpdateDto req, CancellationToken ct = default)
     {
-        if (request is null)
-        {
-            throw LogicException.NullValue(nameof(request));
-        }
+        ArgumentNullException.ThrowIfNull(req);
+        var s = await _homeRepository.GetStatCardByIdAsync(id, ct).ConfigureAwait(false) ?? throw new NotFoundException("StatCard", id);
 
-        HomeDomain.StatCardModel? statCard = await _homeRepository
-            .GetStatCardByIdAsync(statCardId, cancellationToken)
-            .ConfigureAwait(false);
+        s.Order = req.Order ?? s.Order;
+        if (req.Color.HasValue) s.Color = MapEnum<HomeDomain.StatCardColor>(req.Color.Value);
+        if (req.Title is not null) s.Title = Normalize(req.Title, nameof(req.Title));
+        if (req.Value is not null) s.Value = Normalize(req.Value, nameof(req.Value));
+        if (req.Description is not null) s.Description = Normalize(req.Description, nameof(req.Description));
+        if (req.IconName is not null) s.IconName = Normalize(req.IconName, nameof(req.IconName));
 
-        if (statCard is null)
-        {
-            throw new NotFoundException("StatCard", statCardId);
-        }
-
-        if (request.Title is not null)
-        {
-            statCard.Title = NormalizeRequiredText(request.Title, nameof(request.Title));
-        }
-
-        if (request.Value is not null)
-        {
-            statCard.Value = NormalizeRequiredText(request.Value, nameof(request.Value));
-        }
-
-        if (request.Description is not null)
-        {
-            statCard.Description = NormalizeRequiredText(request.Description, nameof(request.Description));
-        }
-
-        if (request.IconName is not null)
-        {
-            statCard.IconName = NormalizeRequiredText(request.IconName, nameof(request.IconName));
-        }
-
-        if (request.Color.HasValue)
-        {
-            statCard.Color = MapToDomainColor(request.Color.Value);
-        }
-
-        if (request.Order.HasValue)
-        {
-            statCard.Order = request.Order.Value;
-        }
-
-        HomeDomain.StatCardModel updatedStatCard = await _homeRepository
-            .UpdateStatCardAsync(statCard, cancellationToken)
-            .ConfigureAwait(false);
-
-        _logger.LogInformation("Updated home stat card {StatCardId}.", updatedStatCard.Id);
-        return MapToStatCardResponse(updatedStatCard);
+        var updated = await _homeRepository.UpdateStatCardAsync(s, ct).ConfigureAwait(false);
+        return MapToStatCardResponse(updated);
     }
 
-    public async Task DeleteStatCardAsync(
-        Guid statCardId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task DeleteStatCardAsync(Guid id, CancellationToken ct = default)
     {
-        HomeDomain.StatCardModel? statCard = await _homeRepository
-            .GetStatCardByIdAsync(statCardId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (statCard is null)
-        {
-            throw new NotFoundException("StatCard", statCardId);
-        }
-
-        await _homeRepository.DeleteStatCardAsync(statCard, cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Deleted home stat card {StatCardId}.", statCardId);
+        var s = await _homeRepository.GetStatCardByIdAsync(id, ct).ConfigureAwait(false) ?? throw new NotFoundException("StatCard", id);
+        await _homeRepository.DeleteStatCardAsync(s, ct).ConfigureAwait(false);
     }
 
-    private static HomeDtos.CarouselResponseDto MapToCarouselResponse(HomeDomain.CarouselModel carousel)
+    #endregion
+
+    #region Helpers & Mappings
+
+    private static HomeDtos.CarouselResponseDto MapToCarouselResponse(HomeDomain.CarouselModel c) =>
+        new(c.Id, c.Title, c.Subtitle, c.ImageUrl, c.ActionUrl, c.Order, MapEnum<HomeDtos.CarouselSection>(c.Section));
+
+    private static HomeDomain.CarouselModel MapToCarouselModel(HomeDtos.CarouselCreateDto r) => new()
     {
-        return new HomeDtos.CarouselResponseDto(
-            carousel.Id,
-            carousel.Title,
-            carousel.Subtitle,
-            carousel.ImageUrl,
-            carousel.ActionUrl,
-            carousel.Order,
-            MapToDtoSection(carousel.Section)
-        );
-    }
+        Title = Normalize(r.Title, nameof(r.Title)),
+        Subtitle = r.Subtitle?.Trim(),
+        ImageUrl = Normalize(r.ImageUrl, nameof(r.ImageUrl)),
+        ActionUrl = r.ActionUrl?.Trim(),
+        Order = r.Order,
+        Section = MapEnum<HomeDomain.CarouselSection>(r.Section)
+    };
 
-    private static HomeDomain.CarouselModel MapToCarouselModel(HomeDtos.CarouselCreateDto request)
+    private static HomeDtos.StatCardResponseDto MapToStatCardResponse(HomeDomain.StatCardModel s) =>
+        new(s.Id, s.Title, s.Value, s.Description, s.IconName, MapEnum<HomeDtos.StatCardColor>(s.Color), s.Order);
+
+    private static HomeDomain.StatCardModel MapToStatCardModel(HomeDtos.StatCardCreateDto r) => new()
     {
-        return new HomeDomain.CarouselModel
-        {
-            Title = NormalizeRequiredText(request.Title, nameof(request.Title)),
-            Subtitle = NormalizeOptionalText(request.Subtitle),
-            ImageUrl = NormalizeRequiredText(request.ImageUrl, nameof(request.ImageUrl)),
-            ActionUrl = NormalizeOptionalText(request.ActionUrl),
-            Order = request.Order,
-            Section = MapToDomainSection(request.Section),
-        };
-    }
+        Title = Normalize(r.Title, nameof(r.Title)),
+        Value = Normalize(r.Value, nameof(r.Value)),
+        Description = Normalize(r.Description, nameof(r.Description)),
+        IconName = Normalize(r.IconName, nameof(r.IconName)),
+        Color = MapEnum<HomeDomain.StatCardColor>(r.Color),
+        Order = r.Order
+    };
 
-    private static HomeDtos.StatCardResponseDto MapToStatCardResponse(HomeDomain.StatCardModel statCard)
-    {
-        return new HomeDtos.StatCardResponseDto(
-            statCard.Id,
-            statCard.Title,
-            statCard.Value,
-            statCard.Description,
-            statCard.IconName,
-            MapToDtoColor(statCard.Color),
-            statCard.Order
-        );
-    }
+    private static T MapEnum<T>(object source) where T : struct, Enum => 
+        Enum.Parse<T>(source.ToString()!, false);
 
-    private static HomeDomain.StatCardModel MapToStatCardModel(HomeDtos.StatCardCreateDto request)
-    {
-        return new HomeDomain.StatCardModel
-        {
-            Title = NormalizeRequiredText(request.Title, nameof(request.Title)),
-            Value = NormalizeRequiredText(request.Value, nameof(request.Value)),
-            Description = NormalizeRequiredText(request.Description, nameof(request.Description)),
-            IconName = NormalizeRequiredText(request.IconName, nameof(request.IconName)),
-            Color = MapToDomainColor(request.Color),
-            Order = request.Order,
-        };
-    }
+    private static string Normalize(string value, string param) => 
+        !string.IsNullOrWhiteSpace(value) ? value.Trim() : throw LogicException.InvalidValue(param, value);
 
-    private static string NormalizeRequiredText(string? value, string parameterName)
-    {
-        string? normalizedValue = NormalizeOptionalText(value);
-
-        if (normalizedValue is null)
-        {
-            throw LogicException.InvalidValue(parameterName, value);
-        }
-
-        return normalizedValue;
-    }
-
-    private static string? NormalizeOptionalText(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value.Trim();
-    }
-
-    private static HomeDomain.CarouselSection MapToDomainSection(HomeDtos.CarouselSection section)
-    {
-        return Enum.Parse<HomeDomain.CarouselSection>(section.ToString(), ignoreCase: false);
-    }
-
-    private static HomeDtos.CarouselSection MapToDtoSection(HomeDomain.CarouselSection section)
-    {
-        return Enum.Parse<HomeDtos.CarouselSection>(section.ToString(), ignoreCase: false);
-    }
-
-    private static HomeDomain.StatCardColor MapToDomainColor(HomeDtos.StatCardColor color)
-    {
-        return Enum.Parse<HomeDomain.StatCardColor>(color.ToString(), ignoreCase: false);
-    }
-
-    private static HomeDtos.StatCardColor MapToDtoColor(HomeDomain.StatCardColor color)
-    {
-        return Enum.Parse<HomeDtos.StatCardColor>(color.ToString(), ignoreCase: false);
-    }
+    #endregion
 }

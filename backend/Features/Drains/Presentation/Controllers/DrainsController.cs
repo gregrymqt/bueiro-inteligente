@@ -1,7 +1,6 @@
 using backend.Core;
 using backend.Features.Drains.Application.DTOs;
 using backend.Features.Drains.Domain.Interfaces;
-using backend.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,203 +9,53 @@ namespace backend.Features.Drains.Presentation.Controllers;
 [Authorize(Roles = "User,Admin,Manager")]
 public sealed class DrainsController(IDrainService drainService) : ApiControllerBase
 {
-    private readonly IDrainService _drainService =
-        drainService ?? throw new ArgumentNullException(nameof(drainService));
+    // C# 12: Injeção via Primary Constructor
+    private readonly IDrainService _drainService = drainService ?? throw new ArgumentNullException(nameof(drainService));
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<DrainResponse>>> GetAll(
-        [FromQuery] int skip = 0,
-        [FromQuery] int limit = 100,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            IReadOnlyList<DrainResponse> drains = await _drainService
-                .GetAllDrainsAsync(skip, limit, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(drains);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+    public async Task<ActionResult<IReadOnlyList<DrainResponse>>> GetAll([FromQuery] int skip = 0, [FromQuery] int limit = 100, CancellationToken ct = default) =>
+        await ExecuteAsync(async () => Ok(await _drainService.GetAllDrainsAsync(skip, limit, ct).ConfigureAwait(false)));
 
     [HttpGet("{drainId:guid}")]
-    public async Task<ActionResult<DrainResponse>> GetById(
-        Guid drainId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            DrainResponse result = await _drainService
-                .GetDrainByIdAsync(drainId, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+    public async Task<ActionResult<DrainResponse>> GetById(Guid drainId, CancellationToken ct = default) =>
+        await ExecuteAsync(async () => Ok(await _drainService.GetDrainByIdAsync(drainId, ct).ConfigureAwait(false)));
 
     [HttpPost]
     [Authorize(Roles = "Admin,Manager")]
-    public async Task<ActionResult<DrainResponse>> Create(
-        [FromBody] DrainCreateRequest request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+    public async Task<ActionResult<DrainResponse>> Create([FromBody] DrainCreateRequest request, CancellationToken ct = default) =>
+        await ExecuteAsync(async () =>
         {
-            DrainResponse result = await _drainService
-                .CreateDrainAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-
+            var result = await _drainService.CreateDrainAsync(request, ct).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetById), new { drainId = result.Id }, result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        });
 
     [HttpPut("{drainId:guid}")]
     [Authorize(Roles = "Admin,Manager")]
-    public async Task<ActionResult<DrainResponse>> Update(
-        Guid drainId,
-        [FromBody] DrainUpdateRequest request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            DrainResponse result = await _drainService
-                .UpdateDrainAsync(drainId, request, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+    public async Task<ActionResult<DrainResponse>> Update(Guid drainId, [FromBody] DrainUpdateRequest request, CancellationToken ct = default) =>
+        await ExecuteAsync(async () => Ok(await _drainService.UpdateDrainAsync(drainId, request, ct).ConfigureAwait(false)));
 
     [HttpDelete("{drainId:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(
-        Guid drainId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+    public async Task<IActionResult> Delete(Guid drainId, CancellationToken ct = default) =>
+        await ExecuteAsync(async () =>
         {
-            await _drainService.DeleteDrainAsync(drainId, cancellationToken).ConfigureAwait(false);
+            await _drainService.DeleteDrainAsync(drainId, ct).ConfigureAwait(false);
             return NoContent();
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
+        });
+
+    #region Helpers Enxutos
+
+    // Wrapper para centralizar o tratamento de erros e reduzir o boilerplate
+    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
+    {
+        try { return await action(); }
+        catch (NotFoundException ex) { return NotFound(CreateProblem("Not found", ex.Message, 404)); }
+        catch (ConnectionException ex) { return StatusCode(503, CreateProblem("Connection error", ex.Message, 503)); }
+        catch (LogicException ex) { return BadRequest(CreateProblem("Validation error", ex.Message, 400)); }
     }
 
-    private static ObjectResult CreateProblem(int statusCode, string title, string detail)
-    {
-        return new ObjectResult(
-            new ProblemDetails
-            {
-                Title = title,
-                Detail = detail,
-                Status = statusCode,
-            }
-        )
-        {
-            StatusCode = statusCode,
-        };
-    }
+    private static ProblemDetails CreateProblem(string title, string detail, int status) => 
+        new() { Title = title, Detail = detail, Status = status };
+
+    #endregion
 }
