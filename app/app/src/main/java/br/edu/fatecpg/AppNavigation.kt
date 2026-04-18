@@ -1,7 +1,6 @@
 package br.edu.fatecpg
 
 import android.util.Log
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -10,15 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
 import br.edu.fatecpg.core.di.AppContainer
+import br.edu.fatecpg.core.navigation.MainBottomBar
 import br.edu.fatecpg.feature.auth.ui.LoginScreen
+import br.edu.fatecpg.feature.auth.ui.RegisterScreen
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
+import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModel
 import br.edu.fatecpg.feature.home.ui.HomeScreen
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
 import br.edu.fatecpg.feature.monitoring.ui.MonitoringScreen
@@ -30,6 +31,10 @@ import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
 @Composable
 fun AppNavigation(appContainer: AppContainer) {
     val navController = rememberNavController()
+    val isLoggedIn = appContainer.tokenManager.getToken() != null
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     val onLogout: () -> Unit = {
         try {
             Log.i("AppNavigation", "Executando logout...")
@@ -44,8 +49,6 @@ fun AppNavigation(appContainer: AppContainer) {
 
     Scaffold(
         topBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
             Log.d("AppNavigation", "Redesenhando TopBar. Rota atual: $currentRoute")
 
             if (currentRoute != "login" && currentRoute != "register") {
@@ -63,11 +66,16 @@ fun AppNavigation(appContainer: AppContainer) {
                     )
                 )
             }
+        },
+        bottomBar = {
+            if (isLoggedIn && currentRoute != "login" && currentRoute != "register") {
+                MainBottomBar(navController = navController, isLoggedIn = true)
+            }
         }
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "home",
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("login") {
@@ -97,16 +105,23 @@ fun AppNavigation(appContainer: AppContainer) {
             }
 
             composable("register") {
-                // Placeholder para a tela de registro
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Tela de Registro (Placeholder)")
-                }
+                Log.d("AppNavigation", "NavHost -> Criando RegisterScreen")
+                val registerViewModel: RegisterViewModel = viewModel(factory = appContainer.registerViewModelFactory)
+
+                RegisterScreen(
+                    viewModel = registerViewModel,
+                    onNavigateBackToLogin = {
+                        navController.popBackStack("login", inclusive = false)
+                    },
+                    onRegisterSuccess = {
+                        navController.popBackStack("login", inclusive = false)
+                    }
+                )
             }
 
             composable("home") {
                 Log.d("AppNavigation", "NavHost -> Criando HomeScreen")
                 val homeViewModel: HomeViewModel = viewModel(factory = appContainer.homeViewModelFactory)
-                val isLoggedIn = remember { appContainer.tokenManager.getToken() != null }
 
                 HomeScreen(
                     viewModel = homeViewModel,
@@ -120,7 +135,6 @@ fun AppNavigation(appContainer: AppContainer) {
             composable("monitoring") {
                 Log.d("AppNavigation", "NavHost -> Criando MonitoringScreen")
                 val monitoringViewModel: MonitoringViewModel = viewModel(factory = appContainer.monitoringViewModelFactory)
-                val isLoggedIn = remember { appContainer.tokenManager.getToken() != null }
 
                 MonitoringScreen(
                     viewModel = monitoringViewModel,

@@ -2,6 +2,7 @@ package br.edu.fatecpg.feature.auth.ui
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -33,6 +34,8 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val InputShape = RoundedCornerShape(12.dp)
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -82,7 +85,8 @@ fun RegisterScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        enabled = uiState !is RegisterUiState.Loading
+                        enabled = uiState !is RegisterUiState.Loading,
+                        shape = InputShape
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -94,7 +98,8 @@ fun RegisterScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        enabled = uiState !is RegisterUiState.Loading
+                        enabled = uiState !is RegisterUiState.Loading,
+                        shape = InputShape
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -114,7 +119,8 @@ fun RegisterScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(imageVector = image, contentDescription = description)
                             }
-                        }
+                        },
+                        shape = InputShape
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))

@@ -14,16 +14,16 @@ interface MonitoringService {
         @Path("bueiro_id") id: String
     ): Response<DrainStatusDTO>
 
-    @GET("monitoring/all")
+    @GET("drains")
     suspend fun getAllDrains(): Response<List<DrainStatusDTO>>
 
     companion object {
         fun create(): MonitoringService {
             return try {
-                Log.d("MonitoringService", "Criando instância do MonitoringService via ApiClient")
+                Log.d("MonitoringService", "Criando instï¿½ncia do MonitoringService via ApiClient")
                 ApiClient.createService(MonitoringService::class.java)
             } catch (e: Exception) {
-                Log.e("MonitoringService", "Erro ao criar instância de MonitoringService", e)
+                Log.e("MonitoringService", "Erro ao criar instï¿½ncia de MonitoringService", e)
                 throw e
             }
         }

@@ -19,20 +19,29 @@ sealed class RegisterUiState {
 
 class RegisterViewModel(private val repository: AuthRepository) : ViewModel() { 
 
+    private val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    private val passwordRegex = Regex("^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).{8,}$")
+
     private val _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Idle)
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    fun performRegister(email: String, password: String, fullName: String) {    
+    fun performRegister(email: String, password: String, fullName: String) {
         try {
-            if (email.isBlank() || password.isBlank() || fullName.isBlank()) {      
+            if (email.isBlank() || password.isBlank() || fullName.isBlank()) {
                 Log.w("RegisterViewModel", "Tentativa de registro negada: campos vazios.")
                 _uiState.value = RegisterUiState.Error("Todos os campos devem ser preenchidos.")
                 return
             }
 
-            if (password.length < 6) {
-                Log.w("RegisterViewModel", "Tentativa de registro negada: senha muito curta.")
-                _uiState.value = RegisterUiState.Error("A senha deve ter pelo menos 6 caracteres.")
+            if (!isEmailValid(email.trim())) {
+                Log.w("RegisterViewModel", "Tentativa de registro negada: e-mail invalido.")
+                _uiState.value = RegisterUiState.Error("Insira um e-mail vÃ¡lido.")
+                return
+            }
+
+            if (!isPasswordStrong(password)) {
+                Log.w("RegisterViewModel", "Tentativa de registro negada: senha fraca.")
+                _uiState.value = RegisterUiState.Error("A senha deve ter 8+ caracteres, incluindo maiÃºsculas, nÃºmeros e sÃ­mbolos.")
                 return
             }
 
@@ -40,18 +49,18 @@ class RegisterViewModel(private val repository: AuthRepository) : ViewModel() {
                 try {
                     _uiState.value = RegisterUiState.Loading
 
-                    val request = RegisterRequest(email = email, password = password, fullName = fullName)
+                    val request = RegisterRequest(email = email.trim(), password = password, fullName = fullName)
                     val result = repository.register(request)
 
                     result.onSuccess {
-                        Log.i("RegisterViewModel", "Registro reportado com sucesso pelo repositório.")
+                        Log.i("RegisterViewModel", "Registro reportado com sucesso pelo repositï¿½rio.")
                         _uiState.value = RegisterUiState.Success
                     }.onFailure { exception ->
                         Log.w("RegisterViewModel", "Falha reportada no registro de db: ${exception.message}")
                         _uiState.value = RegisterUiState.Error(exception.message ?: "Erro desconhecido ao cadastrar.")
                     }
                 } catch (e: Exception) {
-                    Log.e("RegisterViewModel", "Erro crítico capturado na coroutine de performação do registro", e)
+                    Log.e("RegisterViewModel", "Erro crï¿½tico capturado na coroutine de performaï¿½ï¿½o do registro", e)
                     _uiState.value = RegisterUiState.Error("Erro inesperado durante a tentativa de registro.")
                 }
             }
@@ -59,6 +68,14 @@ class RegisterViewModel(private val repository: AuthRepository) : ViewModel() {
             Log.e("RegisterViewModel", "Erro critico na camada do ViewModel ao processar click da view de registro", e)
             _uiState.value = RegisterUiState.Error("Erro interno no aplicativo.")
         }
+    }
+
+    private fun isEmailValid(email: String): Boolean {
+        return email.matches(emailRegex)
+    }
+
+    private fun isPasswordStrong(password: String): Boolean {
+        return password.matches(passwordRegex)
     }
 
     fun resetState() {

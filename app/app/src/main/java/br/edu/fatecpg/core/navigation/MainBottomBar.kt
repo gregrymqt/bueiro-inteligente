@@ -6,33 +6,29 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun MainBottomBar(navController: NavHostController, isLoggedIn: Boolean) {
+    if (!isLoggedIn) return
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = navBackStackEntry?.destination?.route
 
-    val items = mutableListOf(
+    val items = listOf(
         BottomNavRoutes.Home,
-        BottomNavRoutes.Monitoring
+        BottomNavRoutes.Monitoring,
+        BottomNavRoutes.Profile
     )
-
-    if (isLoggedIn) {
-        items.add(BottomNavRoutes.Profile)
-    } else {
-        items.add(BottomNavRoutes.Login)
-    }
 
     NavigationBar {
         items.forEach { screen ->
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = screen.title) },
                 label = { Text(screen.title) },
-                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                selected = currentRoute == screen.route,
                 onClick = {
                     navController.navigate(screen.route) {
                         popUpTo(navController.graph.findStartDestination().id) {

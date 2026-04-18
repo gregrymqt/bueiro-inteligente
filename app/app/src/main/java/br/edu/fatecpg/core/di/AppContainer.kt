@@ -2,25 +2,24 @@ package br.edu.fatecpg.core.di
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import br.edu.fatecpg.core.navigation.AndroidLocationHandler
 import br.edu.fatecpg.core.navigation.LocationHandler
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import br.edu.fatecpg.feature.auth.services.AuthService
-import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
-import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
+import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
+import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
-import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
+import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
 import br.edu.fatecpg.feature.profile.repository.ProfileRepository
 import br.edu.fatecpg.feature.profile.services.ProfileService
-import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
+import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModelFactory
 import br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import br.edu.fatecpg.feature.realtime.services.RealtimeService
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 
 /**
  * Container de Injeo de Dependncias manual (Service Locator).
@@ -91,43 +90,13 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     // --- ViewModel Factories ---
 
-    val authViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-                @Suppress("UNCHECKED_CAST")
-                return LoginViewModel(authRepository) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
-    }
+    val authViewModelFactory by lazy { LoginViewModelFactory(authRepository) }
 
-    val homeViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-                @Suppress("UNCHECKED_CAST")
-                return HomeViewModel(realtimeRepository, tokenManager) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
-    }
+    val registerViewModelFactory by lazy { RegisterViewModelFactory(authRepository) }
 
-    val monitoringViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(MonitoringViewModel::class.java)) {
-                @Suppress("UNCHECKED_CAST")
-                return MonitoringViewModel(monitoringRepository, locationHandler) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
-    }
+    val homeViewModelFactory by lazy { HomeViewModelFactory(realtimeRepository, tokenManager) }
 
-    val profileViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-                @Suppress("UNCHECKED_CAST")
-                return ProfileViewModel(profileRepository) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
-    }
+    val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler) }
+
+    val profileViewModelFactory by lazy { ProfileViewModelFactory(profileRepository) }
 }

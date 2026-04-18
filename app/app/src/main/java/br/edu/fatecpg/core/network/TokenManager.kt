@@ -6,6 +6,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.core.content.edit
 
 class TokenManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("bueiro_auth_prefs", Context.MODE_PRIVATE)
@@ -19,7 +20,7 @@ class TokenManager(context: Context) {
 
     fun saveToken(token: String) {
         try {
-            prefs.edit().putString(KEY_JWT_TOKEN, token).apply()
+            prefs.edit { putString(KEY_JWT_TOKEN, token) }
             _isLoggedIn.value = true
             Log.d("TokenManager", "Token salvo com sucesso")
         } catch (e: Exception) {
@@ -38,7 +39,7 @@ class TokenManager(context: Context) {
 
     fun clearToken() {
         try {
-            prefs.edit().remove(KEY_JWT_TOKEN).apply()
+            prefs.edit { remove(KEY_JWT_TOKEN) }
             _isLoggedIn.value = false
             Log.d("TokenManager", "Token limpo com sucesso")
         } catch (e: Exception) {

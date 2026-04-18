@@ -8,8 +8,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private var retrofit: Retrofit? = null    lateinit var httpClient: OkHttpClient
-        private set
+    lateinit var httpClient: OkHttpClient
+    private var retrofit: Retrofit? = null    
+
     /**
      * Inicializa a inst�ncia Singleton do Retrofit.
      * Deve ser chamado idealmente no Application ou na Activity inicial.       
