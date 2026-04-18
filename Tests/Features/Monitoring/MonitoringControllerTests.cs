@@ -49,7 +49,7 @@ public sealed class MonitoringControllerTests
         // Assert
         result
             .Result.Should()
-            .BeOfType<ObjectResult>()
+            .BeAssignableTo<ObjectResult>()
             .Which.StatusCode.Should()
             .Be(StatusCodes.Status401Unauthorized);
 
@@ -89,7 +89,7 @@ public sealed class MonitoringControllerTests
                 : StatusCodes.Status400BadRequest;
         result
             .Result.Should()
-            .BeOfType<ObjectResult>()
+            .BeAssignableTo<ObjectResult>()
             .Which.StatusCode.Should()
             .Be(expectedStatus);
     }

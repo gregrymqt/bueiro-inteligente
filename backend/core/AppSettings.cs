@@ -358,7 +358,7 @@ namespace backend.Core
 
             if (string.IsNullOrWhiteSpace(rawValue))
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             string trimmedValue = rawValue.Trim();

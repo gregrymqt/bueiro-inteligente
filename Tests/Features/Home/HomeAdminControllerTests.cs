@@ -111,7 +111,11 @@ public sealed class HomeAdminControllerTests
             erroTipo == "LogicException"
                 ? StatusCodes.Status400BadRequest
                 : StatusCodes.Status404NotFound;
-        result.Result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(statusCode);
+        result
+            .Result.Should()
+            .BeAssignableTo<ObjectResult>()
+            .Which.StatusCode.Should()
+            .Be(statusCode);
     }
 
     [Fact]

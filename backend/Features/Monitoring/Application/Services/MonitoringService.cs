@@ -89,12 +89,17 @@ public sealed class MonitoringService(
         return response.Data;
     }
 
-    private void ValidateSensorNoise(string id, double dist)
+    private void ValidateSensorNoise(string id, double distanceCm)
     {
-        if (double.IsNaN(dist) || double.IsInfinity(dist) || dist < 0 || dist > MaxBucketDepthCm)
+        if (
+            double.IsNaN(distanceCm)
+            || double.IsInfinity(distanceCm)
+            || distanceCm < 0
+            || distanceCm > MaxBucketDepthCm
+        )
         {
-            logger.LogWarning("Ruído detectado: {Dist} ignorada para {Id}", dist, id);
-            throw LogicException.InvalidValue(nameof(dist), dist);
+            logger.LogWarning("Ruído detectado: {DistanceCm} ignorada para {Id}", distanceCm, id);
+            throw LogicException.InvalidValue(nameof(distanceCm), distanceCm);
         }
     }
 

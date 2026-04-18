@@ -92,7 +92,7 @@ public sealed class DrainsControllerTests
                 : StatusCodes.Status400BadRequest;
         result
             .Result.Should()
-            .BeOfType<ObjectResult>()
+            .BeAssignableTo<ObjectResult>()
             .Which.StatusCode.Should()
             .Be(statusEsperado);
     }
