@@ -10,105 +10,61 @@ public static class RedisServiceCollectionExtensions
     public static IServiceCollection AddBueiroInteligenteRedis(this IServiceCollection services)
     {
         services.AddSingleton(AppSettings.Current);
-        services.AddSingleton<IConnectionMultiplexer>(sp =>
-        {
-            AppSettings settings = sp.GetRequiredService<AppSettings>();
-            ConfigurationOptions configurationOptions = BuildConfigurationOptions(settings);
-
-            return ConnectionMultiplexer.Connect(configurationOptions);
-        });
-
-        return services;
+        return services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(BuildOptions(sp.GetRequiredService<AppSettings>()))
+        );
     }
 
     public static async Task InitializeBueiroInteligenteRedisAsync(
-        this IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default
+        this IServiceProvider sp,
+        CancellationToken ct = default
     )
     {
-        ILogger logger = serviceProvider
-            .GetRequiredService<ILoggerFactory>()
-            .CreateLogger("RedisBootstrap");
-
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("RedisBootstrap");
         try
         {
-            IConnectionMultiplexer connectionMultiplexer =
-                serviceProvider.GetRequiredService<IConnectionMultiplexer>();
-            IDatabase database = connectionMultiplexer.GetDatabase();
-
-            await database.PingAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
+            var redis = sp.GetRequiredService<IConnectionMultiplexer>();
+            await redis.GetDatabase().PingAsync().WaitAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            logger.LogWarning(
-                exception,
-                "Redis indisponível durante a inicialização. O sistema continuará com fallback de cache."
-            );
+            logger.LogWarning(ex, "Redis indisponível. O sistema utilizará fallback de cache.");
         }
     }
 
-    private static ConfigurationOptions BuildConfigurationOptions(AppSettings settings)
+    private static ConfigurationOptions BuildOptions(AppSettings settings)
     {
         if (settings.RedisLocal)
-        {
             return ConfigurationOptions.Parse("redis:6379,abortConnect=false");
-        }
 
         if (string.IsNullOrWhiteSpace(settings.RedisUrl))
-        {
-            throw new InvalidOperationException("REDIS_URL não está definida.");
-        }
+            throw new InvalidOperationException("REDIS_URL não definida.");
 
-        string normalizedUrl = settings.RedisUrl.Trim();
-
-        if (
-            normalizedUrl.Contains("://", StringComparison.Ordinal)
-            && Uri.TryCreate(normalizedUrl, UriKind.Absolute, out Uri? uri)
-            && uri.Scheme.StartsWith("redis", StringComparison.OrdinalIgnoreCase)
-        )
+        if (Uri.TryCreate(settings.RedisUrl, UriKind.Absolute, out var uri))
         {
-            var configurationOptions = new ConfigurationOptions
+            var options = new ConfigurationOptions
             {
                 AbortOnConnectFail = false,
                 ConnectRetry = 3,
                 ConnectTimeout = 5000,
-                SyncTimeout = 5000,
-                KeepAlive = 180,
                 Ssl = uri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
             };
 
-            configurationOptions.EndPoints.Add(uri.Host, uri.IsDefaultPort ? 6379 : uri.Port);
+            options.EndPoints.Add(uri.Host, uri.IsDefaultPort ? 6379 : uri.Port);
 
             if (!string.IsNullOrWhiteSpace(uri.UserInfo))
             {
-                string[] credentials = uri.UserInfo.Split(':', 2);
-
-                if (credentials.Length > 0)
-                {
-                    configurationOptions.User = Uri.UnescapeDataString(credentials[0]);
-                }
-
-                if (credentials.Length > 1)
-                {
-                    configurationOptions.Password = Uri.UnescapeDataString(credentials[1]);
-                }
+                var parts = uri.UserInfo.Split(':', 2);
+                options.User = Uri.UnescapeDataString(parts[0]);
+                if (parts.Length > 1)
+                    options.Password = Uri.UnescapeDataString(parts[1]);
             }
 
-            if (int.TryParse(uri.AbsolutePath.Trim('/'), out int databaseIndex))
-            {
-                configurationOptions.DefaultDatabase = databaseIndex;
-            }
-
-            return configurationOptions;
+            if (int.TryParse(uri.AbsolutePath.Trim('/'), out int dbIndex))
+                options.DefaultDatabase = dbIndex;
+            return options;
         }
 
-        ConfigurationOptions parsedOptions = ConfigurationOptions.Parse(normalizedUrl);
-        parsedOptions.AbortOnConnectFail = false;
-        parsedOptions.ConnectRetry = 3;
-        parsedOptions.ConnectTimeout = 5000;
-        parsedOptions.SyncTimeout = 5000;
-        parsedOptions.KeepAlive = 180;
-
-        return parsedOptions;
+        return ConfigurationOptions.Parse(settings.RedisUrl);
     }
 }

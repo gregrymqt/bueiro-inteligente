@@ -1,7 +1,6 @@
 using backend.Core;
 using backend.Features.Home.Application.DTOs;
 using backend.Features.Home.Application.Interfaces;
-using backend.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,48 +13,36 @@ public sealed class HomeController(IHomeService homeService) : ApiControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<HomeResponseDto>> GetHomeContent(
-        CancellationToken cancellationToken = default
-    )
+    public async Task<ActionResult<HomeResponseDto>> GetHomeContent(CancellationToken ct) =>
+        await ExecuteAsync(async () =>
+            Ok(await _homeService.GetHomeContentAsync(ct).ConfigureAwait(false))
+        );
+
+    #region Helpers Enxutos
+
+    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
     {
         try
         {
-            HomeResponseDto result = await _homeService
-                .GetHomeContentAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
+            return await action();
         }
-        catch (ConnectionException exception)
+        catch (ConnectionException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
+            return StatusCode(503, CreateProblem("Connection error", ex.Message, 503));
         }
-        catch (LogicException exception)
+        catch (LogicException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
+            return BadRequest(CreateProblem("Validation error", ex.Message, 400));
         }
     }
 
-    private static ObjectResult CreateProblem(int statusCode, string title, string detail)
-    {
-        return new ObjectResult(
-            new ProblemDetails
-            {
-                Title = title,
-                Detail = detail,
-                Status = statusCode,
-            }
-        )
+    private static ProblemDetails CreateProblem(string title, string detail, int status) =>
+        new()
         {
-            StatusCode = statusCode,
+            Title = title,
+            Detail = detail,
+            Status = status,
         };
-    }
+
+    #endregion
 }

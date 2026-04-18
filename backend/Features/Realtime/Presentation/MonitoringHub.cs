@@ -4,69 +4,45 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Features.Realtime.Presentation;
 
-/// <summary>
-/// SignalR hub used as the WebSocket entry point for realtime clients.
-/// SignalR manages keep-alive ping/pong automatically.
-/// </summary>
 public sealed class MonitoringHub(WebSocketRateLimiter rateLimiter, ILogger<MonitoringHub> logger)
     : Hub
 {
     private readonly WebSocketRateLimiter _rateLimiter =
         rateLimiter ?? throw new ArgumentNullException(nameof(rateLimiter));
-
     private readonly ILogger<MonitoringHub> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public override async Task OnConnectedAsync()
     {
-        HttpContext? httpContext = Context.GetHttpContext();
+        var httpContext = Context.GetHttpContext();
 
         if (httpContext is not null)
         {
             try
             {
+                // Proteção contra excesso de conexões simultâneas
                 await _rateLimiter
                     .EnforceAsync(httpContext, Context.ConnectionAborted)
                     .ConfigureAwait(false);
             }
-            catch (RateLimitExceededException exception)
+            catch (RateLimitExceededException ex)
             {
-                _logger.LogWarning(
-                    exception,
-                    "Conexão WebSocket bloqueada por rate limit. ConnectionId={ConnectionId}",
-                    Context.ConnectionId
-                );
-
-                throw new HubException(exception.Message);
+                _logger.LogWarning(ex, "WebSocket rate limit: {Id}", Context.ConnectionId);
+                throw new HubException(ex.Message);
             }
         }
 
-        _logger.LogInformation(
-            "Iniciando nova conexão WebSocket... ConnectionId={ConnectionId}",
-            Context.ConnectionId
-        );
-
+        _logger.LogInformation("WebSocket connected: {Id}", Context.ConnectionId);
         await base.OnConnectedAsync().ConfigureAwait(false);
     }
 
-    public override async Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? ex)
     {
-        if (exception is null)
-        {
-            _logger.LogInformation(
-                "Conexão WebSocket encerrada. ConnectionId={ConnectionId}",
-                Context.ConnectionId
-            );
-        }
+        if (ex is null)
+            _logger.LogInformation("WebSocket closed: {Id}", Context.ConnectionId);
         else
-        {
-            _logger.LogWarning(
-                exception,
-                "Conexão WebSocket encerrada com erro. ConnectionId={ConnectionId}",
-                Context.ConnectionId
-            );
-        }
+            _logger.LogWarning(ex, "WebSocket closed with error: {Id}", Context.ConnectionId);
 
-        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
+        await base.OnDisconnectedAsync(ex).ConfigureAwait(false);
     }
 }

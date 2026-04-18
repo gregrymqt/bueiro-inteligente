@@ -3,27 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace backend.Features.Rows.Application.DTOs;
 
-/// <summary>
-/// Payload used by Rows append operations.
-/// </summary>
+/// <summary> Payload para operações de append no Rows. </summary>
 public sealed record RowsAppendRequest(
-    [property: JsonPropertyName("values"), Required]
-    IReadOnlyList<IReadOnlyList<object?>> Values
+    [property: JsonPropertyName("values"), Required] IReadOnlyList<IReadOnlyList<object?>> Values
 );
 
-/// <summary>
-/// Payload used to create a new table in Rows.
-/// </summary>
-public sealed record RowsCreateTableRequest(
-    [property: JsonPropertyName("name"), Required, StringLength(255)] string Name
-);
+/// <summary> Payload para criação de tabelas. </summary>
+public sealed record RowsCreateTableRequest([property: Required, StringLength(255)] string Name);
 
-/// <summary>
-/// Response returned by Rows when a table is created.
-/// </summary>
+/// <summary> Resposta de criação de tabela. </summary>
 public sealed record RowsCreateTableResponse(
-    [property: JsonPropertyName("id")] string Id,
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("slug")] string Slug,
+    string Id,
+    string Name,
+    string Slug,
     [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt
 );

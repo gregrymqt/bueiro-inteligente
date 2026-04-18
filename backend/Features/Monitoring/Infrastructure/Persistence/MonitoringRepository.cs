@@ -9,9 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Monitoring.Infrastructure.Persistence;
 
-/// <summary>
-/// Persists monitoring readings and serves historical drain status data.
-/// </summary>
+// C# 12: Injeção direta via Primary Constructor
 public sealed class MonitoringRepository(
     AppDbContext dbContext,
     ICacheService cacheService,
@@ -20,50 +18,27 @@ public sealed class MonitoringRepository(
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
 
-    private readonly AppDbContext _dbContext =
-        dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-
-    private readonly ICacheService _cacheService =
-        cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-
-    private readonly ILogger<MonitoringRepository> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
-    public async Task SaveSensorDataAsync(
-        DrainStatusDTO data,
-        CancellationToken cancellationToken = default
-    )
+    public async Task SaveSensorDataAsync(DrainStatusDTO data, CancellationToken ct = default)
     {
-        if (data is null)
-        {
-            throw LogicException.NullValue(nameof(data));
-        }
+        ArgumentNullException.ThrowIfNull(data);
 
-        string cacheKey = BuildStatusCacheKey(data.IdBueiro);
-
-        _logger.LogInformation(
-            "Atualizando status atual no Redis para o bueiro {DrainIdentifier}.",
-            data.IdBueiro
-        );
-
+        // 1. Atualização do Cache (Redis)
         try
         {
-            await _cacheService.SetAsync(cacheKey, data, CacheTtl).ConfigureAwait(false);
+            await cacheService
+                .SetAsync($"bueiro:{data.IdBueiro}:status", data, CacheTtl)
+                .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogWarning(
-                exception,
-                "Falha ao atualizar o cache do bueiro {DrainIdentifier}. A persistência histórica continuará.",
+            logger.LogWarning(
+                ex,
+                "Falha no cache para {Id}. Prosseguindo com persistência.",
                 data.IdBueiro
             );
         }
 
-        _logger.LogInformation(
-            "Inserindo histórico em drain_status para o bueiro {DrainIdentifier}.",
-            data.IdBueiro
-        );
-
+        // 2. Persistência Histórica (PostgreSQL)
         DrainStatus entity = new()
         {
             DrainIdentifier = data.IdBueiro,
@@ -78,175 +53,115 @@ public sealed class MonitoringRepository(
 
         try
         {
-            await _dbContext
-                .DrainStatuses.AddAsync(entity, cancellationToken)
-                .ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
-        catch (DbUpdateException exception)
+        catch (DbUpdateException ex)
         {
             throw new ConnectionException(
                 "PostgreSQL",
-                $"Falha ao inserir histórico de medição para o bueiro {data.IdBueiro}.",
-                exception
+                $"Erro ao salvar leitura de {data.IdBueiro}",
+                ex
             );
         }
-
-        _logger.LogInformation(
-            "Histórico persistido com sucesso para o bueiro {DrainIdentifier}.",
-            data.IdBueiro
-        );
     }
 
     public async Task<DrainStatusDTO?> GetLatestStatusAsync(
-        string drainIdentifier,
-        CancellationToken cancellationToken = default
+        string drainId,
+        CancellationToken ct = default
     )
     {
-        if (string.IsNullOrWhiteSpace(drainIdentifier))
-        {
-            throw LogicException.InvalidValue(nameof(drainIdentifier), drainIdentifier);
-        }
+        if (string.IsNullOrWhiteSpace(drainId))
+            throw LogicException.InvalidValue(nameof(drainId), drainId);
 
         try
         {
-            _logger.LogDebug(
-                "Consultando o último status do bueiro {DrainIdentifier} no banco de dados.",
-                drainIdentifier
-            );
-
-            DrainStatus? record = await _dbContext
+            var record = await dbContext
                 .DrainStatuses.AsNoTracking()
-                .Where(status => status.DrainIdentifier == drainIdentifier)
-                .OrderByDescending(status => status.LastUpdate)
-                .ThenByDescending(status => status.Id)
-                .FirstOrDefaultAsync(cancellationToken)
+                .Where(s => s.DrainIdentifier == drainId)
+                .OrderByDescending(s => s.LastUpdate)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefaultAsync(ct)
                 .ConfigureAwait(false);
 
-            if (record is null)
-            {
-                _logger.LogDebug(
-                    "Nenhum status encontrado para o bueiro {DrainIdentifier}.",
-                    drainIdentifier
-                );
-                return null;
-            }
-
-            return MapToDto(record);
+            return record is null ? null : MapToDto(record);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            throw new ConnectionException(
-                "PostgreSQL",
-                $"Falha ao consultar o status do bueiro {drainIdentifier}.",
-                exception
-            );
+            throw new ConnectionException("PostgreSQL", $"Erro ao buscar status de {drainId}", ex);
         }
     }
 
     public async Task<IReadOnlyList<DrainStatusDTO>> GetUnsyncedDataAsync(
         int limit = 100,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         if (limit <= 0)
-        {
             throw LogicException.InvalidValue(nameof(limit), limit);
-        }
 
         try
         {
-            _logger.LogInformation(
-                "Buscando até {Limit} leituras pendentes de sincronização com Rows.",
-                limit
-            );
-
-            List<DrainStatus> records = await _dbContext
+            var records = await dbContext
                 .DrainStatuses.AsNoTracking()
-                .Where(status => !status.SyncedToRows)
-                .OrderBy(status => status.LastUpdate)
+                .Where(s => !s.SyncedToRows)
+                .OrderBy(s => s.LastUpdate)
                 .Take(limit)
-                .ToListAsync(cancellationToken)
+                .ToListAsync(ct)
                 .ConfigureAwait(false);
 
-            return records.Select(MapToDto).ToList();
+            return [.. records.Select(MapToDto)]; // C# 12: Collection expression
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
             throw new ConnectionException(
                 "PostgreSQL",
-                "Falha ao buscar leituras não sincronizadas com Rows.",
-                exception
+                "Erro ao buscar dados não sincronizados.",
+                ex
             );
         }
     }
 
     public async Task MarkAsSyncedAsync(
-        IReadOnlyCollection<string> drainIdentifiers,
-        CancellationToken cancellationToken = default
+        IReadOnlyCollection<string> drainIds,
+        CancellationToken ct = default
     )
     {
-        if (drainIdentifiers is null)
-        {
-            throw LogicException.NullValue(nameof(drainIdentifiers));
-        }
-
-        if (drainIdentifiers.Count == 0)
-        {
+        ArgumentNullException.ThrowIfNull(drainIds);
+        if (drainIds.Count == 0)
             return;
-        }
 
         try
         {
-            string[] identifiers = drainIdentifiers
-                .Where(identifier => !string.IsNullOrWhiteSpace(identifier))
-                .Distinct(StringComparer.Ordinal)
+            var identifiers = drainIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
                 .ToArray();
-
             if (identifiers.Length == 0)
-            {
                 return;
-            }
 
-            _logger.LogInformation(
-                "Marcando {Count} bueiro(s) como sincronizados no banco de dados.",
-                identifiers.Length
-            );
-
-            await _dbContext
-                .DrainStatuses.Where(status => identifiers.Contains(status.DrainIdentifier))
-                .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(status => status.SyncedToRows, true),
-                    cancellationToken
+            // Uso do ExecuteUpdateAsync (EF Core 7/8) para performance em lote
+            await dbContext
+                .DrainStatuses.Where(s =>
+                    identifiers.Contains(s.DrainIdentifier) && !s.SyncedToRows
                 )
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.SyncedToRows, true), ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            throw new ConnectionException(
-                "PostgreSQL",
-                "Falha ao marcar leituras como sincronizadas com Rows.",
-                exception
-            );
+            throw new ConnectionException("PostgreSQL", "Erro ao marcar sincronização.", ex);
         }
     }
 
-    private static DrainStatusDTO MapToDto(DrainStatus status)
-    {
-        return new DrainStatusDTO
-        {
-            IdBueiro = status.DrainIdentifier,
-            DistanciaCm = status.DistanceCm,
-            NivelObstrucao = status.ObstructionLevel,
-            Status = status.Status,
-            Latitude = status.Latitude,
-            Longitude = status.Longitude,
-            UltimaAtualizacao = status.LastUpdate,
-        };
-    }
-
-    private static string BuildStatusCacheKey(string drainIdentifier)
-    {
-        return $"bueiro:{drainIdentifier}:status";
-    }
+    private static DrainStatusDTO MapToDto(DrainStatus s) =>
+        new(
+            s.DrainIdentifier,
+            s.DistanceCm,
+            s.ObstructionLevel,
+            s.Status,
+            s.Latitude,
+            s.Longitude,
+            s.LastUpdate
+        );
 }

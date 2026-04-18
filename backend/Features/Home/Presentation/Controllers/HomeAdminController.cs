@@ -1,7 +1,6 @@
 using backend.Core;
 using backend.Features.Home.Application.DTOs;
 using backend.Features.Home.Application.Interfaces;
-using backend.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,378 +12,145 @@ public sealed class HomeAdminController(IHomeService homeService) : ApiControlle
     private readonly IHomeService _homeService =
         homeService ?? throw new ArgumentNullException(nameof(homeService));
 
+    #region Carousel Endpoints
+
     [HttpGet("carousel")]
     public async Task<ActionResult<IReadOnlyList<CarouselResponseDto>>> GetCarousels(
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            IReadOnlyList<CarouselResponseDto> carousels = await _homeService
-                .GetAllCarouselsAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(carousels);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(await _homeService.GetAllCarouselsAsync(ct).ConfigureAwait(false))
+        );
 
     [HttpGet("carousel/{carouselId:guid}")]
     public async Task<ActionResult<CarouselResponseDto>> GetCarouselById(
         Guid carouselId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            CarouselResponseDto result = await _homeService
-                .GetCarouselByIdAsync(carouselId, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(await _homeService.GetCarouselByIdAsync(carouselId, ct).ConfigureAwait(false))
+        );
 
     [HttpPost("carousel")]
     public async Task<ActionResult<CarouselResponseDto>> CreateCarousel(
         [FromBody] CarouselCreateDto request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
         {
-            CarouselResponseDto result = await _homeService
-                .CreateCarouselAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-
+            var result = await _homeService.CreateCarouselAsync(request, ct).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetCarouselById), new { carouselId = result.Id }, result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        });
 
     [HttpPatch("carousel/{carouselId:guid}")]
     public async Task<ActionResult<CarouselResponseDto>> UpdateCarousel(
         Guid carouselId,
         [FromBody] CarouselUpdateDto request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            CarouselResponseDto result = await _homeService
-                .UpdateCarouselAsync(carouselId, request, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(
+                await _homeService
+                    .UpdateCarouselAsync(carouselId, request, ct)
+                    .ConfigureAwait(false)
+            )
+        );
 
     [HttpDelete("carousel/{carouselId:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteCarousel(
-        Guid carouselId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+    public async Task<IActionResult> DeleteCarousel(Guid carouselId, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
         {
-            await _homeService.DeleteCarouselAsync(carouselId, cancellationToken)
-                .ConfigureAwait(false);
-
+            await _homeService.DeleteCarouselAsync(carouselId, ct).ConfigureAwait(false);
             return NoContent();
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        });
+
+    #endregion
+
+    #region Stats Endpoints
 
     [HttpGet("stats")]
     public async Task<ActionResult<IReadOnlyList<StatCardResponseDto>>> GetStatCards(
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            IReadOnlyList<StatCardResponseDto> stats = await _homeService
-                .GetAllStatCardsAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(stats);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(await _homeService.GetAllStatCardsAsync(ct).ConfigureAwait(false))
+        );
 
     [HttpGet("stats/{statCardId:guid}")]
     public async Task<ActionResult<StatCardResponseDto>> GetStatCardById(
         Guid statCardId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            StatCardResponseDto result = await _homeService
-                .GetStatCardByIdAsync(statCardId, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(await _homeService.GetStatCardByIdAsync(statCardId, ct).ConfigureAwait(false))
+        );
 
     [HttpPost("stats")]
     public async Task<ActionResult<StatCardResponseDto>> CreateStatCard(
         [FromBody] StatCardCreateDto request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
         {
-            StatCardResponseDto result = await _homeService
-                .CreateStatCardAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-
+            var result = await _homeService.CreateStatCardAsync(request, ct).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetStatCardById), new { statCardId = result.Id }, result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        });
 
     [HttpPatch("stats/{statCardId:guid}")]
     public async Task<ActionResult<StatCardResponseDto>> UpdateStatCard(
         Guid statCardId,
         [FromBody] StatCardUpdateDto request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
-        {
-            StatCardResponseDto result = await _homeService
-                .UpdateStatCardAsync(statCardId, request, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
-        }
-        catch (NotFoundException exception)
-        {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
+            Ok(
+                await _homeService
+                    .UpdateStatCardAsync(statCardId, request, ct)
+                    .ConfigureAwait(false)
+            )
+        );
 
     [HttpDelete("stats/{statCardId:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteStatCard(
-        Guid statCardId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<IActionResult> DeleteStatCard(Guid statCardId, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
+        {
+            await _homeService.DeleteStatCardAsync(statCardId, ct).ConfigureAwait(false);
+            return NoContent();
+        });
+
+    #endregion
+
+    #region Helpers Enxutos
+
+    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
     {
         try
         {
-            await _homeService.DeleteStatCardAsync(statCardId, cancellationToken)
-                .ConfigureAwait(false);
-
-            return NoContent();
+            return await action();
         }
-        catch (NotFoundException exception)
+        catch (NotFoundException ex)
         {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
+            return NotFound(CreateProblem("Not found", ex.Message, 404));
         }
-        catch (ConnectionException exception)
+        catch (ConnectionException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
+            return StatusCode(503, CreateProblem("Connection error", ex.Message, 503));
         }
-        catch (LogicException exception)
+        catch (LogicException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
+            return BadRequest(CreateProblem("Validation error", ex.Message, 400));
         }
     }
 
-    private static ObjectResult CreateProblem(int statusCode, string title, string detail)
-    {
-        return new ObjectResult(
-            new ProblemDetails
-            {
-                Title = title,
-                Detail = detail,
-                Status = statusCode,
-            }
-        )
+    private static ProblemDetails CreateProblem(string title, string detail, int status) =>
+        new()
         {
-            StatusCode = statusCode,
+            Title = title,
+            Detail = detail,
+            Status = status,
         };
-    }
+
+    #endregion
 }

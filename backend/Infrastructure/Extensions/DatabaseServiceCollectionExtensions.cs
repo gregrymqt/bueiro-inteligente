@@ -12,64 +12,51 @@ public static class DatabaseServiceCollectionExtensions
     public static IServiceCollection AddBueiroInteligenteDatabase(this IServiceCollection services)
     {
         services.AddSingleton(AppSettings.Current);
-
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
         services.AddDbContext<AppDbContext>(
-            (serviceProvider, options) =>
+            (sp, options) =>
             {
-                string databaseUrl = serviceProvider.GetRequiredService<AppSettings>().DatabaseUrl;
-                string resolvedConnectionString = PostgreSqlConnectionStringFactory.Create(
-                    databaseUrl
+                var settings = sp.GetRequiredService<AppSettings>();
+                var connectionString = PostgreSqlConnectionStringFactory.Create(
+                    settings.DatabaseUrl
                 );
 
-                options.UseNpgsql(
-                    resolvedConnectionString,
-                    npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()
-                );
+                options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure());
                 options.EnableDetailedErrors();
             }
         );
 
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        return services;
+        return services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 
     public static async Task InitializeBueiroInteligenteDatabaseAsync(
-        this IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default
+        this IServiceProvider sp,
+        CancellationToken ct = default
     )
     {
-        using IServiceScope scope = serviceProvider.CreateScope();
-
-        // 1. Pegamos as configurações
+        using var scope = sp.CreateScope();
         var settings = scope.ServiceProvider.GetRequiredService<AppSettings>();
 
-        // 2. Se estivermos em nuvem, usamos a porta 5432 explicitamente para migrar
-        string connectionString = settings.DbLocal ? settings.DatabaseUrl : settings.MigrationsUrl;
-        string resolvedConnectionString = PostgreSqlConnectionStringFactory.Create(
-            connectionString
+        // Porta 5432 explícita para migrações em nuvem
+        var connectionString = PostgreSqlConnectionStringFactory.Create(
+            settings.DbLocal ? settings.DatabaseUrl : settings.MigrationsUrl
         );
 
-        // 3. Criamos um contexto temporário apenas para a migração
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql(resolvedConnectionString);
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connectionString)
+            .Options;
+        using var dbContext = new AppDbContext(options);
 
-        using var dbContext = new AppDbContext(optionsBuilder.Options);
+        await dbContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
-        // Agora o MigrateAsync rodará na porta 5432, que permite criar tabelas
-        await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
-
-        if (!await dbContext.Roles.AnyAsync(cancellationToken).ConfigureAwait(false))
+        // Seed de Roles se necessário
+        if (!await dbContext.Roles.AnyAsync(ct).ConfigureAwait(false))
         {
             dbContext.Roles.AddRange(
-                new Role { Name = "User" },
-                new Role { Name = "Admin" },
-                new Role { Name = "Manager" }
+                [new() { Name = "User" }, new() { Name = "Admin" }, new() { Name = "Manager" }]
             );
-
-            await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -78,88 +65,32 @@ public static class DatabaseServiceCollectionExtensions
         public static string Create(string databaseUrl)
         {
             if (string.IsNullOrWhiteSpace(databaseUrl))
-                throw new InvalidOperationException("DATABASE_URL não está definida.");
+                throw new InvalidOperationException("DATABASE_URL não definida.");
 
-            string normalizedUrl = databaseUrl.Trim();
-
-            if (!normalizedUrl.Contains("://", StringComparison.Ordinal))
-                return normalizedUrl;
-
-            if (!Uri.TryCreate(normalizedUrl, UriKind.Absolute, out Uri? uri))
-                throw new InvalidOperationException("DATABASE_URL possui um formato inválido.");
-
-            if (!uri.Scheme.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
-            {
-                return normalizedUrl;
-            }
+            if (
+                !databaseUrl.Contains("://")
+                || !Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri)
+            )
+                return databaseUrl;
 
             var builder = new NpgsqlConnectionStringBuilder
             {
                 Host = uri.Host,
                 Port = uri.IsDefaultPort ? 5432 : uri.Port,
+                Database = uri.AbsolutePath.Trim('/'),
                 Pooling = true,
                 IncludeErrorDetail = true,
             };
 
-            string databaseName = uri.AbsolutePath.Trim('/');
-
-            if (!string.IsNullOrWhiteSpace(databaseName))
-            {
-                builder.Database = databaseName;
-            }
-
             if (!string.IsNullOrWhiteSpace(uri.UserInfo))
             {
-                string[] credentials = uri.UserInfo.Split(':', 2);
-                builder.Username = Uri.UnescapeDataString(credentials[0]);
-
-                if (credentials.Length > 1)
-                {
-                    builder.Password = Uri.UnescapeDataString(credentials[1]);
-                }
-            }
-
-            foreach (KeyValuePair<string, string> queryParameter in ParseQueryString(uri.Query))
-            {
-                var key = queryParameter.Key.ToLower();
-                var value = queryParameter.Value;
-
-                // Apenas mapeie o SslMode. O Npgsql moderno cuida da validação internamente.
-                if (key == "sslmode" && Enum.TryParse(value, true, out SslMode sslMode))
-                {
-                    builder.SslMode = sslMode;
-                }
+                var parts = uri.UserInfo.Split(':', 2);
+                builder.Username = Uri.UnescapeDataString(parts[0]);
+                if (parts.Length > 1)
+                    builder.Password = Uri.UnescapeDataString(parts[1]);
             }
 
             return builder.ConnectionString;
-        }
-
-        private static IReadOnlyDictionary<string, string> ParseQueryString(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (
-                string segment in query
-                    .TrimStart('?')
-                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            )
-            {
-                string[] parts = segment.Split('=', 2);
-                string key = Uri.UnescapeDataString(parts[0]);
-                string value = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : string.Empty;
-
-                if (!string.IsNullOrWhiteSpace(key))
-                {
-                    values[key] = value;
-                }
-            }
-
-            return values;
         }
     }
 }

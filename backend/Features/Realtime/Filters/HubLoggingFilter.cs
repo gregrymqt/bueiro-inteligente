@@ -2,37 +2,31 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Features.Realtime.Filters;
 
-/// <summary>
-/// Logs hub method invocations and the connection ID for realtime traffic.
-/// </summary>
 public sealed class HubLoggingFilter(ILogger<HubLoggingFilter> logger) : IHubFilter
 {
     private readonly ILogger<HubLoggingFilter> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async ValueTask<object?> InvokeMethodAsync(
-        HubInvocationContext invocationContext,
+        HubInvocationContext context,
         Func<HubInvocationContext, ValueTask<object?>> next
     )
     {
-        ArgumentNullException.ThrowIfNull(invocationContext);
+        ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(next);
 
-        string connectionId = invocationContext.Context.ConnectionId;
-        string hubMethodName = invocationContext.HubMethodName;
-
         _logger.LogInformation(
-            "Hub method {HubMethodName} invoked. ConnectionId={ConnectionId}",
-            hubMethodName,
-            connectionId
+            "Hub invoked: {Method}. ConnId: {Id}",
+            context.HubMethodName,
+            context.Context.ConnectionId
         );
 
-        object? result = await next(invocationContext).ConfigureAwait(false);
+        var result = await next(context).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Hub method {HubMethodName} completed. ConnectionId={ConnectionId}",
-            hubMethodName,
-            connectionId
+            "Hub completed: {Method}. ConnId: {Id}",
+            context.HubMethodName,
+            context.Context.ConnectionId
         );
 
         return result;

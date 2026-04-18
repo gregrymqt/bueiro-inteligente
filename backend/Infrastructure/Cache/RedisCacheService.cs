@@ -12,46 +12,43 @@ public sealed class RedisCacheService(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly IConnectionMultiplexer _connectionMultiplexer =
+    // C# 12: Campos capturados diretamente do construtor primário
+    private readonly IConnectionMultiplexer _redis =
         connectionMultiplexer ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
-
     private readonly ILogger<RedisCacheService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<T?> GetAsync<T>(string key)
     {
-        (bool Found, T? Value) result = await TryGetAsync<T>(key).ConfigureAwait(false);
-        return result.Found ? result.Value : default;
+        var (found, value) = await TryGetAsync<T>(key).ConfigureAwait(false);
+        return found ? value : default;
     }
 
     public async Task SetAsync<T>(string key, T? value, TimeSpan? expiry = null)
     {
         ValidateKey(key);
-
         try
         {
-            IDatabase database = _connectionMultiplexer.GetDatabase();
-            string payload = JsonSerializer.Serialize(value, JsonOptions);
-            await database.StringSetAsync(key, payload, expiry, false).ConfigureAwait(false);
+            var db = _redis.GetDatabase();
+            var payload = JsonSerializer.Serialize(value, JsonOptions);
+            await db.StringSetAsync(key, payload, (Expiration)expiry!).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Erro ao salvar a chave '{Key}' no cache Redis.", key);
+            _logger.LogError(ex, "Erro ao salvar chave '{Key}' no Redis.", key);
         }
     }
 
     public async Task RemoveAsync(string key)
     {
         ValidateKey(key);
-
         try
         {
-            IDatabase database = _connectionMultiplexer.GetDatabase();
-            await database.KeyDeleteAsync(key).ConfigureAwait(false);
+            await _redis.GetDatabase().KeyDeleteAsync(key).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Erro ao remover a chave '{Key}' do cache Redis.", key);
+            _logger.LogError(ex, "Erro ao remover chave '{Key}' do Redis.", key);
         }
     }
 
@@ -62,33 +59,14 @@ public sealed class RedisCacheService(
     )
     {
         ValidateKey(key);
+        ArgumentNullException.ThrowIfNull(fetchFunc);
 
-        if (fetchFunc is null)
-        {
-            throw LogicException.NullValue(nameof(fetchFunc));
-        }
-
-        (bool Found, T? Value) cachedResult = await TryGetAsync<T>(key).ConfigureAwait(false);
-
-        if (cachedResult.Found)
-        {
-            return new CacheResponseDto<T>(cachedResult.Value!, true);
-        }
+        var (found, cachedValue) = await TryGetAsync<T>(key).ConfigureAwait(false);
+        if (found)
+            return new CacheResponseDto<T>(cachedValue!, true);
 
         T freshData = await fetchFunc().ConfigureAwait(false);
-
-        try
-        {
-            await SetAsync(key, freshData, expiry).ConfigureAwait(false);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(
-                exception,
-                "Erro ao gravar o resultado do fetch no cache para a chave '{Key}'.",
-                key
-            );
-        }
+        await SetAsync(key, freshData, expiry).ConfigureAwait(false);
 
         return new CacheResponseDto<T>(freshData, false);
     }
@@ -96,32 +74,17 @@ public sealed class RedisCacheService(
     private async Task<(bool Found, T? Value)> TryGetAsync<T>(string key)
     {
         ValidateKey(key);
-
         try
         {
-            IDatabase database = _connectionMultiplexer.GetDatabase();
-            RedisValue cachedValue = await database.StringGetAsync(key).ConfigureAwait(false);
-
+            var cachedValue = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
             if (cachedValue.IsNull)
-            {
                 return (false, default);
-            }
 
-            T? value = JsonSerializer.Deserialize<T>(cachedValue!, JsonOptions);
-            return (true, value);
+            return (true, JsonSerializer.Deserialize<T>(cachedValue!, JsonOptions));
         }
-        catch (JsonException exception)
+        catch (Exception ex)
         {
-            _logger.LogError(
-                exception,
-                "Erro ao desserializar a chave '{Key}' do cache Redis.",
-                key
-            );
-            return (false, default);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception, "Erro ao buscar a chave '{Key}' do cache Redis.", key);
+            _logger.LogError(ex, "Erro ao recuperar chave '{Key}' do Redis.", key);
             return (false, default);
         }
     }
@@ -129,8 +92,6 @@ public sealed class RedisCacheService(
     private static void ValidateKey(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
-        {
             throw LogicException.InvalidValue(nameof(key), key);
-        }
     }
 }

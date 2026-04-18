@@ -5,9 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace backend.Features.Rows.Infrastructure.Extensions;
 
-/// <summary>
-/// Registers the Rows API integration and its resilient HttpClient.
-/// </summary>
 public static class RowsServiceCollectionExtensions
 {
     public static IServiceCollection AddBueiroInteligenteRows(this IServiceCollection services)
@@ -18,14 +15,12 @@ public static class RowsServiceCollectionExtensions
         services
             .AddHttpClient(
                 RowsHttpClientDefaults.ClientName,
-                (serviceProvider, client) =>
+                (sp, client) =>
                 {
-                    AppSettings settings = serviceProvider.GetRequiredService<AppSettings>();
+                    var settings = sp.GetRequiredService<AppSettings>();
 
                     if (string.IsNullOrWhiteSpace(settings.RowsApiKey))
-                    {
-                        throw new InvalidOperationException("ROWS_API_KEY não está definida.");
-                    }
+                        throw new InvalidOperationException("ROWS_API_KEY não definida no .env");
 
                     client.BaseAddress = BuildBaseAddress(settings.RowsBaseUrl);
                     client.Timeout = TimeSpan.FromSeconds(30);
@@ -33,7 +28,6 @@ public static class RowsServiceCollectionExtensions
                         "Bearer",
                         settings.RowsApiKey
                     );
-                    client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(
                         new MediaTypeWithQualityHeaderValue("application/json")
                     );
@@ -46,26 +40,18 @@ public static class RowsServiceCollectionExtensions
         return services;
     }
 
-    private static Uri BuildBaseAddress(string baseUrl)
+    private static Uri BuildBaseAddress(string url)
     {
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("ROWS_BASE_URL não está definida.");
-        }
+        if (string.IsNullOrWhiteSpace(url))
+            throw new InvalidOperationException("ROWS_BASE_URL inválida.");
 
-        string normalizedBaseUrl = baseUrl.Trim();
+        var normalized = url.Trim();
+        if (!normalized.EndsWith('/'))
+            normalized += "/";
 
-        if (!normalizedBaseUrl.EndsWith("/", StringComparison.Ordinal))
-        {
-            normalizedBaseUrl += "/";
-        }
-
-        if (!Uri.TryCreate(normalizedBaseUrl, UriKind.Absolute, out Uri? uri))
-        {
-            throw new InvalidOperationException("ROWS_BASE_URL possui um formato inválido.");
-        }
-
-        return uri;
+        return Uri.TryCreate(normalized, UriKind.Absolute, out var uri)
+            ? uri
+            : throw new InvalidOperationException("Formato de ROWS_BASE_URL inválido.");
     }
 }
 

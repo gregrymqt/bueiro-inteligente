@@ -7,265 +7,239 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Home.Infrastructure.Persistence;
 
-/// <summary>
-/// Persists Home carousel items and statistic cards.
-/// </summary>
 public sealed class HomeRepository(AppDbContext dbContext, ILogger<HomeRepository> logger)
     : IHomeRepository
 {
-    private readonly AppDbContext _dbContext =
-        dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-
-    private readonly ILogger<HomeRepository> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
-    public async Task<HomeContent> GetAllContentAsync(
-        CancellationToken cancellationToken = default
-    )
+    public async Task<HomeContent> GetAllContentAsync(CancellationToken ct = default)
     {
-        IReadOnlyList<CarouselModel> carousels = await GetAllCarouselsAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        IReadOnlyList<StatCardModel> stats = await GetAllStatCardsAsync(cancellationToken)
-            .ConfigureAwait(false);
-
+        var carousels = await GetAllCarouselsAsync(ct).ConfigureAwait(false);
+        var stats = await GetAllStatCardsAsync(ct).ConfigureAwait(false);
         return new HomeContent(carousels, stats);
     }
 
+    #region Carousel Persistence
+
     public async Task<IReadOnlyList<CarouselModel>> GetAllCarouselsAsync(
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         try
         {
-            return await _dbContext
+            return await dbContext
                 .HomeCarousels.AsNoTracking()
-                .OrderBy(carousel => carousel.Order)
-                .ThenBy(carousel => carousel.Id)
-                .ToListAsync(cancellationToken)
+                .OrderBy(c => c.Order)
+                .ThenBy(c => c.Id)
+                .ToListAsync(ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving home carousel items.");
+            logger.LogError(ex, "Error retrieving home carousel items.");
             throw new ConnectionException(
                 "HomeRepository.GetAllCarouselsAsync",
-                "Failed to query home carousel items.",
-                exception
+                "Failed to query carousels.",
+                ex
             );
         }
     }
 
-    public async Task<CarouselModel?> GetCarouselByIdAsync(
-        Guid carouselId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<CarouselModel?> GetCarouselByIdAsync(Guid id, CancellationToken ct = default)
     {
         try
         {
-            return await _dbContext
+            return await dbContext
                 .HomeCarousels.AsNoTracking()
-                .FirstOrDefaultAsync(carousel => carousel.Id == carouselId, cancellationToken)
+                .FirstOrDefaultAsync(c => c.Id == id, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving home carousel item {CarouselId}", carouselId);
+            logger.LogError(ex, "Error retrieving carousel {Id}", id);
             throw new ConnectionException(
                 "HomeRepository.GetCarouselByIdAsync",
-                $"Failed to query carousel '{carouselId}'.",
-                exception
+                $"Failed to query carousel '{id}'.",
+                ex
             );
         }
     }
 
     public async Task<CarouselModel> CreateCarouselAsync(
-        CarouselModel carousel,
-        CancellationToken cancellationToken = default
+        CarouselModel c,
+        CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(carousel);
-
+        ArgumentNullException.ThrowIfNull(c);
         try
         {
-            await _dbContext.HomeCarousels.AddAsync(carousel, cancellationToken)
-                .ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return carousel;
+            await dbContext.HomeCarousels.AddAsync(c, ct).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            return c;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error creating home carousel item.");
+            logger.LogError(ex, "Error creating carousel.");
             throw new ConnectionException(
                 "HomeRepository.CreateCarouselAsync",
-                $"Failed to create carousel '{carousel.Id}'.",
-                exception
+                "Failed to create carousel.",
+                ex
             );
         }
     }
 
     public async Task<CarouselModel> UpdateCarouselAsync(
-        CarouselModel carousel,
-        CancellationToken cancellationToken = default
+        CarouselModel c,
+        CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(carousel);
-
+        ArgumentNullException.ThrowIfNull(c);
         try
         {
-            _dbContext.HomeCarousels.Update(carousel);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return carousel;
+            dbContext.HomeCarousels.Update(c);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            return c;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error updating home carousel item {CarouselId}", carousel.Id);
+            logger.LogError(ex, "Error updating carousel {Id}", c.Id);
             throw new ConnectionException(
                 "HomeRepository.UpdateCarouselAsync",
-                $"Failed to update carousel '{carousel.Id}'.",
-                exception
+                $"Failed to update carousel '{c.Id}'.",
+                ex
             );
         }
     }
 
-    public async Task DeleteCarouselAsync(
-        CarouselModel carousel,
-        CancellationToken cancellationToken = default
-    )
+    public async Task DeleteCarouselAsync(CarouselModel c, CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(carousel);
-
+        ArgumentNullException.ThrowIfNull(c);
         try
         {
-            _dbContext.HomeCarousels.Remove(carousel);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            dbContext.HomeCarousels.Remove(c);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error deleting home carousel item {CarouselId}", carousel.Id);
+            logger.LogError(ex, "Error deleting carousel {Id}", c.Id);
             throw new ConnectionException(
                 "HomeRepository.DeleteCarouselAsync",
-                $"Failed to delete carousel '{carousel.Id}'.",
-                exception
+                $"Failed to delete carousel '{c.Id}'.",
+                ex
             );
         }
     }
+
+    #endregion
+
+    #region StatCard Persistence
 
     public async Task<IReadOnlyList<StatCardModel>> GetAllStatCardsAsync(
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         try
         {
-            return await _dbContext
+            return await dbContext
                 .HomeStats.AsNoTracking()
-                .OrderBy(statCard => statCard.Order)
-                .ThenBy(statCard => statCard.Id)
-                .ToListAsync(cancellationToken)
+                .OrderBy(s => s.Order)
+                .ThenBy(s => s.Id)
+                .ToListAsync(ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving home statistic cards.");
+            logger.LogError(ex, "Error retrieving stat cards.");
             throw new ConnectionException(
                 "HomeRepository.GetAllStatCardsAsync",
-                "Failed to query home statistic cards.",
-                exception
+                "Failed to query stats.",
+                ex
             );
         }
     }
 
-    public async Task<StatCardModel?> GetStatCardByIdAsync(
-        Guid statCardId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<StatCardModel?> GetStatCardByIdAsync(Guid id, CancellationToken ct = default)
     {
         try
         {
-            return await _dbContext
+            return await dbContext
                 .HomeStats.AsNoTracking()
-                .FirstOrDefaultAsync(statCard => statCard.Id == statCardId, cancellationToken)
+                .FirstOrDefaultAsync(s => s.Id == id, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error retrieving home statistic card {StatCardId}", statCardId);
+            logger.LogError(ex, "Error retrieving stat card {Id}", id);
             throw new ConnectionException(
                 "HomeRepository.GetStatCardByIdAsync",
-                $"Failed to query statistic card '{statCardId}'.",
-                exception
+                $"Failed to query stat card '{id}'.",
+                ex
             );
         }
     }
 
     public async Task<StatCardModel> CreateStatCardAsync(
-        StatCardModel statCard,
-        CancellationToken cancellationToken = default
+        StatCardModel s,
+        CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(statCard);
-
+        ArgumentNullException.ThrowIfNull(s);
         try
         {
-            await _dbContext.HomeStats.AddAsync(statCard, cancellationToken).ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return statCard;
+            await dbContext.HomeStats.AddAsync(s, ct).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            return s;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error creating home statistic card.");
+            logger.LogError(ex, "Error creating stat card.");
             throw new ConnectionException(
                 "HomeRepository.CreateStatCardAsync",
-                $"Failed to create statistic card '{statCard.Id}'.",
-                exception
+                "Failed to create stat card.",
+                ex
             );
         }
     }
 
     public async Task<StatCardModel> UpdateStatCardAsync(
-        StatCardModel statCard,
-        CancellationToken cancellationToken = default
+        StatCardModel s,
+        CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(statCard);
-
+        ArgumentNullException.ThrowIfNull(s);
         try
         {
-            _dbContext.HomeStats.Update(statCard);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return statCard;
+            dbContext.HomeStats.Update(s);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            return s;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error updating home statistic card {StatCardId}", statCard.Id);
+            logger.LogError(ex, "Error updating stat card {Id}", s.Id);
             throw new ConnectionException(
                 "HomeRepository.UpdateStatCardAsync",
-                $"Failed to update statistic card '{statCard.Id}'.",
-                exception
+                $"Failed to update stat card '{s.Id}'.",
+                ex
             );
         }
     }
 
-    public async Task DeleteStatCardAsync(
-        StatCardModel statCard,
-        CancellationToken cancellationToken = default
-    )
+    public async Task DeleteStatCardAsync(StatCardModel s, CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(statCard);
-
+        ArgumentNullException.ThrowIfNull(s);
         try
         {
-            _dbContext.HomeStats.Remove(statCard);
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            dbContext.HomeStats.Remove(s);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "Error deleting home statistic card {StatCardId}", statCard.Id);
+            logger.LogError(ex, "Error deleting stat card {Id}", s.Id);
             throw new ConnectionException(
                 "HomeRepository.DeleteStatCardAsync",
-                $"Failed to delete statistic card '{statCard.Id}'.",
-                exception
+                $"Failed to delete stat card '{s.Id}'.",
+                ex
             );
         }
     }
+
+    #endregion
 }

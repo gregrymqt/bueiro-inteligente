@@ -7,6 +7,9 @@ namespace backend.Features;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-[Authorize]
+[Authorize] // Garante o JWT em tudo que herdar daqui
 [ServiceFilter(typeof(RateLimitFilter))]
-public abstract class ApiControllerBase : ControllerBase { }
+public abstract class ApiControllerBase : ControllerBase
+{
+    // Métodos auxiliares protegidos podem entrar aqui para evitar repetição nas controllers
+}

@@ -4,10 +4,11 @@ using Microsoft.Extensions.Logging;
 namespace backend.Features.Rows.Infrastructure.Extensions;
 
 /// <summary>
-/// Retry handler for transient Rows API failures.
+/// Handler de resiliência para falhas transitórias na API Rows.
 /// </summary>
 internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : DelegatingHandler
 {
+    // C# 12: Collection Expression para inicialização limpa
     private static readonly TimeSpan[] RetryDelays =
     [
         TimeSpan.FromMilliseconds(250),
@@ -15,18 +16,13 @@ internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : Deleg
         TimeSpan.FromSeconds(2),
     ];
 
-    private readonly ILogger<RowsRetryHandler> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         if (request.Content is not null)
-        {
             await request.Content.LoadIntoBufferAsync().ConfigureAwait(false);
-        }
 
         Exception? lastException = null;
 
@@ -34,77 +30,46 @@ internal sealed class RowsRetryHandler(ILogger<RowsRetryHandler> logger) : Deleg
         {
             try
             {
-                HttpResponseMessage response = await base.SendAsync(request, cancellationToken)
-                    .ConfigureAwait(false);
+                var response = await base.SendAsync(request, ct).ConfigureAwait(false);
 
                 if (!IsTransient(response) || attempt == RetryDelays.Length)
-                {
                     return response;
-                }
 
-                _logger.LogWarning(
-                    "Rows API respondeu com {StatusCode} na tentativa {Attempt}. Repetindo a requisição.",
-                    (int)response.StatusCode,
-                    attempt + 1
+                logger.LogWarning(
+                    "Tentativa {Attempt} falhou com {Status}. Repetindo...",
+                    attempt + 1,
+                    (int)response.StatusCode
                 );
 
                 response.Dispose();
-                await DelayBeforeRetryAsync(attempt, cancellationToken).ConfigureAwait(false);
+                await DelayAsync(attempt, ct).ConfigureAwait(false);
             }
-            catch (TaskCanceledException exception)
-                when (!cancellationToken.IsCancellationRequested)
+            catch (Exception ex)
+                when (ex is HttpRequestException or TaskCanceledException
+                    && !ct.IsCancellationRequested
+                )
             {
-                lastException = exception;
-
+                lastException = ex;
                 if (attempt == RetryDelays.Length)
-                {
                     break;
-                }
 
-                _logger.LogWarning(
-                    exception,
-                    "Timeout ao chamar Rows na tentativa {Attempt}. Repetindo a requisição.",
-                    attempt + 1
-                );
-
-                await DelayBeforeRetryAsync(attempt, cancellationToken).ConfigureAwait(false);
-            }
-            catch (HttpRequestException exception)
-            {
-                lastException = exception;
-
-                if (attempt == RetryDelays.Length)
-                {
-                    break;
-                }
-
-                _logger.LogWarning(
-                    exception,
-                    "Falha transitória ao chamar Rows na tentativa {Attempt}. Repetindo a requisição.",
-                    attempt + 1
-                );
-
-                await DelayBeforeRetryAsync(attempt, cancellationToken).ConfigureAwait(false);
+                logger.LogWarning(ex, "Falha na tentativa {Attempt}. Repetindo...", attempt + 1);
+                await DelayAsync(attempt, ct).ConfigureAwait(false);
             }
         }
 
         throw lastException
-            ?? new HttpRequestException("Falha ao chamar a API Rows após as tentativas de retry.");
+            ?? new HttpRequestException("Falha após múltiplas tentativas na API Rows.");
     }
 
-    private static bool IsTransient(HttpResponseMessage response)
-    {
-        int statusCode = (int)response.StatusCode;
+    private static bool IsTransient(HttpResponseMessage res) =>
+        res.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests
+        || (int)res.StatusCode >= 500;
 
-        return response.StatusCode == HttpStatusCode.RequestTimeout
-            || response.StatusCode == HttpStatusCode.TooManyRequests
-            || statusCode >= 500;
-    }
-
-    private Task DelayBeforeRetryAsync(int attempt, CancellationToken cancellationToken)
+    private async Task DelayAsync(int attempt, CancellationToken ct)
     {
-        TimeSpan delay = RetryDelays[attempt];
-        _logger.LogInformation("Aguardando {Delay} antes da próxima tentativa da API Rows.", delay);
-        return Task.Delay(delay, cancellationToken);
+        var delay = RetryDelays[attempt];
+        logger.LogInformation("Aguardando {Delay} para nova tentativa.", delay);
+        await Task.Delay(delay, ct).ConfigureAwait(false);
     }
 }

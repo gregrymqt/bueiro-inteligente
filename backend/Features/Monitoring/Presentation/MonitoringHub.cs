@@ -3,6 +3,6 @@ using Microsoft.AspNetCore.SignalR;
 namespace backend.Features.Monitoring.Presentation;
 
 /// <summary>
-/// SignalR hub used by the dashboard and the Kotlin app to receive monitoring data.
+/// SignalR hub para broadcast de dados em tempo real para o dashboard e app mobile.
 /// </summary>
 public sealed class MonitoringHub : Hub { }

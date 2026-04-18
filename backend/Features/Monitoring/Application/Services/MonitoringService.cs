@@ -1,5 +1,4 @@
 using backend.Core;
-using backend.Extensions;
 using backend.Extensions.Realtime.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
@@ -8,9 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Monitoring.Application.Services;
 
-/// <summary>
-/// Implements the monitoring orchestration, validation, and broadcast logic.
-/// </summary>
 public sealed class MonitoringService(
     IMonitoringRepository monitoringRepository,
     ICacheService cacheService,
@@ -23,94 +19,48 @@ public sealed class MonitoringService(
     private const double AlertThreshold = 50.0;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
 
-    private readonly IMonitoringRepository _monitoringRepository =
-        monitoringRepository ?? throw new ArgumentNullException(nameof(monitoringRepository));
-
-    private readonly ICacheService _cacheService =
-        cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-
-    private readonly IRealtimeService _realtimeService =
-        realtimeService ?? throw new ArgumentNullException(nameof(realtimeService));
-
-    private readonly ILogger<MonitoringService> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
     public async Task<DrainStatusDTO> ProcessSensorDataAsync(
         SensorPayloadDTO payload,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
-        if (payload is null)
-        {
-            throw LogicException.NullValue(nameof(payload));
-        }
-
+        ArgumentNullException.ThrowIfNull(payload);
         if (string.IsNullOrWhiteSpace(payload.IdBueiro))
-        {
             throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
-        }
 
-        _logger.LogInformation(
-            "Recebendo leitura do sensor para o bueiro {DrainIdentifier}.",
+        logger.LogInformation(
+            "Processando leitura para o bueiro {DrainIdentifier}",
             payload.IdBueiro
         );
 
         ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm);
 
-        _logger.LogInformation(
-            "Calculando obstrução do bueiro {DrainIdentifier} com base na distância {DistanceCm} cm.",
-            payload.IdBueiro,
-            payload.DistanciaCm
-        );
-
-        double normalizedDistanceCm = Math.Round(payload.DistanciaCm, 2);
-        double obstructionLevel = CalculateObstructionLevel(normalizedDistanceCm);
+        double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
+        double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance), 2);
         string status = ResolveStatus(obstructionLevel);
 
-        DrainStatusDTO result = new()
-        {
-            IdBueiro = payload.IdBueiro,
-            DistanciaCm = normalizedDistanceCm,
-            NivelObstrucao = Math.Round(obstructionLevel, 2),
-            Status = status,
-            Latitude = payload.Latitude,
-            Longitude = payload.Longitude,
-            UltimaAtualizacao = DateTimeOffset.UtcNow,
-        };
-
-        _logger.LogInformation(
-            "Persistindo leitura processada do bueiro {DrainIdentifier} com status {Status}.",
-            result.IdBueiro,
-            result.Status
+        var result = new DrainStatusDTO(
+            payload.IdBueiro,
+            normalizedDistance,
+            obstructionLevel,
+            status,
+            payload.Latitude,
+            payload.Longitude,
+            DateTimeOffset.UtcNow
         );
 
-        await _monitoringRepository
-            .SaveSensorDataAsync(result, cancellationToken)
-            .ConfigureAwait(false);
+        await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
 
-        _logger.LogInformation(
-            "Persistência concluída para o bueiro {DrainIdentifier}.",
-            result.IdBueiro
-        );
-
+        // Disparo condicional de Realtime
         if (result.Status is "Alerta" or "Crítico")
         {
             try
             {
-                _logger.LogInformation(
-                    "Disparando atualização em tempo real para o bueiro {DrainIdentifier}.",
-                    result.IdBueiro
-                );
-
-                await _realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
+                await realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                _logger.LogWarning(
-                    exception,
-                    "Falha ao enviar broadcast SignalR para o bueiro {DrainIdentifier}.",
-                    result.IdBueiro
-                );
+                logger.LogWarning(ex, "Falha no broadcast SignalR para {Id}", result.IdBueiro);
             }
         }
 
@@ -118,96 +68,44 @@ public sealed class MonitoringService(
     }
 
     public async Task<DrainStatusDTO> GetDrainStatusAsync(
-        string drainIdentifier,
-        CancellationToken cancellationToken = default
+        string drainId,
+        CancellationToken ct = default
     )
     {
-        if (string.IsNullOrWhiteSpace(drainIdentifier))
-        {
-            throw LogicException.InvalidValue(nameof(drainIdentifier), drainIdentifier);
-        }
+        if (string.IsNullOrWhiteSpace(drainId))
+            throw LogicException.InvalidValue(nameof(drainId), drainId);
 
-        string cacheKey = BuildStatusCacheKey(drainIdentifier);
-
-        _logger.LogInformation("Buscando status do bueiro {DrainIdentifier}.", drainIdentifier);
-
-        CacheResponseDto<DrainStatusDTO> response = await _cacheService
+        var response = await cacheService
             .GetOrSetAsync(
-                cacheKey,
+                $"bueiro:{drainId}:status",
                 async () =>
-                {
-                    _logger.LogDebug(
-                        "Cache miss para o bueiro {DrainIdentifier}. Consultando banco de dados.",
-                        drainIdentifier
-                    );
-
-                    DrainStatusDTO? latestStatus = await _monitoringRepository
-                        .GetLatestStatusAsync(drainIdentifier, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (latestStatus is null)
-                    {
-                        throw new NotFoundException("Bueiro", drainIdentifier);
-                    }
-
-                    return latestStatus;
-                },
+                    await monitoringRepository
+                        .GetLatestStatusAsync(drainId, ct)
+                        .ConfigureAwait(false) ?? throw new NotFoundException("Bueiro", drainId),
                 CacheTtl
             )
             .ConfigureAwait(false);
 
-        _logger.LogInformation(
-            response.FromCache
-                ? "Status do bueiro {DrainIdentifier} recuperado do cache."
-                : "Status do bueiro {DrainIdentifier} recuperado do banco e armazenado no cache.",
-            drainIdentifier
-        );
-
         return response.Data;
     }
 
-    private void ValidateSensorNoise(string drainIdentifier, double distanceCm)
+    private void ValidateSensorNoise(string id, double dist)
     {
-        if (
-            double.IsNaN(distanceCm)
-            || double.IsInfinity(distanceCm)
-            || distanceCm < 0
-            || distanceCm > MaxBucketDepthCm
-        )
+        if (double.IsNaN(dist) || double.IsInfinity(dist) || dist < 0 || dist > MaxBucketDepthCm)
         {
-            _logger.LogWarning(
-                "Sensor ruidoso detectado: Leitura {DistanceCm} ignorada para o bueiro {DrainIdentifier}.",
-                distanceCm,
-                drainIdentifier
-            );
-
-            throw LogicException.InvalidValue(nameof(distanceCm), distanceCm);
+            logger.LogWarning("Ruído detectado: {Dist} ignorada para {Id}", dist, id);
+            throw LogicException.InvalidValue(nameof(dist), dist);
         }
     }
 
-    private static double CalculateObstructionLevel(double distanceCm)
-    {
-        double occupiedSpaceCm = MaxBucketDepthCm - distanceCm;
-        return (occupiedSpaceCm / MaxBucketDepthCm) * 100d;
-    }
+    private static double CalculateObstructionLevel(double dist) =>
+        ((MaxBucketDepthCm - dist) / MaxBucketDepthCm) * 100d;
 
-    private static string ResolveStatus(double obstructionLevel)
-    {
-        if (obstructionLevel >= CriticalThreshold)
+    private static string ResolveStatus(double level) =>
+        level switch
         {
-            return "Crítico";
-        }
-
-        if (obstructionLevel >= AlertThreshold)
-        {
-            return "Alerta";
-        }
-
-        return "Normal";
-    }
-
-    private static string BuildStatusCacheKey(string drainIdentifier)
-    {
-        return $"bueiro:{drainIdentifier}:status";
-    }
+            >= CriticalThreshold => "Crítico",
+            >= AlertThreshold => "Alerta",
+            _ => "Normal",
+        };
 }

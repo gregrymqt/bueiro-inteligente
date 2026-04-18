@@ -1,6 +1,5 @@
 using backend.Core;
 using backend.Extensions.Auth.Abstractions;
-using backend.Features;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,119 +14,75 @@ public sealed class MonitoringController(
     ILogger<MonitoringController> logger
 ) : ApiControllerBase
 {
+    // C# 12: Campos injetados via Primary Constructor
     private readonly IMonitoringService _monitoringService =
         monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
-
     private readonly IAuthExtension _authExtension =
         authExtension ?? throw new ArgumentNullException(nameof(authExtension));
-
     private readonly ILogger<MonitoringController> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     [HttpPost("medicoes")]
-    [AllowAnonymous]
+    [AllowAnonymous] // O hardware usa token próprio via Query ou Header
     public async Task<ActionResult<DrainStatusDTO>> ReceiveSensorData(
         [FromBody] SensorPayloadDTO payload,
-        CancellationToken cancellationToken = default
-    )
-    {
-        try
+        CancellationToken ct
+    ) =>
+        await ExecuteAsync(async () =>
         {
+            // Validação de segurança específica do IoT
             _authExtension.VerifyHardwareToken(
                 Request.Headers.Authorization.ToString(),
                 Request.Query["token"].ToString()
             );
 
-            _logger.LogInformation(
-                "Recepção de medição iniciada para o bueiro {DrainIdentifier}.",
-                payload.IdBueiro
-            );
+            _logger.LogInformation("Recebendo medição do bueiro {Id}", payload.IdBueiro);
 
-            DrainStatusDTO result = await _monitoringService
-                .ProcessSensorDataAsync(payload, cancellationToken)
+            var result = await _monitoringService
+                .ProcessSensorDataAsync(payload, ct)
                 .ConfigureAwait(false);
-
-            _logger.LogInformation(
-                "Recepção de medição concluída para o bueiro {DrainIdentifier}.",
-                result.IdBueiro
-            );
-
             return Ok(result);
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status401Unauthorized,
-                "Unauthorized",
-                exception.Message
-            );
-        }
-        catch (ConnectionException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
-        }
-        catch (LogicException exception)
-        {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
-        }
-    }
+        });
 
     [HttpGet("{id}/status")]
-    public async Task<ActionResult<DrainStatusDTO>> GetStatus(
-        string id,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<ActionResult<DrainStatusDTO>> GetStatus(string id, CancellationToken ct) =>
+        await ExecuteAsync(async () =>
+            Ok(await _monitoringService.GetDrainStatusAsync(id, ct).ConfigureAwait(false))
+        );
+
+    #region Helpers Enxutos
+
+    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
     {
         try
         {
-            _logger.LogInformation("Solicitação de status recebida para o bueiro {DrainIdentifier}.", id);
-
-            DrainStatusDTO result = await _monitoringService
-                .GetDrainStatusAsync(id, cancellationToken)
-                .ConfigureAwait(false);
-
-            return Ok(result);
+            return await action();
         }
-        catch (NotFoundException exception)
+        catch (UnauthorizedAccessException ex)
         {
-            return CreateProblem(StatusCodes.Status404NotFound, "Not found", exception.Message);
+            return Unauthorized(CreateProblem("Unauthorized", ex.Message, 403));
         }
-        catch (ConnectionException exception)
+        catch (NotFoundException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status503ServiceUnavailable,
-                "Connection error",
-                exception.Message
-            );
+            return NotFound(CreateProblem("Not found", ex.Message, 404));
         }
-        catch (LogicException exception)
+        catch (ConnectionException ex)
         {
-            return CreateProblem(
-                StatusCodes.Status400BadRequest,
-                "Validation error",
-                exception.Message
-            );
+            return StatusCode(503, CreateProblem("Connection error", ex.Message, 503));
+        }
+        catch (LogicException ex)
+        {
+            return BadRequest(CreateProblem("Validation error", ex.Message, 400));
         }
     }
 
-    private static ObjectResult CreateProblem(int statusCode, string title, string detail)
-    {
-        return new ObjectResult(new ProblemDetails
+    private static ProblemDetails CreateProblem(string title, string detail, int status) =>
+        new()
         {
             Title = title,
             Detail = detail,
-            Status = statusCode,
-        })
-        {
-            StatusCode = statusCode,
+            Status = status,
         };
-    }
+
+    #endregion
 }

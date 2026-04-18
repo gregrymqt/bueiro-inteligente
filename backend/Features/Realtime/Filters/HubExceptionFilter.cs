@@ -2,49 +2,43 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Features.Realtime.Filters;
 
-/// <summary>
-/// Logs unhandled hub exceptions and returns a safe HubException to the client.
-/// </summary>
 public sealed class HubExceptionFilter(ILogger<HubExceptionFilter> logger) : IHubFilter
 {
     private const string GenericHubErrorMessage =
         "Ocorreu um erro interno ao processar a solicitação em tempo real.";
-
     private readonly ILogger<HubExceptionFilter> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async ValueTask<object?> InvokeMethodAsync(
-        HubInvocationContext invocationContext,
+        HubInvocationContext context,
         Func<HubInvocationContext, ValueTask<object?>> next
     )
     {
-        ArgumentNullException.ThrowIfNull(invocationContext);
+        ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(next);
 
         try
         {
-            return await next(invocationContext).ConfigureAwait(false);
+            return await next(context).ConfigureAwait(false);
         }
-        catch (HubException exception)
+        catch (HubException ex)
         {
             _logger.LogWarning(
-                exception,
-                "Hub exception in method {HubMethodName}. ConnectionId={ConnectionId}",
-                invocationContext.HubMethodName,
-                invocationContext.Context.ConnectionId
+                ex,
+                "Hub exception: {Method}. ConnId: {Id}",
+                context.HubMethodName,
+                context.Context.ConnectionId
             );
-
             throw;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
             _logger.LogError(
-                exception,
-                "Unhandled hub exception in method {HubMethodName}. ConnectionId={ConnectionId}",
-                invocationContext.HubMethodName,
-                invocationContext.Context.ConnectionId
+                ex,
+                "Unhandled hub exception: {Method}. ConnId: {Id}",
+                context.HubMethodName,
+                context.Context.ConnectionId
             );
-
             throw new HubException(GenericHubErrorMessage);
         }
     }
