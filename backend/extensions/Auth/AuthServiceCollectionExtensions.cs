@@ -52,20 +52,30 @@ public static class AuthServiceCollectionExtensions
             .AddScheme<AuthenticationSchemeOptions, BueiroInteligenteAuthenticationHandler>(
                 BueiroInteligenteAuthenticationDefaults.Scheme,
                 _ => { }
-            )
-            .AddGoogle(options =>
-            {
-                options.ClientId = googleSettings.GoogleClientId;
-                options.ClientSecret = googleSettings.GoogleClientSecret;
-                options.CallbackPath = GoogleAuthDefaults.CallbackPath;
-                options.SignInScheme = IdentityConstants.ExternalScheme;
-                options.Scope.Add("email");
-                options.Scope.Add("profile");
-                options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-                options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-                options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-                options.ClaimActions.MapJsonKey("picture", "picture");
-            });
+            );
+
+        if (
+            !string.IsNullOrWhiteSpace(googleSettings.GoogleClientId)
+            && !string.IsNullOrWhiteSpace(googleSettings.GoogleClientSecret)
+        )
+        {
+            services
+                .AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    options.ClientId = googleSettings.GoogleClientId;
+                    options.ClientSecret = googleSettings.GoogleClientSecret;
+                    options.CallbackPath = GoogleAuthDefaults.CallbackPath;
+                    options.SignInScheme = IdentityConstants.ExternalScheme;
+                    options.Scope.Add("email");
+                    options.Scope.Add("profile");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+                    options.ClaimActions.MapJsonKey("picture", "picture");
+                });
+        }
+
         services.AddAuthorization();
         return services;
     }

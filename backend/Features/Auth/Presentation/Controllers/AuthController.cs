@@ -45,6 +45,21 @@ public sealed class AuthController(
         [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl = null
     )
     {
+        if (
+            string.IsNullOrWhiteSpace(_googleSettings.GoogleClientId)
+            || string.IsNullOrWhiteSpace(_googleSettings.GoogleClientSecret)
+        )
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                CreateProblem(
+                    "Service unavailable",
+                    "Google authentication is not configured on this environment.",
+                    StatusCodes.Status503ServiceUnavailable
+                )
+            );
+        }
+
         var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
             frontendRedirectUrl,
             _googleSettings.AllowedOrigins,
@@ -69,6 +84,21 @@ public sealed class AuthController(
     ) =>
         await ExecuteAsync(async () =>
         {
+            if (
+                string.IsNullOrWhiteSpace(_googleSettings.GoogleClientId)
+                || string.IsNullOrWhiteSpace(_googleSettings.GoogleClientSecret)
+            )
+            {
+                return StatusCode(
+                    StatusCodes.Status503ServiceUnavailable,
+                    CreateProblem(
+                        "Service unavailable",
+                        "Google authentication is not configured on this environment.",
+                        StatusCodes.Status503ServiceUnavailable
+                    )
+                );
+            }
+
             var authResult = await HttpContext
                 .AuthenticateAsync(IdentityConstants.ExternalScheme)
                 .ConfigureAwait(false);

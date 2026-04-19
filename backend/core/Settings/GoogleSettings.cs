@@ -1,4 +1,4 @@
-namespace backend.Core.Settings;
+﻿namespace backend.Core.Settings;
 
 public sealed class GoogleSettings
 {

@@ -12,6 +12,7 @@ public sealed class AppIdMiddleware
     [
         "/",
         "/health",
+        "/Error",
         "/api/v1/auth/google-login",
         "/api/v1/auth/google-callback",
         "/api/v1/monitoring/medicoes",
