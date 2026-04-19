@@ -10,6 +10,7 @@ public sealed class AppIdMiddleware
     private const string HeaderName = "X-App-Id";
     private static readonly string[] ExcludedPaths =
     [
+        "/",
         "/health",
         "/api/v1/auth/google-login",
         "/api/v1/auth/google-callback",
@@ -80,7 +81,9 @@ public sealed class AppIdMiddleware
         string path = request.Path.Value ?? string.Empty;
 
         return ExcludedPaths.Any(segments =>
-            path.StartsWith(segments, StringComparison.OrdinalIgnoreCase)
+            string.Equals(segments, "/", StringComparison.Ordinal)
+                ? string.Equals(path, "/", StringComparison.OrdinalIgnoreCase)
+                : path.StartsWith(segments, StringComparison.OrdinalIgnoreCase)
         );
     }
 }
