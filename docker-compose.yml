@@ -29,8 +29,13 @@ services:
       ROWS_TABLE_ID: "${ROWS_TABLE_ID}"
       ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-*}"
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "${DOTNET_SYSTEM_GLOBALIZATION_INVARIANT:-true}"
+      APP_ID_SECRET: "${APP_ID_SECRET}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-*}"
+      EMAIL_USERS_ADMIN: "${EMAIL_USERS_ADMIN}"
+      LOG_DIRECTORY: "/app/log"
     volumes:
       - ./.env:/app/.env:ro
+      - ./log:/app/log
     ports:
       - "8080:8080"
     depends_on:

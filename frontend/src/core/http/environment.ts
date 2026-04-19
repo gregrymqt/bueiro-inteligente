@@ -12,8 +12,8 @@ export type SignalRHubEnvironment = Pick<
 
 export const DEFAULT_APP_ID = 'bueiro-inteligente-app-id';
 
-export const LOCAL_BACKEND_URL = 'http://localhost:8000';
-export const SIGNALR_LOCAL_URL = 'http://localhost:8000/realtime/ws';
+export const LOCAL_BACKEND_URL = 'http://localhost:8080';
+export const SIGNALR_LOCAL_URL = 'http://localhost:8080/realtime/ws';
 
 export type UrlMode = 'local' | 'tunnel' | 'remote';
 

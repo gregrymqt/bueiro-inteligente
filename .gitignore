@@ -48,6 +48,7 @@ yarn-debug.log*
 **/obj/
 *.lscache
 TestResults/
+log/
 
 ### C++ / Arduino / ESP32 ###
 # Arquivos compilados e executáveis

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using backend.Extensions;
 using backend.Extensions.App.Middleware;
+using backend.Extensions.App.Logging;
 using backend.Extensions.Auth;
 using backend.Extensions.Realtime;
 using backend.Extensions.Security;
@@ -11,6 +12,8 @@ using Microsoft.AspNetCore.SignalR;
 using MonitoringHub = backend.Features.Realtime.Presentation.MonitoringHub;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddBueiroInteligenteFileLogging(builder.Configuration, builder.Environment);
 
 // Add services to the container.
 builder.Services.AddRazorPages();

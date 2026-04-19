@@ -69,15 +69,16 @@
   &RequirementsTitle {
     margin: 0;
     color: $color-text-main;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+    opacity: 0.8;
   }
 
   &CriteriaContainer {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 0.5rem;
     margin: 0;
     padding: 0;
@@ -87,33 +88,58 @@
   &CriteriaItem {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-height: 2rem;
-    padding: 0.65rem 0.75rem;
-    border-radius: 10px;
-    font-size: 0.82rem;
+    gap: 0.65rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
     font-weight: 500;
-    color: color.adjust(#1f2937, $lightness: 30%);
-    background-color: rgba($color-bg-light, 0.7);
-    border: 1px solid rgba($color-border, 0.65);
-    transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
 
-    svg {
-      width: 14px;
-      height: 14px;
+    .indicatorWrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
-      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: color.adjust($color-text-main, $lightness: 50%);
+      transition: transform 0.2s ease;
+    }
+
+    .checkIcon {
+      color: $color-success;
+      animation: scaleIn 0.2s ease-out;
+    }
+
+    &.unmet {
+      color: color.adjust($color-text-main, $lightness: 40%);
+      background-color: rgba($color-bg-light, 0.4);
     }
 
     &.met {
       color: $color-success;
-      background-color: rgba($color-success, 0.08);
-      border-color: rgba($color-success, 0.18);
+      background-color: rgba($color-success, 0.05);
+      border-color: rgba($color-success, 0.15);
+      font-weight: 600;
+    }
+  }
 
-      svg {
-        color: $color-success;
-        transform: scale(1.05);
-      }
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+
+    to {
+      transform: scale(1);
+      opacity: 1;
     }
   }
 
