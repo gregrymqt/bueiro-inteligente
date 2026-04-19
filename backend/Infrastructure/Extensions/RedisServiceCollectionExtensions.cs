@@ -36,11 +36,11 @@ public static class RedisServiceCollectionExtensions
 
     private static ConfigurationOptions BuildOptions(RedisSettings settings)
     {
-        if (settings.Local)
+        if (settings.RedisLocal)
             return ConfigurationOptions.Parse("redis:6379,abortConnect=false");
 
         if (string.IsNullOrWhiteSpace(settings.Url))
-            throw new InvalidOperationException("REDIS_URL não definida.");
+            throw new InvalidOperationException("REDIS_URL_CLOUD não definida.");
 
         if (Uri.TryCreate(settings.Url, UriKind.Absolute, out var uri))
         {

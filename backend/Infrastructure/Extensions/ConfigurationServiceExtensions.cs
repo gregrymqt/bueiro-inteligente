@@ -80,11 +80,12 @@ public static class ConfigurationServiceExtensions
             GoogleSettings.SectionName,
             ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_FRONTEND_REDIRECT_URL"]
         );
+        MapSection(mappedValues, rawEnv, IotSettings.SectionName, ["HARDWARE_TOKEN"]);
         MapSection(
             mappedValues,
             rawEnv,
             RedisSettings.SectionName,
-            ["REDIS_URL_LOCAL", "REDIS_URL_CLOUD", "REDIS_LOCAL"]
+            ["REDIS_LOCAL", "REDIS_URL_LOCAL", "REDIS_URL_CLOUD"]
         );
         MapSection(
             mappedValues,

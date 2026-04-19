@@ -4,10 +4,10 @@ public sealed class RedisSettings
 {
     public const string SectionName = "Redis";
 
-    public string UrlLocal { get; set; } = string.Empty;
-    public string UrlCloud { get; set; } = string.Empty;
+    public string RedisUrlLocal { get; set; } = string.Empty;
+    public string RedisUrlCloud { get; set; } = string.Empty;
 
-    public bool Local { get; set; }
+    public bool RedisLocal { get; set; }
 
-    public string Url => Local ? UrlLocal : UrlCloud;
+    public string Url => RedisLocal ? RedisUrlLocal : RedisUrlCloud;
 }
