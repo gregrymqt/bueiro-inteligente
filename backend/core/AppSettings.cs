@@ -32,7 +32,9 @@ namespace backend.Core
             string googleClientSecret,
             string[] allowedOrigins,
             bool dotnetSystemGlobalizationInvariant,
-            string[]? emailUsersAdmin = null
+            string[]? emailUsersAdmin = null,
+            string allowedHosts = "*",
+            string appIdSecret = ""
         )
         {
             ProjectName = projectName;
@@ -56,6 +58,8 @@ namespace backend.Core
             GoogleClientId = googleClientId;
             GoogleClientSecret = googleClientSecret;
             AllowedOrigins = allowedOrigins;
+            AllowedHosts = allowedHosts;
+            AppIdSecret = appIdSecret;
             DotNetSystemGlobalizationInvariant = dotnetSystemGlobalizationInvariant;
             EmailUsersAdmin = emailUsersAdmin ?? Array.Empty<string>();
         }
@@ -150,6 +154,10 @@ namespace backend.Core
 
         public string[] AllowedOrigins { get; }
 
+        public string AllowedHosts { get; }
+
+        public string AppIdSecret { get; }
+
         public string[] EmailUsersAdmin { get; }
 
         public bool DotNetSystemGlobalizationInvariant { get; }
@@ -189,6 +197,8 @@ namespace backend.Core
                 googleClientId: GetString("GOOGLE_CLIENT_ID"),
                 googleClientSecret: GetString("GOOGLE_CLIENT_SECRET"),
                 allowedOrigins: GetAllowedOrigins("ALLOWED_ORIGINS", ["*"]),
+                allowedHosts: GetString("ALLOWED_HOSTS", GetString("AllowedHosts", "*")),
+                appIdSecret: GetString("APP_ID_SECRET", GetString("AppIdSecret")),
                 dotnetSystemGlobalizationInvariant: GetBool(
                     "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
                     true

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LOCAL_BACKEND_URL, resolveBackendBaseUrl, resolveUrlMode } from '../environment';
+import { DEFAULT_APP_ID, LOCAL_BACKEND_URL, resolveAppId, resolveBackendBaseUrl, resolveUrlMode } from '../environment';
 
 describe('resolveBackendBaseUrl', () => {
   it('prioriza o túnel público quando configurado', () => {
@@ -41,5 +41,12 @@ describe('resolveUrlMode', () => {
 
   it('classifica urls remotas como remote', () => {
     expect(resolveUrlMode('https://api.example.com')).toBe('remote');
+  });
+});
+
+describe('resolveAppId', () => {
+  it('usa o valor configurado ou cai no default', () => {
+    expect(resolveAppId({ VITE_APP_ID: ' custom-app-id ' })).toBe('custom-app-id');
+    expect(resolveAppId({ VITE_APP_ID: undefined })).toBe(DEFAULT_APP_ID);
   });
 });

@@ -1,6 +1,12 @@
-import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  HubConnectionState,
+  HttpTransportType,
+  LogLevel,
+} from '@microsoft/signalr';
 import { AlertService } from '../alert/AlertService';
-import { resolveBackendBaseUrl, resolveUrlMode } from '../http/environment';
+import { resolveAppId, resolveBackendBaseUrl, resolveUrlMode } from '../http/environment';
 
 export type SignalRHubEnvironment = Pick<
   ImportMetaEnv,
@@ -67,7 +73,12 @@ export class SignalRClient {
     }
 
     this.connection = new HubConnectionBuilder()
-      .withUrl(resolveSignalRHubUrl())
+      .withUrl(resolveSignalRHubUrl(), {
+        headers: {
+          'X-App-Id': resolveAppId(),
+        },
+        transport: HttpTransportType.LongPolling,
+      })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();

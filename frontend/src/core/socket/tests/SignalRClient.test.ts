@@ -82,6 +82,9 @@ vi.mock('@microsoft/signalr', () => ({
     Disconnected: 'Disconnected',
     Reconnecting: 'Reconnecting',
   },
+  HttpTransportType: {
+    LongPolling: 'LongPolling',
+  },
   LogLevel: {
     Information: 'Information',
   },
@@ -143,6 +146,15 @@ describe('SignalRClient', () => {
     const secondUnsubscribe = module.signalRClient.subscribe('BUEIRO_STATUS_MUDOU', secondHandler);
 
     expect(signalRMocks.builder.withUrl).toHaveBeenCalledTimes(1);
+    expect(signalRMocks.builder.withUrl).toHaveBeenCalledWith(
+      'http://localhost:8000/realtime/ws',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-App-Id': expect.any(String),
+        }),
+        transport: 'LongPolling',
+      }),
+    );
     expect(signalRMocks.builder.withAutomaticReconnect).toHaveBeenCalledTimes(1);
     expect(signalRMocks.builder.configureLogging).toHaveBeenCalledTimes(1);
     expect(signalRMocks.builder.build).toHaveBeenCalledTimes(1);

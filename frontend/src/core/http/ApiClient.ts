@@ -1,5 +1,5 @@
 import { AlertService } from '../alert/AlertService';
-import { resolveBackendBaseUrl } from './environment';
+import { resolveAppId, resolveBackendBaseUrl } from './environment';
 import {
   RATE_LIMIT_THROTTLED_EVENT,
   rateLimitService as defaultRateLimitService,
@@ -39,6 +39,7 @@ export class ApiClient implements IApiClient {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'X-App-Id': resolveAppId(),
     };
 
     const token = this.tokenService.getToken();

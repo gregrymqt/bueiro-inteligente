@@ -53,8 +53,8 @@ O ecossistema é centrado no backend ASP.NET Core. Cada frente conversa com ele 
 
 1. **Hardware (ESP32/ESP8266)** envia leituras para `POST /monitoring/medicoes?token=...` com payload JSON contendo `id_bueiro`, `distancia_cm`, `latitude` e `longitude`.
 2. **Backend (ASP.NET Core)** valida o hardware token, persiste a medição no PostgreSQL, atualiza o Redis, emite eventos em tempo real via WebSocket em `/realtime/ws` e agenda a sincronização ETL com Rows.
-3. **Frontend Web (React)** consome `GET /home`, `GET /auth/users/me`, `GET /monitoring/{id}/status` e o WebSocket de realtime; a comunicação HTTP passa pelo `ApiClient` e os alertas visuais passam pelo `AlertService`.
-4. **Mobile (Kotlin)** consome os mesmos contratos REST e o canal de realtime, mantendo estado de interface via `StateFlow` e `collectAsStateWithLifecycle()`.
+3. **Frontend Web (React)** consome `GET /home`, `GET /auth/users/me`, `GET /drains`, `GET /monitoring/{id}/status` e o WebSocket de realtime; a comunicação HTTP passa pelo `ApiClient` e os alertas visuais passam pelo `AlertService`.
+4. **Mobile (Kotlin)** consome os mesmos contratos REST, incluindo `GET /drains`, e o canal de realtime, mantendo estado de interface via `StateFlow` e `collectAsStateWithLifecycle()`.
 
 ---
 
@@ -125,6 +125,7 @@ Quando solicitarem código para este projeto, você deve SEMPRE seguir estas reg
 10. **Testes do Backend:** Quando criar lógica complexa em services, repositories ou integrações com Rows, adicione testes em `Tests/Features/<feature>/`. Use `xUnit`, `Moq`, `FluentAssertions`, mocks de dependência e testes async quando necessário; nunca acople teste ao banco real quando existir fixture equivalente.
 11. **Hardware e Credenciais:** Ao sugerir alterações em `esp_bueiro.ino`, mantenha credenciais em `secrets.h` e preserve a autenticação por query token `?token=` na API. Evite JWT no firmware e prefira `StaticJsonDocument` para payloads pequenos.
 12. **Frontend HTTP e Alertas:** Nunca use `fetch`, `axios` ou chamadas HTTP diretas em componentes e páginas. Todo acesso à API deve passar por `src/core/http/ApiClient.ts` e pelos services da feature; feedback visual deve usar `src/core/alert/AlertService.ts`, e não `window.alert`.
+13. **App Token Obrigatório:** Toda requisição vinda do Frontend ou do Mobile para o Backend deve enviar o header `X-App-Id`. No Frontend, esse header é aplicado pelos clientes centralizados de HTTP e realtime; no Android, ele é injetado pelo interceptor do app. O Backend valida esse valor de forma global no `AppIdMiddleware` e rejeita chamadas ausentes ou inválidas antes de elas seguirem no pipeline.
 
 ## 🚀 Comandos Úteis (Para Referência)
 - **Backend:** `dotnet run --project backend/backend.csproj` (a partir da raiz) ou `dotnet run` dentro de `/backend`.

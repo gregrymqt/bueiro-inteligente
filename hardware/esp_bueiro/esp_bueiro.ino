@@ -1,4 +1,4 @@
-#include <Wifi.h>
+#include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "secrets.h"
@@ -14,12 +14,13 @@ int const trig = 4;
 int const echo = 2;
 
 const float alturaTotal = 100.0;
+const float DELTA_MINIMO = 2.0;
+const unsigned long HEARTBEAT_MS = 5UL * 60UL * 1000UL;
+const unsigned long INTERVALO_LEITURA_MS = 500UL;
 
-unsigned long intervalo = 500;
-const unsigned long intervaloMax = 3000.0;
-
-float ultimaDistancia = 0;
-float leiturasIguais = 0;
+float ultimaDistancia = 0.0;
+unsigned long ultimoEnvioMillis = 0;
+bool jaEnviouLeitura = false;
 
 // medição da distância
 float medirDistancia() {
@@ -39,35 +40,39 @@ float medirDistancia() {
 
 // filtra as medições afim de eliminar falsos positivos vindos de ruidos
 float distanciaFiltrada() {
-  float leitura[5];
-  //preenche o vetor com os valores do sensor
-  for (int i = 0; i <= 5; i++) {
+  const int quantidadeAmostras = 5;
+  float leitura[quantidadeAmostras];
+
+  // preenche o vetor com os valores do sensor
+  for (int i = 0; i < quantidadeAmostras; i++) {
     leitura[i] = medirDistancia();
     delay(30);
   }
 
-  //bubble sort ordenando os dados de forma crescente
-  for (int i = 0; i < 5; i++) {
-    for (int i = 0; i < 5; i++) {
-      if (leitura[j] > leitura[leitura[j] + 1]) {
-        float t = leitura[j];
+  // bubble sort ordenando os dados de forma crescente
+  for (int i = 0; i < quantidadeAmostras - 1; i++) {
+    for (int j = 0; j < quantidadeAmostras - i - 1; j++) {
+      if (leitura[j] > leitura[j + 1]) {
+        float temp = leitura[j];
         leitura[j] = leitura[j + 1];
         leitura[j + 1] = temp;
       }
     }
   }
 
-  //media dos valores ignorando o menor e maior valor
+  // media dos valores ignorando o menor e maior valor
   float soma = 0;
-  for (int i = 1; i < 4; i++) {
-    soma += float[i];
+  for (int i = 1; i < quantidadeAmostras - 1; i++) {
+    soma += leitura[i];
   }
 
   return soma / 3;
 }
 
-void bueiroJson(float distancia, float nivel){
-  if (WiFi.status() == WL_CONNECTED){
+bool bueiroJson(float distancia, float nivel) {
+  (void)nivel;
+
+  if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     String urlFinal = String(urlApi) + "?token=" + String(hardwareToken);
     http.begin(urlFinal);
@@ -87,20 +92,30 @@ void bueiroJson(float distancia, float nivel){
     Serial.println(payload);
 
     int httpResponseCode = http.POST(payload);
+    bool sucesso = false;
 
-    if (httpResponseCode > 0) {
+    if (httpResponseCode == 200) {
       Serial.print("Código HTTP: ");
       Serial.println(httpResponseCode);
 
       String response = http.getString();
       Serial.println("Resposta: " + response);
+      sucesso = true;
     } else {
       Serial.print("Erro HTTP: ");
       Serial.println(httpResponseCode);
+      if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.println("Resposta: " + response);
+      }
     }
 
     http.end();
+    return sucesso;
   }
+
+  Serial.println("WiFi desconectado; envio bloqueado.");
+  return false;
 }
 
 void setup() {
@@ -108,7 +123,7 @@ void setup() {
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid, senha);
   Serial.print("Conectando");
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -123,37 +138,40 @@ void loop() {
   float distancia = distanciaFiltrada();
   float nivel = ((alturaTotal - distancia) / alturaTotal) * 100;
 
-  if (nivel >= 75) {
+  if (nivel >= 60) {
     Serial.println("Nivel Critico!");
-  } else if (nivel >= 50) {
-    Serial.println("Alerta! acima de 50%!");
+  } else if (nivel >= 40) {
+    Serial.println("Alerta! acima de 40%!");
+  } else if (nivel >= 15) {
+    Serial.println("Nivel normal! abaixo de 40% e acima de 15%!");
   } else {
-    Serial.println("Nivel normal");
+    Serial.println("Nivel baixo, possível falha no sensor ou bueiro vazio");
   }
 
-  if (abs(distancia - ultimaDistancia) < 1.0) {
-    leiturasiguais++;
-    if (leiturasIguais >= 3) {
-      intervalo += 500;
+  float delta = jaEnviouLeitura
+    ? (distancia >= ultimaDistancia ? distancia - ultimaDistancia : ultimaDistancia - distancia)
+    : DELTA_MINIMO + 1.0;
+  unsigned long agora = millis();
+  bool heartbeatVencido = jaEnviouLeitura && (agora - ultimoEnvioMillis >= HEARTBEAT_MS);
+  bool deveEnviar = !jaEnviouLeitura || delta > DELTA_MINIMO || heartbeatVencido;
 
-      if (intervalo > intervaloMax) {
-        intervalo = invtervaloMax;
-      }
-      leiturasIguais = 0;
+  if (deveEnviar) {
+    if (bueiroJson(distancia, nivel)) {
+      ultimaDistancia = distancia;
+      ultimoEnvioMillis = agora;
+      jaEnviouLeitura = true;
     }
   } else {
-    intervalo = 500;
-    leiturasIguais = 0;
+    Serial.println("Envio bloqueado por delta mínimo.");
   }
-
-  distancia = ultimaDistancia = 0;
 
   Serial.print("Distancia: ");
   Serial.print(distancia);
   Serial.print(" cm | Nivel: ");
   Serial.print(nivel);
-  Serial.print("% | Intervalo: ");
-  Serial.println(intervalo);
+  Serial.print("% | Ultima enviada: ");
+  Serial.print(ultimaDistancia);
+  Serial.println(" cm");
 
-  delay(intervalo);
+  delay(INTERVALO_LEITURA_MS);
 }

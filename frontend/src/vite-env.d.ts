@@ -4,6 +4,7 @@
 interface ImportMetaEnv {
   readonly VITE_BACKEND_URL?: string;
   readonly VITE_ENABLE_RATE_LIMIT?: string;
+  readonly VITE_APP_ID?: string;
   readonly VITE_WS_URL?: string;
   readonly VITE_WS_LOCAL?: string;
   readonly VITE_BACKEND_LOCAL?: string;

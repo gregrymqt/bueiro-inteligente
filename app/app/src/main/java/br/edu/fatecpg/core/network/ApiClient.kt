@@ -25,12 +25,14 @@ object ApiClient {
                 }
 
                 val authInterceptor = AuthInterceptor(tokenManager)
+                val appIdInterceptor = AppIdInterceptor()
 
                 val tokenAuthenticator = TokenAuthenticator(tokenManager)
                 val rateLimitInterceptor = RateLimitInterceptor()
 
                 val okHttpClient = OkHttpClient.Builder()
                     .addInterceptor(authInterceptor)
+                    .addInterceptor(appIdInterceptor)
                     .addInterceptor(rateLimitInterceptor)
                     .authenticator(tokenAuthenticator)
                     .addInterceptor(loggingInterceptor) // Adicionado para debug em nvel BODY

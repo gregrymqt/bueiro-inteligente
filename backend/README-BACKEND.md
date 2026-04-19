@@ -86,7 +86,10 @@ As variaveis abaixo sao lidas pelo `AppSettings`:
 | `ROWS_TABLE_ID` | ID da tabela |
 | `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth |
+| `ALLOWED_HOSTS` | Hosts permitidos pelo backend |
+| `EMAIL_USERS_ADMIN` | E-mail do administrador para notificações críticas |
 | `ALLOWED_ORIGINS` | Origens permitidas no CORS |
+| `APP_ID_SECRET` | Segredo do header `X-App-Id` usado pelo app oficial |
 
 ### Exemplo de `.env`
 
@@ -110,7 +113,10 @@ ROWS_SPREADSHEET_ID=
 ROWS_TABLE_ID=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+ALLOWED_HOSTS=localhost;127.0.0.1
 ALLOWED_ORIGINS=https://localhost:5173,http://localhost:5173
+APP_ID_SECRET=
+EMAIL_USERS_ADMIN=
 ```
 
 ## Como executar com Docker Compose
@@ -191,6 +197,8 @@ dotnet test Tests/backend.Tests.csproj
 
 - [Program.cs](Program.cs)
 - [core/AppSettings.cs](core/AppSettings.cs)
+- [extensions/App/AppServiceCollectionExtensions.cs](extensions/App/AppServiceCollectionExtensions.cs)
+- [extensions/App/Middleware/AppIdMiddleware.cs](extensions/App/Middleware/AppIdMiddleware.cs)
 - [Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs](Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs)
 - [Infrastructure/Extensions/RedisServiceCollectionExtensions.cs](Infrastructure/Extensions/RedisServiceCollectionExtensions.cs)
 - [entrypoint.sh](entrypoint.sh)

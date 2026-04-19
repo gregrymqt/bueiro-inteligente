@@ -1,5 +1,6 @@
 using System.Text.Json;
 using backend.Extensions;
+using backend.Extensions.App.Middleware;
 using backend.Extensions.Auth;
 using backend.Extensions.Realtime;
 using backend.Extensions.Security;
@@ -43,6 +44,7 @@ builder.Services.AddBueiroInteligenteHome();
 builder.Services.AddBueiroInteligenteMonitoring();
 builder.Services.AddBueiroInteligenteRealtime();
 builder.Services.AddBueiroInteligenteScheduler();
+builder.Services.AddBueiroInteligenteApp(builder.Configuration);
 
 var app = builder.Build();
 
@@ -63,6 +65,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseBueiroInteligenteApp();
 
 app.UseAuthentication();
 app.UseAuthorization();

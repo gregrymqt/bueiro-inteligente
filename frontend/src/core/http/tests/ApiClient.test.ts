@@ -48,4 +48,29 @@ describe('ApiClient throttling', () => {
 
     window.removeEventListener(RATE_LIMIT_THROTTLED_EVENT, throttledEventHandler as EventListener);
   });
+
+  it('injeta X-App-Id junto dos headers padrão', async () => {
+    rateLimitServiceMock = {
+      isEnabled: true,
+      checkLimit: vi.fn(() => true),
+    };
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    const apiClient = new ApiClient('https://api.example.com', {
+      ...tokenServiceMock,
+      getToken: vi.fn(() => 'token-123'),
+    }, rateLimitServiceMock);
+
+    await apiClient.get('/auth/users/me');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const [, requestInit] = fetchMock.mock.calls[0];
+    expect(requestInit?.headers).toMatchObject({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer token-123',
+      'X-App-Id': expect.any(String),
+    });
+  });
 });

@@ -3,6 +3,10 @@ export type BackendEnvironment = Pick<
   'VITE_BACKEND_URL' | 'VITE_BACKEND_LOCAL'
 >;
 
+export type AppIdEnvironment = Pick<ImportMetaEnv, 'VITE_APP_ID'>;
+
+export const DEFAULT_APP_ID = 'bueiro-inteligente-app-id';
+
 export const LOCAL_BACKEND_URL = 'http://localhost:8000';
 
 export type UrlMode = 'local' | 'tunnel' | 'remote';
@@ -83,6 +87,14 @@ export function resolveBackendBaseUrl(
   }
 
   return backendUrl;
+}
+
+export function resolveAppId(
+  env: AppIdEnvironment = import.meta.env,
+): string {
+  const configuredAppId = env.VITE_APP_ID?.trim();
+
+  return configuredAppId && configuredAppId.length > 0 ? configuredAppId : DEFAULT_APP_ID;
 }
 
 export function resolveRowsEmbedUrl(

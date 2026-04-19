@@ -25,9 +25,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "APP_ID_SECRET", "\"jZ3frultyGb5G84zX4en0naZDwIal2HuJi83fqgyPmAWjyXtoI5WzywycGvepQew7aEDtLCwZ0MBZy07tuvY8zcRif8iA5M5CcUTCrHgRMx8Hde8oATev72TGmNO0mnR\"")
             buildConfigField("String", "BASE_URL", "\"https://bueiro-inteligente.onrender.com\"")
         }
         debug {
+            buildConfigField("String", "APP_ID_SECRET", "\"bueiro-inteligente-app-id\"")
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
         }
     }

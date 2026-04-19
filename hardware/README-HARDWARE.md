@@ -17,6 +17,8 @@ Este diretório contém o sketch embarcado do projeto, em `esp_bueiro/esp_bueiro
 4. A requisição é enviada para `POST /monitoring/medicoes?token=...`.
 5. O backend valida o token do hardware, persiste a medição e pode emitir atualização em tempo real.
 
+Para evitar envio redundante, o firmware só publica uma nova leitura quando a diferença em relação à última amostra confirmada ultrapassa 2 cm. Mesmo assim, o dispositivo mantém um heartbeat a cada 5 minutos para sinalizar que segue online, preservar visibilidade operacional e evitar longos períodos sem comunicação com a API.
+
 ## Configuração Local
 
 Antes de compilar, ajuste os valores abaixo em `secrets.h`:
