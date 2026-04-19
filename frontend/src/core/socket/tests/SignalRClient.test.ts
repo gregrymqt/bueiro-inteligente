@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveSignalRHubUrl } from '../../http/environment';
 
 const alertMocks = vi.hoisted(() => ({
   error: vi.fn(),
@@ -104,22 +105,16 @@ describe('SignalRClient', () => {
   });
 
   it('resolve a URL local quando o backend aponta para localhost', async () => {
-    const module = await import('../SignalRClient');
+    expect(resolveSignalRHubUrl({ VITE_BACKEND_URL: 'http://localhost:8080' })).toBe(
+      'http://localhost:8080/realtime/ws',
+    );
+
+    expect(resolveSignalRHubUrl({ VITE_BACKEND_LOCAL: 'TRUE' })).toBe(
+      'http://localhost:8000/realtime/ws',
+    );
 
     expect(
-      module.resolveSignalRHubUrl({
-        VITE_BACKEND_URL: 'http://localhost:8080',
-      }),
-    ).toBe('http://localhost:8080/realtime/ws');
-
-    expect(
-      module.resolveSignalRHubUrl({
-        VITE_BACKEND_LOCAL: 'TRUE',
-      }),
-    ).toBe('http://localhost:8000/realtime/ws');
-
-    expect(
-      module.resolveSignalRHubUrl({
+      resolveSignalRHubUrl({
         VITE_BACKEND_URL: 'https://example.com',
         VITE_WS_URL: 'https://example.com/realtime/ws',
       }),
@@ -127,10 +122,8 @@ describe('SignalRClient', () => {
   });
 
   it('deriva o websocket a partir de uma URL de tunel', async () => {
-    const module = await import('../SignalRClient');
-
     expect(
-      module.resolveSignalRHubUrl({
+      resolveSignalRHubUrl({
         VITE_BACKEND_URL: 'https://abc.ngrok-free.app/',
         VITE_WS_URL: 'https://another.example.com/realtime/ws',
       }),

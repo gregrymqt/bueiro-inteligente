@@ -5,9 +5,15 @@ export type BackendEnvironment = Pick<
 
 export type AppIdEnvironment = Pick<ImportMetaEnv, 'VITE_APP_ID'>;
 
+export type SignalRHubEnvironment = Pick<
+  ImportMetaEnv,
+  'VITE_BACKEND_LOCAL' | 'VITE_BACKEND_URL' | 'VITE_WS_LOCAL' | 'VITE_WS_URL'
+>;
+
 export const DEFAULT_APP_ID = 'bueiro-inteligente-app-id';
 
 export const LOCAL_BACKEND_URL = 'http://localhost:8000';
+export const SIGNALR_LOCAL_URL = 'http://localhost:8000/realtime/ws';
 
 export type UrlMode = 'local' | 'tunnel' | 'remote';
 
@@ -95,6 +101,38 @@ export function resolveAppId(
   const configuredAppId = env.VITE_APP_ID?.trim();
 
   return configuredAppId && configuredAppId.length > 0 ? configuredAppId : DEFAULT_APP_ID;
+}
+
+function appendRealtimePath(baseUrl: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
+
+  if (normalizedBase.endsWith('/realtime/ws')) {
+    return normalizedBase;
+  }
+
+  return `${normalizedBase}/realtime/ws`;
+}
+
+export function resolveSignalRHubUrl(
+  env: SignalRHubEnvironment = import.meta.env,
+): string {
+  const backendUrl = resolveBackendBaseUrl(env);
+  const backendMode = resolveUrlMode(backendUrl);
+  const wsUrl = normalizeUrl(env.VITE_WS_URL);
+
+  if (backendMode === 'local' || backendMode === 'tunnel') {
+    return appendRealtimePath(backendUrl);
+  }
+
+  if (isTruthyFlag(env.VITE_WS_LOCAL) || isTruthyFlag(env.VITE_BACKEND_LOCAL)) {
+    return SIGNALR_LOCAL_URL;
+  }
+
+  if (wsUrl) {
+    return wsUrl;
+  }
+
+  return appendRealtimePath(backendUrl);
 }
 
 export function resolveRowsEmbedUrl(

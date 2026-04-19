@@ -1,5 +1,5 @@
 plugins {
-    // Substituímos o alias pelo ID direto para evitar conflitos de catálogo
+    
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
