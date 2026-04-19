@@ -185,10 +185,7 @@ public sealed class AuthExtension(
         return blacklistStore.IsBlacklistedAsync(jti.Trim());
     }
 
-    private static string GetRequiredClaim(
-        Dictionary<string, object?> claims,
-        params string[] keys
-    )
+    private static string GetRequiredClaim(Dictionary<string, object?> claims, params string[] keys)
     {
         foreach (string key in keys)
         {

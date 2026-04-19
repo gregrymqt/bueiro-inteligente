@@ -3,11 +3,13 @@ import { signalRClient } from '@/core/socket/SignalRClient';
 import type { DrainStatus } from '../types';
 
 export class MonitoringService {
+  private static readonly BASE_API = '/api/v1/monitoring';
+  
   /**
    * Busca inicial (REST) - Padrão que você já usa
    */
   public static async getInitialStatus(bueiroId: string): Promise<DrainStatus> {
-    return apiClient.get<DrainStatus>(`/monitoring/${bueiroId}/status`);
+    return apiClient.get<DrainStatus>(`${this.BASE_API}/${bueiroId}/status`);
   }
 
   /**

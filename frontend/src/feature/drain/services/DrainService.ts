@@ -3,9 +3,11 @@ import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 import { createMockDrain, deleteMockDrain, getMockDrainById, getMockDrains, updateMockDrain } from '../mocks/drainMocks';
 
 export class DrainService {
+    private static readonly BASE_API = '/api/v1/drains';
+
   public static async getDrains(useMock: boolean): Promise<Drain[]> {
     if (!useMock) {
-      return apiClient.get<Drain[]>('/drains');
+      return apiClient.get<Drain[]>(this.BASE_API);
     }
 
     return getMockDrains();
@@ -13,7 +15,7 @@ export class DrainService {
 
   public static async getDrainById(id: string, useMock: boolean): Promise<Drain> {
     if (!useMock) {
-      return apiClient.get<Drain>(`/drains/${id}`);
+      return apiClient.get<Drain>(`${this.BASE_API}/${id}`);
     }
 
     return getMockDrainById(id);
@@ -21,7 +23,7 @@ export class DrainService {
 
   public static async createDrain(data: DrainCreatePayload, useMock: boolean): Promise<Drain> {
     if (!useMock) {
-      return apiClient.post<Drain, DrainCreatePayload>('/drains', data);
+      return apiClient.post<Drain, DrainCreatePayload>(this.BASE_API, data);
     }
 
     return createMockDrain(data);
@@ -29,7 +31,7 @@ export class DrainService {
 
   public static async updateDrain(id: string, data: DrainUpdatePayload, useMock: boolean): Promise<Drain> {
     if (!useMock) {
-      return apiClient.put<Drain, DrainUpdatePayload>(`/drains/${id}`, data);
+      return apiClient.put<Drain, DrainUpdatePayload>(`${this.BASE_API}/${id}`, data);
     }
 
     return updateMockDrain(id, data);
@@ -37,7 +39,7 @@ export class DrainService {
 
   public static async deleteDrain(id: string, useMock: boolean): Promise<void> {
     if (!useMock) {
-      return apiClient.delete<void>(`/drains/${id}`);
+      return apiClient.delete<void>(`${this.BASE_API}/${id}`);
     }
 
     return deleteMockDrain(id);

@@ -144,9 +144,7 @@ internal sealed class DailyFileLoggerProvider : ILoggerProvider
         return new DailyFileLogger(categoryName, _logFileManager);
     }
 
-    public void Dispose()
-    {
-    }
+    public void Dispose() { }
 }
 
 internal sealed class DailyFileLogger : ILogger
@@ -194,7 +192,9 @@ internal sealed class DailyFileLogger : ILogger
         }
 
         var builder = new StringBuilder();
-        builder.Append(DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture));
+        builder.Append(
+            DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture)
+        );
         builder.Append(' ');
         builder.Append('[').Append(logLevel).Append(']');
         builder.Append(' ');
@@ -226,17 +226,13 @@ internal sealed class DailyFileLogger : ILogger
         {
             _logFileManager.AppendEntry(builder.ToString());
         }
-        catch
-        {
-        }
+        catch { }
     }
 
     private sealed class NullScope : IDisposable
     {
         public static readonly NullScope Instance = new();
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
 }

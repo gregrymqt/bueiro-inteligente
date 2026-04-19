@@ -354,12 +354,17 @@ namespace backend.Core
                 catch (JsonException) { }
             }
 
-            string[] splitOrigins = trimmedValue.Split(
+            string[] splitOrigins = rawValue.Split(
                 ',',
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
             );
 
-            return splitOrigins.Length > 0 ? splitOrigins : defaultValue;
+            return
+            [
+                .. splitOrigins
+                    .Select(o => o.Replace("\"", "").Replace("'", "").Trim())
+                    .Where(o => !string.IsNullOrEmpty(o)),
+            ];
         }
 
         private static string[] GetDelimitedStrings(string key)
@@ -374,7 +379,7 @@ namespace backend.Core
             string trimmedValue = rawValue.Trim();
 
             return trimmedValue.Split(
-                new[] { ',', ';', '\r', '\n' },
+                [',', ';', '\r', '\n'],
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
             );
         }

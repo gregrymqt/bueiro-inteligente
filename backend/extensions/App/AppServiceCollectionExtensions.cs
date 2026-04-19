@@ -7,7 +7,7 @@ namespace backend.Extensions.App.Middleware;
 
 public static class AppServiceCollectionExtensions
 {
-    private const string RestrictedOriginsPolicyName = "RestrictedOrigins";
+    public const string RestrictedOriginsPolicyName = "RestrictedOrigins";
 
     public static IServiceCollection AddBueiroInteligenteApp(
         this IServiceCollection services,
@@ -21,29 +21,36 @@ public static class AppServiceCollectionExtensions
 
         services.AddCors(options =>
         {
-            string[] allowedOrigins = settings
-                .AllowedOrigins.Where(origin =>
-                    !string.IsNullOrWhiteSpace(origin)
-                    && !string.Equals(origin.Trim(), "*", StringComparison.Ordinal)
-                )
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            string[] allowedOrigins =
+            [
+                .. AppSettings
+                    .Current.AllowedOrigins.Where(origin => !string.IsNullOrWhiteSpace(origin))
+                    .Select(origin => origin.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ];
+
+            string[] explicitOrigins =
+            [
+                .. allowedOrigins.Where(origin =>
+                    !string.Equals(origin, "*", StringComparison.Ordinal)
+                ),
+            ];
 
             options.AddPolicy(
                 RestrictedOriginsPolicyName,
                 policy =>
                 {
-                    if (allowedOrigins.Length > 0)
+                    policy.AllowAnyHeader();
+                    policy.AllowAnyMethod();
+
+                    if (explicitOrigins.Length > 0)
                     {
-                        policy.WithOrigins(allowedOrigins);
+                        policy.WithOrigins(explicitOrigins).AllowCredentials();
                     }
                     else
                     {
                         policy.AllowAnyOrigin();
                     }
-
-                    policy.AllowAnyHeader();
-                    policy.AllowAnyMethod();
                 }
             );
         });
@@ -53,7 +60,6 @@ public static class AppServiceCollectionExtensions
 
     public static WebApplication UseBueiroInteligenteApp(this WebApplication app)
     {
-        app.UseCors(RestrictedOriginsPolicyName);
         app.UseMiddleware<AppIdMiddleware>();
 
         return app;

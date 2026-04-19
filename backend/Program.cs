@@ -1,7 +1,7 @@
 using System.Text.Json;
 using backend.Extensions;
-using backend.Extensions.App.Middleware;
 using backend.Extensions.App.Logging;
+using backend.Extensions.App.Middleware;
 using backend.Extensions.Auth;
 using backend.Extensions.Realtime;
 using backend.Extensions.Security;
@@ -60,14 +60,13 @@ await app.Services.InitializeBueiroInteligenteRedisAsync();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
+app.UseCors(AppServiceCollectionExtensions.RestrictedOriginsPolicyName);
 
 app.UseBueiroInteligenteApp();
 
