@@ -1,7 +1,9 @@
-using backend.Core;
+using backend.Core.Settings;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace backend.Extensions.App.Middleware;
 
@@ -9,51 +11,10 @@ public static class AppServiceCollectionExtensions
 {
     public const string RestrictedOriginsPolicyName = "RestrictedOrigins";
 
-    public static IServiceCollection AddBueiroInteligenteApp(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public static IServiceCollection AddBueiroInteligenteApp(this IServiceCollection services)
     {
-        AppSettings settings = AppSettings.Current;
-
-        configuration["AllowedHosts"] = settings.AllowedHosts;
-        configuration["AppIdSecret"] = settings.AppIdSecret;
-
-        services.AddCors(options =>
-        {
-            string[] allowedOrigins =
-            [
-                .. AppSettings
-                    .Current.AllowedOrigins.Where(origin => !string.IsNullOrWhiteSpace(origin))
-                    .Select(origin => origin.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase),
-            ];
-
-            string[] explicitOrigins =
-            [
-                .. allowedOrigins.Where(origin =>
-                    !string.Equals(origin, "*", StringComparison.Ordinal)
-                ),
-            ];
-
-            options.AddPolicy(
-                RestrictedOriginsPolicyName,
-                policy =>
-                {
-                    policy.AllowAnyHeader();
-                    policy.AllowAnyMethod();
-
-                    if (explicitOrigins.Length > 0)
-                    {
-                        policy.WithOrigins(explicitOrigins).AllowCredentials();
-                    }
-                    else
-                    {
-                        policy.AllowAnyOrigin();
-                    }
-                }
-            );
-        });
+        services.AddCors();
+        services.AddSingleton<ICorsPolicyProvider, RestrictedOriginsCorsPolicyProvider>();
 
         return services;
     }
@@ -63,5 +24,42 @@ public static class AppServiceCollectionExtensions
         app.UseMiddleware<AppIdMiddleware>();
 
         return app;
+    }
+
+    private sealed class RestrictedOriginsCorsPolicyProvider(
+        IOptionsMonitor<GeneralSettings> settingsMonitor
+    ) : ICorsPolicyProvider
+    {
+        public Task<CorsPolicy?> GetPolicyAsync(HttpContext context, string? policyName)
+        {
+            if (!string.Equals(policyName, RestrictedOriginsPolicyName, StringComparison.Ordinal))
+            {
+                return Task.FromResult<CorsPolicy?>(null);
+            }
+
+            var settings = settingsMonitor.CurrentValue;
+            var allowedOrigins = settings.AllowedOrigins
+                .Where(origin => !string.IsNullOrWhiteSpace(origin))
+                .Select(origin => origin.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            var explicitOrigins = allowedOrigins
+                .Where(origin => !string.Equals(origin, "*", StringComparison.Ordinal))
+                .ToArray();
+
+            var builder = new CorsPolicyBuilder().AllowAnyHeader().AllowAnyMethod();
+
+            if (explicitOrigins.Length > 0)
+            {
+                builder.WithOrigins(explicitOrigins).AllowCredentials();
+            }
+            else
+            {
+                builder.AllowAnyOrigin();
+            }
+
+            return Task.FromResult<CorsPolicy?>(builder.Build());
+        }
     }
 }

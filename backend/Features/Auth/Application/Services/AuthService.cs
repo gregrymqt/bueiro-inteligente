@@ -1,5 +1,6 @@
-using System.Security.Claims;
 using backend.Core;
+using System.Security.Claims;
+using backend.Core.Settings;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
 using backend.Features.Auth.Application.DTOs;
@@ -9,6 +10,7 @@ using backend.Features.Auth.Infrastructure.Repositories;
 using backend.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
 namespace backend.Features.Auth.Application.Services;
@@ -17,7 +19,7 @@ public sealed class AuthService(
     IAuthRepository repository,
     IAuthExtension authExtension,
     IUnitOfWork unitOfWork,
-    AppSettings settings,
+    IOptions<GeneralSettings> settings,
     ILogger<AuthService> logger
 ) : IAuthService
 {
@@ -28,8 +30,8 @@ public sealed class AuthService(
         authExtension ?? throw new ArgumentNullException(nameof(authExtension));
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-    private readonly AppSettings _settings =
-        settings ?? throw new ArgumentNullException(nameof(settings));
+    private readonly GeneralSettings _settings =
+        settings?.Value ?? throw new ArgumentNullException(nameof(settings));
     private readonly ILogger<AuthService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 

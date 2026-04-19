@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using backend.Core;
+using System.Security.Claims;
+using backend.Core.Settings;
 using backend.Extensions.Auth;
-using backend.Extensions.Auth.Models;
 using backend.Features.Auth.Application.DTOs;
 using backend.Features.Auth.Application.Services;
 using backend.Features.Auth.Infrastructure.Authentication;
@@ -10,17 +10,18 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace backend.Features.Auth.Presentation.Controllers;
 
-public sealed class AuthController(IAuthService authService, GoogleSettings googleSettings)
+public sealed class AuthController(IAuthService authService, IOptions<GoogleSettings> googleSettings)
     : ApiControllerBase
 {
     // C# 12: Campos capturados diretamente do construtor primário
     private readonly IAuthService _authService =
         authService ?? throw new ArgumentNullException(nameof(authService));
     private readonly GoogleSettings _googleSettings =
-        googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
+        googleSettings?.Value ?? throw new ArgumentNullException(nameof(googleSettings));
 
     [HttpPost("login")]
     [AllowAnonymous]

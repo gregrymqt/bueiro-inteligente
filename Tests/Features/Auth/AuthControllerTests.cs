@@ -1,9 +1,10 @@
-using backend.Extensions.Auth.Models;
+using backend.Core.Settings;
 using backend.Features.Auth.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace backend.Tests.Features.Auth;
 
@@ -11,11 +12,14 @@ public sealed class AuthControllerTests
 {
     private readonly Mock<IAuthService> _authServiceMock = new();
     private readonly Mock<IAuthenticationService> _authInternalMock = new();
-    private readonly GoogleSettings _googleSettings = new(
-        "google-client-id",
-        "google-client-secret",
-        "https://frontend.example",
-        ["http://localhost:5173"]
+    private readonly IOptions<GoogleSettings> _googleSettings = Options.Create(
+        new GoogleSettings
+        {
+            ClientId = "google-client-id",
+            ClientSecret = "google-client-secret",
+            FrontendRedirectUrl = "https://frontend.example",
+            AllowedOrigins = ["http://localhost:5173"],
+        }
     );
 
     private readonly AuthController _controller;

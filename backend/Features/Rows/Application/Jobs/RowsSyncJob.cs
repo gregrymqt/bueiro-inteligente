@@ -1,11 +1,13 @@
-using System.Globalization;
 using backend.Core;
+using System.Globalization;
+using backend.Core.Settings;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Features.Rows.Application.DTOs;
 using backend.Features.Rows.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Quartz;
 
 namespace backend.Features.Rows.Application.Jobs;
@@ -13,11 +15,13 @@ namespace backend.Features.Rows.Application.Jobs;
 [DisallowConcurrentExecution]
 public sealed class RowsSyncJob(
     IServiceScopeFactory serviceScopeFactory,
-    AppSettings settings,
+    IOptions<RowsSettings> settings,
     ILogger<RowsSyncJob> logger
 ) : IJob
 {
     private const int ChunkSize = 500;
+    private readonly RowsSettings _settings =
+        settings?.Value ?? throw new ArgumentNullException(nameof(settings));
 
     public async Task Execute(IJobExecutionContext context)
     {
@@ -25,8 +29,8 @@ public sealed class RowsSyncJob(
         int totalProcessed = 0;
 
         if (
-            string.IsNullOrWhiteSpace(settings.RowsSpreadsheetId)
-            || string.IsNullOrWhiteSpace(settings.RowsTableId)
+            string.IsNullOrWhiteSpace(_settings.SpreadsheetId)
+            || string.IsNullOrWhiteSpace(_settings.TableId)
         )
         {
             logger.LogWarning("Configurações do Rows ausentes. Sincronização abortada.");
@@ -54,7 +58,7 @@ public sealed class RowsSyncJob(
                 // Transformação e Envio
                 var payload = new RowsAppendRequest(BuildValuesMatrix(unsyncedData));
                 await rowsService
-                    .AppendDataAsync(settings.RowsSpreadsheetId, settings.RowsTableId, payload, ct)
+                    .AppendDataAsync(_settings.SpreadsheetId, _settings.TableId, payload, ct)
                     .ConfigureAwait(false);
 
                 // Marcação de Sincronismo

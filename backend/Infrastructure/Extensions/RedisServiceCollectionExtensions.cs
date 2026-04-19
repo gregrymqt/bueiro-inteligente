@@ -1,6 +1,7 @@
-using backend.Core;
+using backend.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace backend.Infrastructure;
@@ -9,9 +10,10 @@ public static class RedisServiceCollectionExtensions
 {
     public static IServiceCollection AddBueiroInteligenteRedis(this IServiceCollection services)
     {
-        services.AddSingleton(AppSettings.Current);
         return services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(BuildOptions(sp.GetRequiredService<AppSettings>()))
+            ConnectionMultiplexer.Connect(
+                BuildOptions(sp.GetRequiredService<IOptions<RedisSettings>>().Value)
+            )
         );
     }
 
@@ -32,15 +34,15 @@ public static class RedisServiceCollectionExtensions
         }
     }
 
-    private static ConfigurationOptions BuildOptions(AppSettings settings)
+    private static ConfigurationOptions BuildOptions(RedisSettings settings)
     {
-        if (settings.RedisLocal)
+        if (settings.Local)
             return ConfigurationOptions.Parse("redis:6379,abortConnect=false");
 
-        if (string.IsNullOrWhiteSpace(settings.RedisUrl))
+        if (string.IsNullOrWhiteSpace(settings.Url))
             throw new InvalidOperationException("REDIS_URL não definida.");
 
-        if (Uri.TryCreate(settings.RedisUrl, UriKind.Absolute, out var uri))
+        if (Uri.TryCreate(settings.Url, UriKind.Absolute, out var uri))
         {
             var options = new ConfigurationOptions
             {
@@ -65,6 +67,6 @@ public static class RedisServiceCollectionExtensions
             return options;
         }
 
-        return ConfigurationOptions.Parse(settings.RedisUrl);
+        return ConfigurationOptions.Parse(settings.Url);
     }
 }

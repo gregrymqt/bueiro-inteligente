@@ -1,12 +1,13 @@
-using backend.Core;
+using backend.Core.Settings;
 using backend.Features.Auth.Infrastructure.Authentication;
+using Microsoft.Extensions.Options;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 
 namespace backend.Tests.Features.Auth;
 
 public sealed class AuthServiceTests
 {
-    private readonly AppSettings _settings;
+    private readonly GeneralSettings _settings;
     private readonly Mock<IAuthRepository> _repositoryMock = new(); // Default is Loose
     private readonly Mock<IAuthExtension> _authExtensionMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
@@ -19,7 +20,7 @@ public sealed class AuthServiceTests
             _repositoryMock.Object,
             _authExtensionMock.Object,
             _unitOfWorkMock.Object,
-            _settings,
+            Options.Create(_settings),
             Mock.Of<ILogger<AuthService>>()
         );
     }
@@ -139,32 +140,15 @@ public sealed class AuthServiceTests
         return new ClaimsPrincipal(identity);
     }
 
-    private static AppSettings CreateSettings(params string[] emailUsersAdmin)
-    {
-        return new AppSettings(
-            "Bueiro Inteligente",
-            "1.0.0",
-            "/api/v1",
-            "secret-key",
-            "HS256",
-            30,
-            "hardware-token",
-            "redis://localhost:6379",
-            true,
-            true,
-            "postgres://cloud",
-            "postgres://local",
-            "postgres://local",
-            "migrations",
-            "rows-api-key",
-            "https://api.rows.com/v1",
-            "spreadsheet-id",
-            "table-id",
-            "google-client-id",
-            "google-client-secret",
-            Array.Empty<string>(),
-            false,
-            emailUsersAdmin
-        );
-    }
+    private static GeneralSettings CreateSettings(params string[] emailUsersAdmin) =>
+        new()
+        {
+            ProjectName = "Bueiro Inteligente",
+            Version = "1.0.0",
+            ApiStr = "/api/v1",
+            AllowedHosts = "*",
+            AllowedOrigins = [],
+            EmailUsersAdmin = emailUsersAdmin,
+            AppIdSecret = string.Empty,
+        };
 }

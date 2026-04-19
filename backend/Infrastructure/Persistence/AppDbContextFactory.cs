@@ -1,4 +1,6 @@
-using backend.Core;
+using backend.Core.Settings;
+using backend.Infrastructure.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -8,7 +10,15 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var connectionString = AppSettings.Current.MigrationsUrl;
+        IConfiguration configuration =
+            new ConfigurationBuilder()
+                .AddEnvironmentVariables()
+                .AddBueiroInteligenteDotEnvMappings()
+                .Build();
+
+        var settings = configuration.GetSection(DatabaseSettings.SectionName).Get<DatabaseSettings>()
+            ?? new DatabaseSettings();
+        var connectionString = settings.MigrationsUrl;
         var resolvedString =
             DatabaseServiceCollectionExtensions.PostgreSqlConnectionStringFactory.Create(
                 connectionString

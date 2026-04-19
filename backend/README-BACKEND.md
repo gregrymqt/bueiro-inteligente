@@ -33,8 +33,8 @@ backend/
 ├── Program.cs
 ├── backend.csproj
 ├── backend.sln
-├── core/
-│   └── AppSettings.cs
+├── Core/
+│   └── Settings/
 ├── extensions/
 ├── Features/
 │   ├── Auth/
@@ -57,13 +57,15 @@ backend/
 
 ## Configuracao de ambiente
 
-O backend carrega um arquivo `.env` automaticamente pelo `AppSettings` em `core/AppSettings.cs`. O arquivo e procurado a partir de `AppContext.BaseDirectory`, subindo na arvore de diretorios ate encontrar o `.env`.
+O backend carrega o arquivo `.env` e as variaveis de ambiente por meio de `Infrastructure/Extensions/ConfigurationServiceExtensions.cs`, que mapeia os valores para options tipadas em `Core/Settings/`.
 
 Se voce abrir a pasta `backend/` isoladamente, o `.env` do repositorio fica em `../.env`.
 
+As chaves abaixo continuam aceitas tanto no formato plano quanto no formato com `__` usado por Docker e pelo ASP.NET Core.
+
 ### Variaveis usadas pelo backend
 
-As variaveis abaixo sao lidas pelo `AppSettings`:
+As variaveis abaixo sao mapeadas para `GeneralSettings`, `DatabaseSettings`, `JwtSettings`, `GoogleSettings`, `IotSettings`, `RedisSettings` e `RowsSettings`:
 
 | Variavel | Descricao |
 | --- | --- |
@@ -196,7 +198,8 @@ dotnet test Tests/backend.Tests.csproj
 ## Arquivos importantes
 
 - [Program.cs](Program.cs)
-- [core/AppSettings.cs](core/AppSettings.cs)
+- [Core/Settings](Core/Settings)
+- [Infrastructure/Extensions/ConfigurationServiceExtensions.cs](Infrastructure/Extensions/ConfigurationServiceExtensions.cs)
 - [extensions/App/AppServiceCollectionExtensions.cs](extensions/App/AppServiceCollectionExtensions.cs)
 - [extensions/App/Middleware/AppIdMiddleware.cs](extensions/App/Middleware/AppIdMiddleware.cs)
 - [Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs](Infrastructure/Extensions/DatabaseServiceCollectionExtensions.cs)

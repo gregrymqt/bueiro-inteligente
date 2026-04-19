@@ -1,8 +1,7 @@
 using System.Security.Claims;
-using backend.Core;
+using backend.Core.Settings;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Infrastructure;
-using backend.Extensions.Auth.Models;
 using backend.Features.Auth.Application.Services;
 using backend.Features.Auth.Infrastructure.Authentication;
 using backend.Features.Auth.Infrastructure.Repositories;
@@ -10,24 +9,22 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace backend.Extensions.Auth;
 
 public static class AuthServiceCollectionExtensions
 {
-    public static IServiceCollection AddBueiroInteligenteAuth(this IServiceCollection services)
+    public static IServiceCollection AddBueiroInteligenteAuth(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        AppSettings settings = AppSettings.Current;
-        GoogleSettings googleSettings = new(
-            settings.GoogleClientId,
-            settings.GoogleClientSecret,
-            GoogleRedirectUrlResolver.ResolvePreferredFrontendRedirectUrl(settings.AllowedOrigins),
-            settings.AllowedOrigins
-        );
+        var googleSettings = configuration.GetSection(GoogleSettings.SectionName).Get<GoogleSettings>()
+            ?? new GoogleSettings();
 
-        services.AddSingleton(settings);
-        services.AddSingleton(googleSettings);
+        services.Configure<GoogleSettings>(configuration.GetSection(GoogleSettings.SectionName));
         services.AddSingleton<ITokenBlacklistStore, InMemoryTokenBlacklistStore>();
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<AuthExtension>();

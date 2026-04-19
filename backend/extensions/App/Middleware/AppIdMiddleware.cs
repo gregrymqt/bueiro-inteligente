@@ -1,13 +1,13 @@
+using backend.Core.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace backend.Extensions.App.Middleware;
 
 public sealed class AppIdMiddleware
 {
     private const string HeaderName = "X-App-Id";
-    private const string AppIdConfigKey = "AppIdSecret";
     private static readonly string[] ExcludedPaths =
     [
         "/health",
@@ -17,17 +17,17 @@ public sealed class AppIdMiddleware
     ];
 
     private readonly RequestDelegate _next;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<GeneralSettings> _settings;
     private readonly ILogger<AppIdMiddleware> _logger;
 
     public AppIdMiddleware(
         RequestDelegate next,
-        IConfiguration configuration,
+        IOptions<GeneralSettings> settings,
         ILogger<AppIdMiddleware> logger
     )
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -39,7 +39,7 @@ public sealed class AppIdMiddleware
             return;
         }
 
-        string expectedAppId = _configuration[AppIdConfigKey] ?? string.Empty;
+        string expectedAppId = _settings.Value.AppIdSecret ?? string.Empty;
         string providedAppId = context.Request.Headers[HeaderName].ToString();
 
         if (!string.Equals(providedAppId, expectedAppId, StringComparison.Ordinal))

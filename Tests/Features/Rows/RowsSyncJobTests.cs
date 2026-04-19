@@ -1,7 +1,9 @@
+using backend.Core.Settings;
 using backend.Features.Rows.Application.DTOs;
 using backend.Features.Rows.Application.Jobs;
 using backend.Features.Rows.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Quartz;
 
 namespace backend.Tests.Features.Rows;
@@ -10,13 +12,17 @@ public sealed class RowsSyncJobTests
 {
     private readonly Mock<IMonitoringRepository> _monitoringRepoMock = new();
     private readonly Mock<IRowsService> _rowsServiceMock = new();
-    private readonly AppSettings _settings;
+    private readonly RowsSettings _settings;
     private readonly RowsSyncJob _job;
 
     public RowsSyncJobTests()
     {
         _settings = CreateSettings();
-        _job = new RowsSyncJob(SetupScope(), _settings, Mock.Of<ILogger<RowsSyncJob>>());
+        _job = new RowsSyncJob(
+            SetupScope(),
+            Options.Create(_settings),
+            Mock.Of<ILogger<RowsSyncJob>>()
+        );
     }
 
     #region Helpers (O gabarito de infraestrutura para o Job)
@@ -70,8 +76,8 @@ public sealed class RowsSyncJobTests
         _rowsServiceMock.Verify(
             s =>
                 s.AppendDataAsync(
-                    _settings.RowsSpreadsheetId,
-                    _settings.RowsTableId,
+                    _settings.SpreadsheetId,
+                    _settings.TableId,
                     It.IsAny<RowsAppendRequest>(),
                     default
                 ),
@@ -137,29 +143,12 @@ public sealed class RowsSyncJobTests
         );
     }
 
-    private static AppSettings CreateSettings() =>
-        new(
-            "Bueiro Inteligente",
-            "1.0.0",
-            "/api/v1",
-            "key",
-            "HS256",
-            30,
-            "hw",
-            "redis",
-            true,
-            true,
-            "cloud",
-            "local",
-            "local",
-            "m",
-            "rows-key",
-            "url",
-            "ss-123",
-            "tb-456",
-            "g-id",
-            "g-sec",
-            [],
-            false
-        );
+    private static RowsSettings CreateSettings() =>
+        new()
+        {
+            ApiKey = "rows-key",
+            BaseUrl = "https://api.rows.com/v1",
+            SpreadsheetId = "ss-123",
+            TableId = "tb-456",
+        };
 }

@@ -1,8 +1,9 @@
-using backend.Core;
+using backend.Core.Settings;
 using backend.Features.Auth.Domain;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace backend.Infrastructure;
@@ -11,13 +12,12 @@ public static class DatabaseServiceCollectionExtensions
 {
     public static IServiceCollection AddBueiroInteligenteDatabase(this IServiceCollection services)
     {
-        services.AddSingleton(AppSettings.Current);
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
         services.AddDbContext<AppDbContext>(
             (sp, options) =>
             {
-                var settings = sp.GetRequiredService<AppSettings>();
+                var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
                 var connectionString = PostgreSqlConnectionStringFactory.Create(
                     settings.DatabaseUrl
                 );
@@ -36,7 +36,7 @@ public static class DatabaseServiceCollectionExtensions
     )
     {
         using var scope = sp.CreateScope();
-        var settings = scope.ServiceProvider.GetRequiredService<AppSettings>();
+        var settings = scope.ServiceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
 
         // Porta 5432 explícita para migrações em nuvem
         var connectionString = PostgreSqlConnectionStringFactory.Create(

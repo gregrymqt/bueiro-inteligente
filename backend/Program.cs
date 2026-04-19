@@ -5,6 +5,7 @@ using backend.Extensions.App.Middleware;
 using backend.Extensions.Auth;
 using backend.Extensions.Realtime;
 using backend.Extensions.Security;
+using backend.Infrastructure.Extensions;
 using backend.Features.Realtime.Filters;
 using backend.Infrastructure;
 using backend.Infrastructure.Cache;
@@ -12,6 +13,10 @@ using Microsoft.AspNetCore.SignalR;
 using MonitoringHub = backend.Features.Realtime.Presentation.MonitoringHub;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.AddBueiroInteligenteDotEnvMappings();
+builder.Services.AddBueiroInteligenteOptions(builder.Configuration);
 
 builder.Logging.AddBueiroInteligenteFileLogging(builder.Configuration, builder.Environment);
 
@@ -24,7 +29,6 @@ builder
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
         options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
     });
-builder.Services.AddBueiroInteligenteAuth();
 builder.Services.AddBueiroInteligenteSecurity();
 builder.Services.AddBueiroInteligenteDatabase();
 builder.Services.AddBueiroInteligenteRedis();
@@ -47,7 +51,8 @@ builder.Services.AddBueiroInteligenteHome();
 builder.Services.AddBueiroInteligenteMonitoring();
 builder.Services.AddBueiroInteligenteRealtime();
 builder.Services.AddBueiroInteligenteScheduler();
-builder.Services.AddBueiroInteligenteApp(builder.Configuration);
+builder.Services.AddBueiroInteligenteAuth(builder.Configuration);
+builder.Services.AddBueiroInteligenteApp();
 
 var app = builder.Build();
 

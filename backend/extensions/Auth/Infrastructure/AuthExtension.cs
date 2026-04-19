@@ -1,29 +1,35 @@
-using System.Text.Json;
 using backend.Core;
+using System.Text.Json;
+using backend.Core.Settings;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
 using backend.Extensions.Auth.Utils;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace backend.Extensions.Auth;
 
 public sealed class AuthExtension(
-    AppSettings settings,
+    IOptions<JwtSettings> jwtSettings,
+    IOptions<IotSettings> iotSettings,
     ITokenBlacklistStore blacklistStore,
     IPasswordHasher<object> passwordHasher,
     ILogger<AuthExtension> logger
 ) : IAuthExtension
 {
     private readonly TimeSpan _blacklistTtl = TimeSpan.FromMinutes(
-        settings.AccessTokenExpireMinutes + 1
+        jwtSettings.Value.AccessTokenExpireMinutes + 1
     );
 
     public Task OpenAsync()
     {
-        if (string.IsNullOrWhiteSpace(settings.SecretKey) || settings.SecretKey == "mudar-depois")
+        if (
+            string.IsNullOrWhiteSpace(jwtSettings.Value.SecretKey)
+            || jwtSettings.Value.SecretKey == "mudar-depois"
+        )
             logger.LogWarning("ALERTA: SECRET_KEY insegura.");
 
-        if (string.IsNullOrWhiteSpace(settings.HardwareToken))
+        if (string.IsNullOrWhiteSpace(iotSettings.Value.HardwareToken))
             logger.LogWarning("ALERTA: HARDWARE_TOKEN ausente.");
 
         return Task.CompletedTask;
@@ -39,7 +45,9 @@ public sealed class AuthExtension(
         {
             ["sub"] = payload.Email,
             ["role"] = payload.Role ?? "User",
-            ["exp"] = now.AddMinutes(settings.AccessTokenExpireMinutes).ToUnixTimeSeconds(),
+            ["exp"] = now
+                .AddMinutes(jwtSettings.Value.AccessTokenExpireMinutes)
+                .ToUnixTimeSeconds(),
             ["iat"] = now.ToUnixTimeSeconds(),
             ["jti"] = Guid.NewGuid().ToString(),
         };
@@ -49,7 +57,7 @@ public sealed class AuthExtension(
             foreach (var claim in payload.AdditionalClaims)
                 claims.TryAdd(claim.Key, claim.Value);
         }
-        return JwtTokenHelper.Encode(claims, settings.SecretKey!, settings.Algorithm);
+            return JwtTokenHelper.Encode(claims, jwtSettings.Value.SecretKey!, jwtSettings.Value.Algorithm);
     }
 
     public Task<bool> VerifyPasswordAsync(string plain, string hashed) =>
@@ -77,8 +85,8 @@ public sealed class AuthExtension(
 
         Dictionary<string, object?> claims = JwtTokenHelper.Decode(
             normalizedToken,
-            settings.SecretKey!,
-            settings.Algorithm
+            jwtSettings.Value.SecretKey!,
+            jwtSettings.Value.Algorithm
         );
 
         string email = GetRequiredClaim(claims, "sub", "email");
@@ -108,7 +116,7 @@ public sealed class AuthExtension(
     {
         var token = NormalizeBearerToken(auth) ?? NormalizeBearerToken(query);
 
-        if (string.IsNullOrEmpty(token) || token != settings.HardwareToken)
+        if (string.IsNullOrEmpty(token) || token != iotSettings.Value.HardwareToken)
             throw new UnauthorizedAccessException("Hardware não autorizado.");
 
         return token;

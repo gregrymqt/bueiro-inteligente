@@ -1,7 +1,8 @@
-using backend.Core;
+using backend.Core.Settings;
 using backend.Extensions.Auth;
 using backend.Extensions.Auth.Abstractions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
 using SharedUserTokenData = backend.Extensions.Auth.Models.UserTokenData;
 
@@ -10,7 +11,8 @@ namespace backend.Tests.Features.Auth;
 public sealed class AuthExtensionTests
 {
     private readonly AuthExtension _authExtension = new(
-        CreateSettings(),
+        Options.Create(CreateJwtSettings()),
+        Options.Create(CreateIotSettings()),
         Mock.Of<ITokenBlacklistStore>(),
         Mock.Of<IPasswordHasher<object>>(),
         Mock.Of<ILogger<AuthExtension>>()
@@ -40,32 +42,17 @@ public sealed class AuthExtensionTests
         currentUser.Role.Should().Be("Admin");
     }
 
-    private static AppSettings CreateSettings()
-    {
-        return new AppSettings(
-            "Bueiro Inteligente",
-            "1.0.0",
-            "/api/v1",
-            "secret-key",
-            "HS256",
-            30,
-            "hardware-token",
-            "redis://localhost:6379",
-            true,
-            true,
-            "postgres://cloud",
-            "postgres://local",
-            "postgres://local",
-            "migrations",
-            "rows-api-key",
-            "https://api.rows.com/v1",
-            "spreadsheet-id",
-            "table-id",
-            "google-client-id",
-            "google-client-secret",
-            Array.Empty<string>(),
-            false,
-            Array.Empty<string>()
-        );
-    }
+    private static JwtSettings CreateJwtSettings() =>
+        new()
+        {
+            SecretKey = "secret-key",
+            Algorithm = "HS256",
+            AccessTokenExpireMinutes = 30,
+        };
+
+    private static IotSettings CreateIotSettings() =>
+        new()
+        {
+            HardwareToken = "hardware-token",
+        };
 }
