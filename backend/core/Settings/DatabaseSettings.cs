@@ -10,7 +10,10 @@ public sealed class DatabaseSettings
 
     public string DatabaseUrlLocal { get; set; } = string.Empty;
 
-    public string MigrationsUrl { get; set; } = string.Empty;
+    public string MigrationsUrlCloud { get; set; } = string.Empty;
+    public string MigrationsUrlLocal { get; set; } = string.Empty;
+
+    public string MigrationsUrl => DbLocal ? MigrationsUrlLocal : MigrationsUrlCloud;
 
     public string DatabaseUrl => DbLocal ? DatabaseUrlLocal : DatabaseUrlCloud;
 }

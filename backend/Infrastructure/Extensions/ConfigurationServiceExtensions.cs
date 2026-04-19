@@ -31,12 +31,17 @@ public static class ConfigurationServiceExtensions
                 "PROJECT_NAME",
                 "VERSION",
                 "API_STR",
-                "ALLOWED_HOSTS",
                 "APP_ID_SECRET",
                 "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
             ]
         );
-
+        MapArray(
+            mappedValues,
+            rawEnv,
+            GeneralSettings.SectionName,
+            nameof(GeneralSettings.AllowedHosts),
+            "ALLOWED_HOSTS"
+        );
         MapArray(
             mappedValues,
             rawEnv,
@@ -51,12 +56,17 @@ public static class ConfigurationServiceExtensions
             nameof(GeneralSettings.EmailUsersAdmin),
             "EMAIL_USERS_ADMIN"
         );
-
         MapSection(
             mappedValues,
             rawEnv,
             DatabaseSettings.SectionName,
-            ["DB_LOCAL", "DATABASE_URL_CLOUD", "DATABASE_URL_LOCAL", "MIGRATIONS_URL"]
+            [
+                "DB_LOCAL",
+                "DATABASE_URL_CLOUD",
+                "DATABASE_URL_LOCAL",
+                "MIGRATIONS_URL_CLOUD",
+                "MIGRATIONS_URL_LOCAL",
+            ]
         );
         MapSection(
             mappedValues,
@@ -70,7 +80,12 @@ public static class ConfigurationServiceExtensions
             GoogleSettings.SectionName,
             ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_FRONTEND_REDIRECT_URL"]
         );
-        MapSection(mappedValues, rawEnv, RedisSettings.SectionName, ["REDIS_URL", "REDIS_LOCAL"]);
+        MapSection(
+            mappedValues,
+            rawEnv,
+            RedisSettings.SectionName,
+            ["REDIS_URL_LOCAL", "REDIS_URL_CLOUD", "REDIS_LOCAL"]
+        );
         MapSection(
             mappedValues,
             rawEnv,

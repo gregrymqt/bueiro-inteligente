@@ -6,7 +6,7 @@ public sealed class RowsSettings
 
     public string ApiKey { get; set; } = string.Empty;
 
-    public string BaseUrl { get; set; } = "https://api.rows.com/v1";
+    public string BaseUrl { get; set; } = "https://api.rows.com/";
 
     public string SpreadsheetId { get; set; } = string.Empty;
 
