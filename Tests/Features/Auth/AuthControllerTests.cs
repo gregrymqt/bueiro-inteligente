@@ -15,9 +15,9 @@ public sealed class AuthControllerTests
     private readonly IOptions<GoogleSettings> _googleSettings = Options.Create(
         new GoogleSettings
         {
-            ClientId = "google-client-id",
-            ClientSecret = "google-client-secret",
-            FrontendRedirectUrl = "https://frontend.example",
+            GoogleClientId = "google-client-id",
+            GoogleClientSecret = "google-client-secret",
+            GoogleFrontendRedirectUrl = "https://frontend.example",
             AllowedOrigins = ["http://localhost:5173"],
         }
     );

@@ -21,7 +21,8 @@ public static class AuthServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        var googleSettings = configuration.GetSection(GoogleSettings.SectionName).Get<GoogleSettings>()
+        var googleSettings =
+            configuration.GetSection(GoogleSettings.SectionName).Get<GoogleSettings>()
             ?? new GoogleSettings();
 
         services.Configure<GoogleSettings>(configuration.GetSection(GoogleSettings.SectionName));
@@ -54,8 +55,8 @@ public static class AuthServiceCollectionExtensions
             )
             .AddGoogle(options =>
             {
-                options.ClientId = googleSettings.ClientId;
-                options.ClientSecret = googleSettings.ClientSecret;
+                options.ClientId = googleSettings.GoogleClientId;
+                options.ClientSecret = googleSettings.GoogleClientSecret;
                 options.CallbackPath = GoogleAuthDefaults.CallbackPath;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
                 options.Scope.Add("email");

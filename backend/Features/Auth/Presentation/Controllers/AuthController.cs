@@ -1,5 +1,5 @@
-using backend.Core;
 using System.Security.Claims;
+using backend.Core;
 using backend.Core.Settings;
 using backend.Extensions.Auth;
 using backend.Features.Auth.Application.DTOs;
@@ -14,8 +14,10 @@ using Microsoft.Extensions.Options;
 
 namespace backend.Features.Auth.Presentation.Controllers;
 
-public sealed class AuthController(IAuthService authService, IOptions<GoogleSettings> googleSettings)
-    : ApiControllerBase
+public sealed class AuthController(
+    IAuthService authService,
+    IOptions<GoogleSettings> googleSettings
+) : ApiControllerBase
 {
     // C# 12: Campos capturados diretamente do construtor primário
     private readonly IAuthService _authService =
@@ -46,7 +48,7 @@ public sealed class AuthController(IAuthService authService, IOptions<GoogleSett
         var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
             frontendRedirectUrl,
             _googleSettings.AllowedOrigins,
-            _googleSettings.FrontendRedirectUrl
+            _googleSettings.GoogleFrontendRedirectUrl
         );
 
         return Challenge(
@@ -82,7 +84,7 @@ public sealed class AuthController(IAuthService authService, IOptions<GoogleSett
             var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
                 frontendRedirectUrl,
                 _googleSettings.AllowedOrigins,
-                _googleSettings.FrontendRedirectUrl
+                _googleSettings.GoogleFrontendRedirectUrl
             );
 
             return Redirect($"{resolvedUrl}#token={Uri.EscapeDataString(accessToken)}");

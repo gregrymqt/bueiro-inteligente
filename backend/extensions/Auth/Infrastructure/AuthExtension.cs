@@ -1,5 +1,5 @@
-using backend.Core;
 using System.Text.Json;
+using backend.Core;
 using backend.Core.Settings;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
@@ -45,8 +45,7 @@ public sealed class AuthExtension(
         {
             ["sub"] = payload.Email,
             ["role"] = payload.Role ?? "User",
-            ["exp"] = now
-                .AddMinutes(jwtSettings.Value.AccessTokenExpireMinutes)
+            ["exp"] = now.AddMinutes(jwtSettings.Value.AccessTokenExpireMinutes)
                 .ToUnixTimeSeconds(),
             ["iat"] = now.ToUnixTimeSeconds(),
             ["jti"] = Guid.NewGuid().ToString(),
@@ -57,7 +56,11 @@ public sealed class AuthExtension(
             foreach (var claim in payload.AdditionalClaims)
                 claims.TryAdd(claim.Key, claim.Value);
         }
-            return JwtTokenHelper.Encode(claims, jwtSettings.Value.SecretKey!, jwtSettings.Value.Algorithm);
+        return JwtTokenHelper.Encode(
+            claims,
+            jwtSettings.Value.SecretKey!,
+            jwtSettings.Value.Algorithm
+        );
     }
 
     public Task<bool> VerifyPasswordAsync(string plain, string hashed) =>
