@@ -13,9 +13,9 @@ using Microsoft.AspNetCore.SignalR;
 using MonitoringHub = backend.Features.Realtime.Presentation.MonitoringHub;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
 builder.Configuration.AddBueiroInteligenteDotEnvMappings();
 builder.Services.AddBueiroInteligenteOptions(builder.Configuration);
-builder.Configuration.AddEnvironmentVariables();
 
 builder.Logging.AddBueiroInteligenteFileLogging(builder.Configuration, builder.Environment);
 
@@ -51,7 +51,7 @@ builder.Services.AddBueiroInteligenteMonitoring();
 builder.Services.AddBueiroInteligenteRealtime();
 builder.Services.AddBueiroInteligenteScheduler();
 builder.Services.AddBueiroInteligenteAuth(builder.Configuration);
-builder.Services.AddBueiroInteligenteApp();
+builder.Services.AddBueiroInteligenteApp(builder.Configuration);
 
 var app = builder.Build();
 

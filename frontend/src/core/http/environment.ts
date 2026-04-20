@@ -12,8 +12,8 @@ export type SignalRHubEnvironment = Pick<
 
 export const DEFAULT_APP_ID = "bueiro-inteligente-app-id";
 
-export const LOCAL_BACKEND_URL = "http://localhost:8080";
-export const SIGNALR_LOCAL_URL = "http://localhost:8080/realtime/ws";
+export const LOCAL_BACKEND_URL = "";
+export const SIGNALR_LOCAL_URL = '/realtime/ws';
 
 export type UrlMode = "local" | "tunnel" | "remote";
 
@@ -82,12 +82,13 @@ export function resolveUrlMode(urlValue?: string): UrlMode {
 export function resolveBackendBaseUrl(
   env: BackendEnvironment = import.meta.env,
 ): string {
+  // Se estiver rodando local, retornamos string vazia para usar o Proxy do Vite
   if (isTruthyFlag(env.VITE_BACKEND_LOCAL)) {
-    return LOCAL_BACKEND_URL;
+    return ""; 
   }
 
-  // Caso contrário, tenta ler do .env ou volta para o local como fallback
-  return normalizeUrl(env.VITE_BACKEND_URL) ?? LOCAL_BACKEND_URL;
+  // Em produção (Render), usamos a URL completa da Cloud
+  return normalizeUrl(env.VITE_BACKEND_URL) ?? "";
 }
 
 export function resolveAppId(env: AppIdEnvironment = import.meta.env): string {
