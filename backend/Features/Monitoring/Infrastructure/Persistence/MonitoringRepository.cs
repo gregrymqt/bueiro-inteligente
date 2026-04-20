@@ -58,6 +58,13 @@ public sealed class MonitoringRepository(
         }
         catch (DbUpdateException ex)
         {
+            logger.LogError(
+                ex,
+                "Erro ao salvar leitura no PostgreSQL para {IdBueiro}. Payload: {@Payload}",
+                data.IdBueiro,
+                data
+            );
+
             throw new ConnectionException(
                 "PostgreSQL",
                 $"Erro ao salvar leitura de {data.IdBueiro}",

@@ -19,7 +19,10 @@ try
     builder.Configuration.AddEnvironmentVariables().AddBueiroInteligenteDotEnvMappings();
     builder.Host.AddBueiroInteligenteLogging(builder.Configuration, builder.Environment);
 
-    builder.Services.AddBueiroInteligenteServices(builder.Configuration); // Agrupador de serviços
+    builder.Services.AddBueiroInteligenteServices(
+        builder.Configuration,
+        builder.Environment
+    ); // Agrupador de serviços
 
     var app = builder.Build();
 

@@ -19,7 +19,7 @@ public static class AppPipelineExtensions
         await scopedServices.GetRequiredService<AuthExtension>().OpenAsync().ConfigureAwait(false);
         scopedServices.InitializeBueiroInteligenteSecurity();
         await scopedServices
-            .InitializeBueiroInteligenteDatabaseAsync(app.Configuration)
+            .InitializeBueiroInteligenteDatabaseAsync()
             .ConfigureAwait(false);
         await scopedServices.InitializeBueiroInteligenteRedisAsync().ConfigureAwait(false);
 

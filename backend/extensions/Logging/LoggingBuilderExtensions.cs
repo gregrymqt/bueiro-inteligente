@@ -20,7 +20,9 @@ public static class LoggingBuilderExtensions
             .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
             .MinimumLevel.Override("Quartz", LogEventLevel.Information) 
             .Enrich.FromLogContext()
-            .WriteTo.Console()
+            .WriteTo.Console(
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"
+            )
             .WriteTo.File(
                 path: "log/log-.txt",
                 rollingInterval: RollingInterval.Day,

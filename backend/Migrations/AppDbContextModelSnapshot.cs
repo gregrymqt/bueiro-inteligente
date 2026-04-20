@@ -259,8 +259,8 @@ namespace backend.Migrations
 
                     b.Property<string>("DrainIdentifier")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("id_bueiro");
 
                     b.Property<DateTimeOffset>("LastUpdate")

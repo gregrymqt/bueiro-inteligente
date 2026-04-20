@@ -17,7 +17,7 @@ public sealed class DrainStatusConfiguration : IEntityTypeConfiguration<DrainSta
         builder
             .Property(x => x.DrainIdentifier)
             .HasColumnName("id_bueiro")
-            .HasMaxLength(50)
+            .HasMaxLength(100)
             .IsRequired();
 
         builder.HasIndex(x => x.DrainIdentifier);
