@@ -19,8 +19,6 @@ builder.Services.AddBueiroInteligenteOptions(builder.Configuration);
 
 builder.Logging.AddBueiroInteligenteFileLogging(builder.Configuration, builder.Environment);
 
-// Add services to the container.
-builder.Services.AddRazorPages();
 builder
     .Services.AddControllers()
     .AddJsonOptions(options =>
@@ -60,15 +58,15 @@ app.Services.InitializeBueiroInteligenteSecurity();
 await app.Services.InitializeBueiroInteligenteDatabaseAsync();
 await app.Services.InitializeBueiroInteligenteRedisAsync();
 
-// Configure the HTTP request pipeline.
+app.UseBueiroInteligenteExceptionHandling(app.Environment);
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
     app.UseHsts();
-    app.UseHttpsRedirection();
 }
 
-app.UseStaticFiles();
+app.UseHttpsRedirection();
+
 app.UseRouting();
 app.UseCors(AppServiceCollectionExtensions.RestrictedOriginsPolicyName);
 
@@ -79,7 +77,7 @@ app.UseAuthorization();
 
 app.MapHub<MonitoringHub>("/realtime/ws");
 app.MapControllers();
-app.MapRazorPages();
+
 app.MapGet("/health", () => Results.Ok()).AllowAnonymous();
 
 app.Run();

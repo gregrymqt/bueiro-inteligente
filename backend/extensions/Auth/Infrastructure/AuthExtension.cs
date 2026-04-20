@@ -23,10 +23,7 @@ public sealed class AuthExtension(
 
     public Task OpenAsync()
     {
-        if (
-            string.IsNullOrWhiteSpace(jwtSettings.Value.SecretKey)
-            || jwtSettings.Value.SecretKey == "mudar-depois"
-        )
+        if (string.IsNullOrWhiteSpace(jwtSettings.Value.SecretKey))
             logger.LogWarning("ALERTA: SECRET_KEY insegura.");
 
         if (string.IsNullOrWhiteSpace(iotSettings.Value.HardwareToken))

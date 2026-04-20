@@ -70,5 +70,4 @@ public sealed class WebSocketRateLimiter
             _logger.LogError(exception, "Erro no validador do Redis (WebSocketRateLimiter).");
         }
     }
-
 }

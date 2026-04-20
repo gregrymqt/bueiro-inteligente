@@ -42,5 +42,4 @@ public sealed class RateLimiter(
             logger.LogError(ex, "Erro no processamento do Rate Limit.");
         }
     }
-
 }
