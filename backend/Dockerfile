@@ -26,11 +26,7 @@ RUN set -eux; \
 	fi; \
 	rm -rf /tmp/backend-work; \
 	mkdir -p /tmp/backend-work; \
-	cp -R "$PROJECT_DIR"/. /tmp/backend-work/; \
-	if [ ! -f /tmp/backend-work/entrypoint.sh ]; then \
-		echo "entrypoint.sh not found in build context"; \
-		exit 1; \
-	fi
+	cp -R "$PROJECT_DIR"/. /tmp/backend-work/
 
 WORKDIR /tmp/backend-work
 RUN dotnet restore "backend.csproj"

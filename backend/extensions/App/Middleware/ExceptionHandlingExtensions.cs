@@ -86,29 +86,21 @@ public static class ExceptionHandlingExtensions
     }
 
     private static (int StatusCode, string Title, string Detail) ResolveProblemDetails(
-        Exception? exception,
-        IWebHostEnvironment env
-    )
+    Exception? exception,
+    IWebHostEnvironment env
+)
     {
-        return exception switch
-        {
-            LogicException or ArgumentException => (400, "Validation error", exception.Message),
-            NotFoundException => (404, "Not found", exception.Message),
-            UnauthorizedAccessException => (401, "Unauthorized", exception.Message),
-            ConnectionException => (503, "Connection error", exception.Message),
-            ExternalApiException => (502, "External API error", exception.Message),
-            null => (
-                500,
-                "Erro interno no servidor",
-                "Erro interno. Verifique os logs do servidor."
-            ),
-            _ => env.IsDevelopment()
-                ? (500, "Erro interno no servidor", exception.Message)
-                : (
-                    500,
-                    "Erro interno no servidor",
-                    "Erro interno. Verifique os logs do servidor."
-                ),
-        };
+        // TÁTICA KAMIKAZE: Ignora se é Development, ignora segurança.
+        // Vamos forçar o erro real (com Stack Trace completa) a ir direto para o Frontend!
+
+        var errorDetail = exception != null
+            ? exception.ToString() // Pega a mensagem e a linha exata onde explodiu
+            : "MISTÉRIO FATAL: A exceção chegou NULA no handler!";
+
+        return (
+            500,
+            "FANTASMA CAPTURADO",
+            errorDetail
+        );
     }
 }
