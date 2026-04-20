@@ -39,9 +39,9 @@ public static class SecurityServiceCollectionExtensions
 
     public static void InitializeBueiroInteligenteSecurity(this IServiceProvider serviceProvider)
     {
-        using IServiceScope scope = serviceProvider.CreateScope();
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        _ = scope.ServiceProvider.GetRequiredService<RateLimiter>();
-        _ = scope.ServiceProvider.GetRequiredService<WebSocketRateLimiter>();
+        _ = serviceProvider.GetRequiredService<RateLimiter>();
+        _ = serviceProvider.GetRequiredService<WebSocketRateLimiter>();
     }
 }

@@ -17,12 +17,15 @@ public static class ExceptionHandlingExtensions
             {
                 var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
                 var exception = exceptionFeature?.Error;
+
+                // Use o logger injetado para capturar o erro real
+                var logger = context.RequestServices.GetRequiredService<ILogger<AppIdMiddleware>>();
+
                 var (statusCode, title, detail) = ResolveProblemDetails(exception, env);
 
-                var logger = context
-                    .RequestServices.GetRequiredService<ILoggerFactory>()
-                    .CreateLogger("GlobalExceptionHandler");
-                logger.LogError(exception, "Falha crítica na rota {Method} {Path} ({StatusCode})", context.Request.Method, context.Request.Path, statusCode);
+                // LOG CRÍTICO: Isso vai aparecer com o Stack Trace completo no arquivo .txt
+                logger.LogError(exception, "ERRO CRÍTICO: Rota {Method} {Path} falhou com status {StatusCode}. Mensagem: {Message}",
+                    context.Request.Method, context.Request.Path, statusCode, exception?.Message);
 
                 context.Response.StatusCode = statusCode;
                 context.Response.ContentType = "application/problem+json";

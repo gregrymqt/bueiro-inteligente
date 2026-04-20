@@ -36,8 +36,9 @@ public static class DatabaseServiceCollectionExtensions
         CancellationToken ct = default
     )
     {
-        using var scope = sp.CreateScope();
-        var settings = scope.ServiceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+        ArgumentNullException.ThrowIfNull(sp);
+
+        var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
 
         // Porta 5432 explícita para migrações em nuvem
         var connectionString = PostgreSqlConnectionStringFactory.Create(

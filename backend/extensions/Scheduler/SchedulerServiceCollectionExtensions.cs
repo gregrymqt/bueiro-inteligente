@@ -1,5 +1,4 @@
 using backend.Features.Rows.Application.Jobs;
-using backend.Features.Rows.Infrastructure.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -15,7 +14,6 @@ public static class SchedulerServiceCollectionExtensions
 
     public static IServiceCollection AddBueiroInteligenteScheduler(this IServiceCollection services)
     {
-        services.AddBueiroInteligenteRows();
         services.AddTransient<RowsSyncJob>();
 
         services.AddQuartz(quartz =>

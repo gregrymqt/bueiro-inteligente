@@ -1,9 +1,9 @@
 using backend.Core.Settings;
-using Microsoft.AspNetCore.Builder;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Extensions.App.Middleware;
+namespace backend.Extensions.App;
 
 public static class AppServiceCollectionExtensions
 {
@@ -16,6 +16,14 @@ public static class AppServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+
+        services
+            .AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+                options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
+            });
 
         var generalSettings =
             configuration.GetSection(GeneralSettings.SectionName).Get<GeneralSettings>()
@@ -53,12 +61,5 @@ public static class AppServiceCollectionExtensions
         });
 
         return services;
-    }
-
-    public static WebApplication UseBueiroInteligenteApp(this WebApplication app)
-    {
-        app.UseMiddleware<AppIdMiddleware>();
-
-        return app;
     }
 }
