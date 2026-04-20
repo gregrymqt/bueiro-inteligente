@@ -44,14 +44,10 @@ public sealed class MonitoringControllerTests
             .Throws(new UnauthorizedAccessException("Hardware não autorizado"));
 
         // Act
-        var result = await _controller.ReceiveSensorData(payload, default);
+        Func<Task> act = () => _controller.ReceiveSensorData(payload, default);
 
         // Assert
-        result
-            .Result.Should()
-            .BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should()
-            .Be(StatusCodes.Status401Unauthorized);
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
 
         _monitoringServiceMock.Verify(
             s =>
@@ -66,7 +62,7 @@ public sealed class MonitoringControllerTests
     [Theory]
     [InlineData("NotFound")]
     [InlineData("LogicException")]
-    public async Task GetStatus_CenariosDeErro_DeveRetornarStatusCorreto(string erroTipo)
+    public async Task GetStatus_CenariosDeErro_DevePropagarExcecao(string erroTipo)
     {
         // Arrange
         var drainId = "DRN-404";
@@ -80,18 +76,13 @@ public sealed class MonitoringControllerTests
                 .ThrowsAsync(new LogicException("Erro de leitura"));
 
         // Act
-        var result = await _controller.GetStatus(drainId, default);
+        Func<Task> act = () => _controller.GetStatus(drainId, default);
 
         // Assert
-        var expectedStatus =
-            erroTipo == "NotFound"
-                ? StatusCodes.Status404NotFound
-                : StatusCodes.Status400BadRequest;
-        result
-            .Result.Should()
-            .BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should()
-            .Be(expectedStatus);
+        if (erroTipo == "NotFound")
+            await act.Should().ThrowAsync<NotFoundException>();
+        else
+            await act.Should().ThrowAsync<LogicException>();
     }
 
     [Fact]

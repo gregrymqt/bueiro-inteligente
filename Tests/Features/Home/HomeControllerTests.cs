@@ -52,7 +52,7 @@ public sealed class HomeControllerTests
     }
 
     [Fact]
-    public async Task GetHomeContent_ErroDeConexao_DeveRetornar503ServiceUnavailable()
+    public async Task GetHomeContent_ErroDeConexao_DevePropagarConnectionException()
     {
         // Arrange
         _homeServiceMock
@@ -60,13 +60,9 @@ public sealed class HomeControllerTests
             .ThrowsAsync(new ConnectionException("Database", "Falha crítica"));
 
         // Act
-        var result = await _controller.GetHomeContent(default);
+        Func<Task> act = () => _controller.GetHomeContent(default);
 
         // Assert
-        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
-        objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
-
-        var problem = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
-        problem.Status.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        await act.Should().ThrowAsync<ConnectionException>();
     }
 }

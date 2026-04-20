@@ -69,7 +69,7 @@ public sealed class DrainsControllerTests
     [Theory]
     [InlineData("NotFound")]
     [InlineData("LogicException")]
-    public async Task Drains_TratamentoDeErros_DeveRetornarStatusCorreto(string erroTipo)
+    public async Task Drains_TratamentoDeErros_DevePropagarExcecao(string erroTipo)
     {
         // Arrange
         var drainId = Guid.NewGuid();
@@ -83,18 +83,13 @@ public sealed class DrainsControllerTests
                 .ThrowsAsync(new LogicException("Erro de validação"));
 
         // Act
-        var result = await _controller.GetById(drainId);
+        Func<Task> act = () => _controller.GetById(drainId);
 
         // Assert
-        var statusEsperado =
-            erroTipo == "NotFound"
-                ? StatusCodes.Status404NotFound
-                : StatusCodes.Status400BadRequest;
-        result
-            .Result.Should()
-            .BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should()
-            .Be(statusEsperado);
+        if (erroTipo == "NotFound")
+            await act.Should().ThrowAsync<NotFoundException>();
+        else
+            await act.Should().ThrowAsync<LogicException>();
     }
 
     [Fact]

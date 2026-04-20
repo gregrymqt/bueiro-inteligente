@@ -1,5 +1,5 @@
-using backend.Core;
 using System.Security.Claims;
+using backend.Core;
 using backend.Core.Settings;
 using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
@@ -44,29 +44,39 @@ public sealed class AuthService(
         CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(request);
+        _logger.LogInformation("Attempting authentication for {Email}", request?.Email);
 
-        _logger.LogInformation("Attempting authentication for {Email}", request.Email);
-
-        var user = await _repository.GetUserByEmailAsync(request.Email, ct).ConfigureAwait(false);
-
-        if (
-            user is null
-            || !await _authExtension
-                .VerifyPasswordAsync(request.Password, user.HashedPassword)
-                .ConfigureAwait(false)
-        )
+        try
         {
-            _logger.LogWarning("Login failed for {Email}", request.Email);
-            return null;
+            ArgumentNullException.ThrowIfNull(request);
+
+            var user = await _repository
+                .GetUserByEmailAsync(request.Email, ct)
+                .ConfigureAwait(false);
+
+            if (
+                user is null
+                || !await _authExtension
+                    .VerifyPasswordAsync(request.Password, user.HashedPassword)
+                    .ConfigureAwait(false)
+            )
+            {
+                _logger.LogWarning("Login failed for {Email}", request.Email);
+                return null;
+            }
+
+            var roleNames = ResolveUserRoleNames(user.Email, user.Roles);
+            var accessToken = _authExtension.CreateAccessToken(
+                BuildTokenPayload(user.Email, roleNames)
+            );
+
+            return new TokenResponse(accessToken, "bearer");
         }
-
-        var roleNames = ResolveUserRoleNames(user.Email, user.Roles);
-        var accessToken = _authExtension.CreateAccessToken(
-            BuildTokenPayload(user.Email, roleNames)
-        );
-
-        return new TokenResponse(accessToken, "bearer");
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao autenticar usuário {Email}.", request?.Email);
+            throw;
+        }
     }
 
     public async Task<UserResponse> RegisterAsync(
@@ -74,35 +84,53 @@ public sealed class AuthService(
         CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(request);
+        _logger.LogInformation("Registering user {Email}", request?.Email);
 
-        _logger.LogInformation("Registering user {Email}", request.Email);
-
-        if (
-            await _repository.GetUserByEmailAsync(request.Email, ct).ConfigureAwait(false)
-            is not null
-        )
-            throw new LogicException($"Email already registered: {request.Email}");
-
-        var assignedRoleNames = await ResolveAssignedRoleNamesAsync(request.Email, request.Role, ct)
-            .ConfigureAwait(false);
-        var roles = await GetRolesByNamesAsync(assignedRoleNames, ct).ConfigureAwait(false);
-        var hashedPassword = await _authExtension
-            .GetPasswordHashAsync(request.Password)
-            .ConfigureAwait(false);
-
-        User user = new()
+        try
         {
-            Email = request.Email,
-            HashedPassword = hashedPassword,
-            FullName = request.FullName,
-            Roles = [.. roles], // C# 12: Spread operator
-        };
+            ArgumentNullException.ThrowIfNull(request);
 
-        await _repository.AddUserAsync(user, ct).ConfigureAwait(false);
-        await _unitOfWork.CommitAsync(ct).ConfigureAwait(false);
+            if (
+                await _repository.GetUserByEmailAsync(request.Email, ct).ConfigureAwait(false)
+                is not null
+            )
+                throw new LogicException($"Email already registered: {request.Email}");
 
-        return new UserResponse(user.Email, user.FullName, assignedRoleNames);
+            var assignedRoleNames = await ResolveAssignedRoleNamesAsync(
+                    request.Email,
+                    request.Role,
+                    ct
+                )
+                .ConfigureAwait(false);
+            var roles = await GetRolesByNamesAsync(assignedRoleNames, ct).ConfigureAwait(false);
+            var hashedPassword = await _authExtension
+                .GetPasswordHashAsync(request.Password)
+                .ConfigureAwait(false);
+
+            User user = new()
+            {
+                Email = request.Email,
+                HashedPassword = hashedPassword,
+                FullName = request.FullName,
+                Roles = [.. roles], // C# 12: Spread operator
+            };
+
+            await _repository.AddUserAsync(user, ct).ConfigureAwait(false);
+            await _unitOfWork.CommitAsync(ct).ConfigureAwait(false);
+
+            return new UserResponse(user.Email, user.FullName, assignedRoleNames);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Erro ao registrar usuário {Email}. Nome: {FullName}. Papel: {Role}",
+                request?.Email,
+                request?.FullName,
+                request?.Role
+            );
+            throw;
+        }
     }
 
     public async Task<string> SignInWithGoogleAsync(
@@ -110,64 +138,85 @@ public sealed class AuthService(
         HttpContext httpContext
     )
     {
-        ArgumentNullException.ThrowIfNull(principal);
-        ArgumentNullException.ThrowIfNull(httpContext);
+        string? googleId = null;
+        string? email = null;
 
-        var googleId = GetRequiredClaim(principal, ClaimTypes.NameIdentifier, "sub", "id");
-        var email = GetRequiredClaim(principal, ClaimTypes.Email, "email");
-
-        _logger.LogInformation("Signing in Google user {Email}", email);
-
-        var user = await _repository
-            .FindByGoogleIdAsync(googleId, httpContext.RequestAborted)
-            .ConfigureAwait(false);
-
-        if (user is null)
+        try
         {
-            var assignedRoleNames = await ResolveAssignedRoleNamesAsync(
-                    email,
-                    DefaultRoleName,
-                    httpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var roles = await GetRolesByNamesAsync(assignedRoleNames, httpContext.RequestAborted)
-                .ConfigureAwait(false);
-            var hashedPassword = await _authExtension
-                .GetPasswordHashAsync(Guid.NewGuid().ToString("N"))
+            ArgumentNullException.ThrowIfNull(principal);
+            ArgumentNullException.ThrowIfNull(httpContext);
+
+            googleId = GetRequiredClaim(principal, ClaimTypes.NameIdentifier, "sub", "id");
+            email = GetRequiredClaim(principal, ClaimTypes.Email, "email");
+
+            _logger.LogInformation("Signing in Google user {Email}", email);
+
+            var user = await _repository
+                .FindByGoogleIdAsync(googleId, httpContext.RequestAborted)
                 .ConfigureAwait(false);
 
-            user = new User
+            if (user is null)
             {
-                Email = email,
-                FullName = GetOptionalClaim(principal, ClaimTypes.Name, "name"),
-                HashedPassword = hashedPassword,
-                GoogleId = googleId,
-                AvatarUrl = GetOptionalClaim(principal, "picture"),
-                EmailConfirmed = true,
-                Roles = [.. roles],
-            };
+                var assignedRoleNames = await ResolveAssignedRoleNamesAsync(
+                        email,
+                        DefaultRoleName,
+                        httpContext.RequestAborted
+                    )
+                    .ConfigureAwait(false);
+                var roles = await GetRolesByNamesAsync(
+                        assignedRoleNames,
+                        httpContext.RequestAborted
+                    )
+                    .ConfigureAwait(false);
+                var hashedPassword = await _authExtension
+                    .GetPasswordHashAsync(Guid.NewGuid().ToString("N"))
+                    .ConfigureAwait(false);
 
-            await _repository.AddUserAsync(user, httpContext.RequestAborted).ConfigureAwait(false);
-            await _unitOfWork.CommitAsync(httpContext.RequestAborted).ConfigureAwait(false);
-        }
+                user = new User
+                {
+                    Email = email,
+                    FullName = GetOptionalClaim(principal, ClaimTypes.Name, "name"),
+                    HashedPassword = hashedPassword,
+                    GoogleId = googleId,
+                    AvatarUrl = GetOptionalClaim(principal, "picture"),
+                    EmailConfirmed = true,
+                    Roles = [.. roles],
+                };
 
-        var accessToken = _authExtension.CreateAccessToken(
-            BuildTokenPayload(user.Email, ResolveUserRoleNames(email, user.Roles))
-        );
-
-        httpContext.Response.Cookies.Append(
-            GoogleAuthDefaults.AccessTokenCookieName,
-            accessToken,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Path = "/",
+                await _repository
+                    .AddUserAsync(user, httpContext.RequestAborted)
+                    .ConfigureAwait(false);
+                await _unitOfWork.CommitAsync(httpContext.RequestAborted).ConfigureAwait(false);
             }
-        );
 
-        return accessToken;
+            var accessToken = _authExtension.CreateAccessToken(
+                BuildTokenPayload(user.Email, ResolveUserRoleNames(email, user.Roles))
+            );
+
+            httpContext.Response.Cookies.Append(
+                GoogleAuthDefaults.AccessTokenCookieName,
+                accessToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                }
+            );
+
+            return accessToken;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Erro ao autenticar usuário via Google. Email: {Email}. GoogleId: {GoogleId}",
+                email,
+                googleId
+            );
+            throw;
+        }
     }
 
     private async Task<IReadOnlyList<string>> ResolveAssignedRoleNamesAsync(
@@ -256,21 +305,45 @@ public sealed class AuthService(
 
     public async Task LogoutAsync(string tokenJti, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(tokenJti))
-            throw LogicException.NullValue(nameof(tokenJti));
         _logger.LogInformation("Revoking token jti {Jti}", tokenJti);
-        await _authExtension.AddToBlacklistAsync(tokenJti).ConfigureAwait(false);
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(tokenJti))
+                throw LogicException.NullValue(nameof(tokenJti));
+
+            await _authExtension.AddToBlacklistAsync(tokenJti).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao revogar token jti {Jti}.", tokenJti);
+            throw;
+        }
     }
 
     public async Task<UserResponse?> GetMeAsync(string email, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(email))
-            throw LogicException.NullValue(nameof(email));
+        _logger.LogInformation("Obtendo usuário autenticado {Email}", email);
 
-        var user = await _repository.GetUserByEmailAsync(email, ct).ConfigureAwait(false);
-        return user is null
-            ? null
-            : new UserResponse(user.Email, user.FullName, ResolveUserRoleNames(email, user.Roles));
+        try
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw LogicException.NullValue(nameof(email));
+
+            var user = await _repository.GetUserByEmailAsync(email, ct).ConfigureAwait(false);
+            return user is null
+                ? null
+                : new UserResponse(
+                    user.Email,
+                    user.FullName,
+                    ResolveUserRoleNames(email, user.Roles)
+                );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter usuário autenticado {Email}.", email);
+            throw;
+        }
     }
 
     private static string GetRequiredClaim(ClaimsPrincipal p, params string[] types) =>

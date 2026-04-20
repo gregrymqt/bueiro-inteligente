@@ -24,47 +24,66 @@ public sealed class MonitoringService(
         CancellationToken ct = default
     )
     {
-        ArgumentNullException.ThrowIfNull(payload);
-        if (string.IsNullOrWhiteSpace(payload.IdBueiro))
-            throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
-
         logger.LogInformation(
             "Processando leitura para o bueiro {DrainIdentifier}",
-            payload.IdBueiro
+            payload?.IdBueiro
         );
 
-        ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm);
-
-        double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
-        double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance), 2);
-        string status = ResolveStatus(obstructionLevel);
-
-        var result = new DrainStatusDTO(
-            payload.IdBueiro,
-            normalizedDistance,
-            obstructionLevel,
-            status,
-            payload.Latitude,
-            payload.Longitude,
-            DateTimeOffset.UtcNow
-        );
-
-        await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
-
-        // Disparo condicional de Realtime
-        if (result.Status is "Alerta" or "Crítico")
+        try
         {
-            try
-            {
-                await realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Falha no broadcast SignalR para {Id}", result.IdBueiro);
-            }
-        }
+            ArgumentNullException.ThrowIfNull(payload);
 
-        return result;
+            if (string.IsNullOrWhiteSpace(payload.IdBueiro))
+                throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
+
+            ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm);
+
+            double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
+            double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance), 2);
+            string status = ResolveStatus(obstructionLevel);
+
+            var result = new DrainStatusDTO(
+                payload.IdBueiro,
+                normalizedDistance,
+                obstructionLevel,
+                status,
+                payload.Latitude,
+                payload.Longitude,
+                DateTimeOffset.UtcNow
+            );
+
+            await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
+
+            // Disparo condicional de Realtime
+            if (result.Status is "Alerta" or "Crítico")
+            {
+                try
+                {
+                    await realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(
+                        ex,
+                        "Erro ao publicar medição no SignalR para o bueiro {Id}. Payload: {@Payload}",
+                        result.IdBueiro,
+                        result
+                    );
+                }
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Erro ao processar medição do bueiro {Id}. Payload: {@Payload}",
+                payload?.IdBueiro,
+                payload
+            );
+            throw;
+        }
     }
 
     public async Task<DrainStatusDTO> GetDrainStatusAsync(
@@ -72,21 +91,31 @@ public sealed class MonitoringService(
         CancellationToken ct = default
     )
     {
-        if (string.IsNullOrWhiteSpace(drainId))
-            throw LogicException.InvalidValue(nameof(drainId), drainId);
+        logger.LogInformation("Obtendo status do bueiro {DrainId}", drainId);
 
-        var response = await cacheService
-            .GetOrSetAsync(
-                $"bueiro:{drainId}:status",
-                async () =>
-                    await monitoringRepository
-                        .GetLatestStatusAsync(drainId, ct)
-                        .ConfigureAwait(false) ?? throw new NotFoundException("Bueiro", drainId),
-                CacheTtl
-            )
-            .ConfigureAwait(false);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(drainId))
+                throw LogicException.InvalidValue(nameof(drainId), drainId);
 
-        return response.Data;
+            var response = await cacheService
+                .GetOrSetAsync(
+                    $"bueiro:{drainId}:status",
+                    async () =>
+                        await monitoringRepository
+                            .GetLatestStatusAsync(drainId, ct)
+                            .ConfigureAwait(false) ?? throw new NotFoundException("Bueiro", drainId),
+                    CacheTtl
+                )
+                .ConfigureAwait(false);
+
+            return response.Data;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao obter status do bueiro {DrainId}.", drainId);
+            throw;
+        }
     }
 
     private void ValidateSensorNoise(string id, double distanceCm)

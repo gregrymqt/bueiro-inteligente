@@ -30,14 +30,11 @@ public sealed class AuthController(
     public async Task<ActionResult<TokenResponse>> Login(
         [FromBody] LoginRequest request,
         CancellationToken ct
-    ) =>
-        await ExecuteAsync(async () =>
-        {
-            var token = await _authService.LoginAsync(request, ct).ConfigureAwait(false);
-            return token is null
-                ? Unauthorized(CreateProblem("Unauthorized", "Incorrect email or password.", 401))
-                : Ok(token);
-        });
+    )
+    {
+        var token = await _authService.LoginAsync(request, ct).ConfigureAwait(false);
+        return token is null ? Unauthorized() : Ok(token);
+    }
 
     [HttpGet("google-login")]
     [AllowAnonymous]
@@ -50,13 +47,9 @@ public sealed class AuthController(
             || string.IsNullOrWhiteSpace(_googleSettings.GoogleClientSecret)
         )
         {
-            return StatusCode(
-                StatusCodes.Status503ServiceUnavailable,
-                CreateProblem(
-                    "Service unavailable",
-                    "Google authentication is not configured on this environment.",
-                    StatusCodes.Status503ServiceUnavailable
-                )
+            throw new ConnectionException(
+                "Google authentication",
+                "Google authentication is not configured on this environment."
             );
         }
 
@@ -81,108 +74,67 @@ public sealed class AuthController(
     public async Task<IActionResult> GoogleCallback(
         [FromQuery(Name = "frontend_redirect")] string? frontendRedirectUrl,
         CancellationToken ct
-    ) =>
-        await ExecuteAsync(async () =>
+    )
+    {
+        if (
+            string.IsNullOrWhiteSpace(_googleSettings.GoogleClientId)
+            || string.IsNullOrWhiteSpace(_googleSettings.GoogleClientSecret)
+        )
         {
-            if (
-                string.IsNullOrWhiteSpace(_googleSettings.GoogleClientId)
-                || string.IsNullOrWhiteSpace(_googleSettings.GoogleClientSecret)
-            )
-            {
-                return StatusCode(
-                    StatusCodes.Status503ServiceUnavailable,
-                    CreateProblem(
-                        "Service unavailable",
-                        "Google authentication is not configured on this environment.",
-                        StatusCodes.Status503ServiceUnavailable
-                    )
-                );
-            }
-
-            var authResult = await HttpContext
-                .AuthenticateAsync(IdentityConstants.ExternalScheme)
-                .ConfigureAwait(false);
-
-            if (!authResult.Succeeded || authResult.Principal is null)
-                return Unauthorized(
-                    CreateProblem("Unauthorized", "Google authentication failed.", 401)
-                );
-
-            var accessToken = await _authService
-                .SignInWithGoogleAsync(authResult.Principal, HttpContext)
-                .ConfigureAwait(false);
-            var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
-                frontendRedirectUrl,
-                _googleSettings.AllowedOrigins,
-                _googleSettings.GoogleFrontendRedirectUrl
+            throw new ConnectionException(
+                "Google authentication",
+                "Google authentication is not configured on this environment."
             );
+        }
 
-            return Redirect($"{resolvedUrl}#token={Uri.EscapeDataString(accessToken)}");
-        });
+        var authResult = await HttpContext
+            .AuthenticateAsync(IdentityConstants.ExternalScheme)
+            .ConfigureAwait(false);
+
+        if (!authResult.Succeeded || authResult.Principal is null)
+            return Unauthorized();
+
+        var accessToken = await _authService
+            .SignInWithGoogleAsync(authResult.Principal, HttpContext)
+            .ConfigureAwait(false);
+        var resolvedUrl = GoogleRedirectUrlResolver.ResolveFrontendRedirectUrl(
+            frontendRedirectUrl,
+            _googleSettings.AllowedOrigins,
+            _googleSettings.GoogleFrontendRedirectUrl
+        );
+
+        return Redirect($"{resolvedUrl}#token={Uri.EscapeDataString(accessToken)}");
+    }
 
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<UserResponse>> Register(
         [FromBody] UserCreateRequest request,
         CancellationToken ct
-    ) =>
-        await ExecuteAsync(async () =>
-        {
-            var result = await _authService.RegisterAsync(request, ct).ConfigureAwait(false);
-            return Created("/auth/users/me", result);
-        });
-
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout(CancellationToken ct) =>
-        await ExecuteAsync(async () =>
-        {
-            var jti = User.FindFirstValue("jti") ?? throw LogicException.NullValue("jti");
-            await _authService.LogoutAsync(jti, ct).ConfigureAwait(false);
-            return Ok(new { message = "Logout successful" });
-        });
-
-    [HttpGet("users/me")]
-    public async Task<ActionResult<UserResponse>> GetMe(CancellationToken ct) =>
-        await ExecuteAsync(async () =>
-        {
-            var email =
-                User.FindFirstValue(ClaimTypes.Email)
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? throw LogicException.NullValue("email");
-
-            var result = await _authService.GetMeAsync(email, ct).ConfigureAwait(false);
-            return result is null
-                ? NotFound(CreateProblem("Not found", "User not found.", 404))
-                : Ok(result);
-        });
-
-    #region Helpers Enxutos
-
-    // Centraliza o tratamento de exceções para remover o excesso de try-catch
-    private async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
+    )
     {
-        try
-        {
-            return await action();
-        }
-        catch (ConnectionException ex)
-        {
-            return StatusCode(503, CreateProblem("Connection error", ex.Message, 503));
-        }
-        catch (LogicException ex)
-        {
-            return BadRequest(CreateProblem("Validation error", ex.Message, 400));
-        }
+        var result = await _authService.RegisterAsync(request, ct).ConfigureAwait(false);
+        return Created("/auth/users/me", result);
     }
 
-    private static ProblemDetails CreateProblem(string title, string detail, int status) =>
-        new()
-        {
-            Title = title,
-            Detail = detail,
-            Status = status,
-        };
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(CancellationToken ct)
+    {
+        var jti = User.FindFirstValue("jti") ?? throw LogicException.NullValue("jti");
+        await _authService.LogoutAsync(jti, ct).ConfigureAwait(false);
+        return Ok(new { message = "Logout successful" });
+    }
 
-    #endregion
+    [HttpGet("users/me")]
+    public async Task<ActionResult<UserResponse>> GetMe(CancellationToken ct)
+    {
+        var email =
+            User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub")
+            ?? throw LogicException.NullValue("email");
+
+        var result = await _authService.GetMeAsync(email, ct).ConfigureAwait(false);
+        return result is null ? NotFound() : Ok(result);
+    }
 }

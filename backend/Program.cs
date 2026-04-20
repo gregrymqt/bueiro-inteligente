@@ -17,7 +17,7 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Configuration.AddBueiroInteligenteDotEnvMappings();
 builder.Services.AddBueiroInteligenteOptions(builder.Configuration);
 
-builder.Logging.AddBueiroInteligenteFileLogging(builder.Configuration, builder.Environment);
+builder.Logging.AddBueiroInteligenteLogging(builder.Configuration, builder.Environment);
 
 builder
     .Services.AddControllers()

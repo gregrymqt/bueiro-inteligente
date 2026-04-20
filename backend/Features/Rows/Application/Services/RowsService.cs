@@ -19,14 +19,15 @@ public sealed class RowsService(IHttpClientFactory httpClientFactory, ILogger<Ro
         CancellationToken ct = default
     )
     {
-        Validate(spreadsheetId, tableId, payload);
         logger.LogInformation("Enviando dados para Rows: Tabela {TableId}", tableId);
-
-        var client = httpClientFactory.CreateClient(RowsHttpClientDefaults.ClientName);
-        var url = $"spreadsheets/{spreadsheetId}/tables/{tableId}/values:append";
 
         try
         {
+            Validate(spreadsheetId, tableId, payload);
+
+            var client = httpClientFactory.CreateClient(RowsHttpClientDefaults.ClientName);
+            var url = $"spreadsheets/{spreadsheetId}/tables/{tableId}/values:append";
+
             using var response = await client
                 .PostAsJsonAsync(url, payload, JsonOptions, ct)
                 .ConfigureAwait(false);
@@ -36,7 +37,25 @@ public sealed class RowsService(IHttpClientFactory httpClientFactory, ILogger<Ro
         }
         catch (HttpRequestException ex)
         {
+            logger.LogError(
+                ex,
+                "Erro ao enviar dados para Rows. SpreadsheetId: {SpreadsheetId}. TableId: {TableId}. Payload: {@Payload}",
+                spreadsheetId,
+                tableId,
+                payload
+            );
             throw new ConnectionException("Rows", "Falha de conexão com a API Rows.", ex);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Erro ao enviar dados para Rows. SpreadsheetId: {SpreadsheetId}. TableId: {TableId}. Payload: {@Payload}",
+                spreadsheetId,
+                tableId,
+                payload
+            );
+            throw;
         }
     }
 
@@ -47,14 +66,15 @@ public sealed class RowsService(IHttpClientFactory httpClientFactory, ILogger<Ro
         CancellationToken ct = default
     )
     {
-        Validate(spreadsheetId, pageId, payload);
-        logger.LogInformation("Criando tabela no Rows: {Name}", payload.Name);
-
-        var client = httpClientFactory.CreateClient(RowsHttpClientDefaults.ClientName);
-        var url = $"spreadsheets/{spreadsheetId}/pages/{pageId}/tables";
+        logger.LogInformation("Criando tabela no Rows: {Name}", payload?.Name);
 
         try
         {
+            Validate(spreadsheetId, pageId, payload);
+
+            var client = httpClientFactory.CreateClient(RowsHttpClientDefaults.ClientName);
+            var url = $"spreadsheets/{spreadsheetId}/pages/{pageId}/tables";
+
             using var response = await client
                 .PostAsJsonAsync(url, payload, JsonOptions, ct)
                 .ConfigureAwait(false);
@@ -67,17 +87,42 @@ public sealed class RowsService(IHttpClientFactory httpClientFactory, ILogger<Ro
         }
         catch (HttpRequestException ex)
         {
+            logger.LogError(
+                ex,
+                "Erro ao criar tabela no Rows. SpreadsheetId: {SpreadsheetId}. PageId: {PageId}. Payload: {@Payload}",
+                spreadsheetId,
+                pageId,
+                payload
+            );
             throw new ConnectionException("Rows", "Erro ao criar tabela no Rows.", ex);
         }
         catch (JsonException ex)
         {
+            logger.LogError(
+                ex,
+                "JSON inválido retornado pelo Rows. SpreadsheetId: {SpreadsheetId}. PageId: {PageId}. Payload: {@Payload}",
+                spreadsheetId,
+                pageId,
+                payload
+            );
             throw new ExternalApiException("Rows", "JSON inválido da API Rows.", ex);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Erro ao criar tabela no Rows. SpreadsheetId: {SpreadsheetId}. PageId: {PageId}. Payload: {@Payload}",
+                spreadsheetId,
+                pageId,
+                payload
+            );
+            throw;
         }
     }
 
     #region Validações Enxutas
 
-    private static void Validate(string sid, string targetId, object payload)
+    private static void Validate(string sid, string targetId, object? payload)
     {
         if (string.IsNullOrWhiteSpace(sid))
             throw LogicException.InvalidValue("spreadsheetId", sid);

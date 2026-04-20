@@ -88,7 +88,7 @@ public sealed class HomeAdminControllerTests
     [Theory]
     [InlineData("LogicException")]
     [InlineData("NotFound")]
-    public async Task HomeAdmin_TratamentoDeErros_DeveRetornarStatusCorreto(string erroTipo)
+    public async Task HomeAdmin_TratamentoDeErros_DevePropagarExcecao(string erroTipo)
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -104,18 +104,13 @@ public sealed class HomeAdminControllerTests
                 .ThrowsAsync(new NotFoundException("Carousel", id));
 
         // Act
-        var result = await _controller.UpdateCarousel(id, request, default);
+        Func<Task> act = () => _controller.UpdateCarousel(id, request, default);
 
         // Assert
-        var statusCode =
-            erroTipo == "LogicException"
-                ? StatusCodes.Status400BadRequest
-                : StatusCodes.Status404NotFound;
-        result
-            .Result.Should()
-            .BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should()
-            .Be(statusCode);
+        if (erroTipo == "LogicException")
+            await act.Should().ThrowAsync<LogicException>();
+        else
+            await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using backend.Core;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,23 +17,22 @@ public static class ExceptionHandlingExtensions
             {
                 var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
                 var exception = exceptionFeature?.Error;
+                var (statusCode, title, detail) = ResolveProblemDetails(exception, env);
 
-                // O ASP.NET já loga automaticamente exceções não tratadas.
-                // Mas como você prefere logs, você pode injetar um ILogger aqui se desejar um log customizado.
+                var logger = context
+                    .RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("GlobalExceptionHandler");
+                logger.LogError(exception, "Falha crítica na rota {Method} {Path} ({StatusCode})", context.Request.Method, context.Request.Path, statusCode);
 
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.StatusCode = statusCode;
                 context.Response.ContentType = "application/problem+json";
 
                 await context.Response.WriteAsJsonAsync(
                     new ProblemDetails
                     {
-                        Title = "Erro interno no servidor",
-                        // Em Dev, mostramos a mensagem real da Exception no JSON para facilitar seu debug.
-                        // Em Prod, mostramos uma mensagem genérica por segurança.
-                        Detail = env.IsDevelopment()
-                            ? exception?.Message
-                            : "Ocorreu um erro inesperado.",
-                        Status = StatusCodes.Status500InternalServerError,
+                        Title = title,
+                        Detail = detail,
+                        Status = statusCode,
                         Instance = context.Request.Path,
                     }
                 );
@@ -60,5 +60,32 @@ public static class ExceptionHandlingExtensions
                 }
             }
         );
+    }
+
+    private static (int StatusCode, string Title, string Detail) ResolveProblemDetails(
+        Exception? exception,
+        IWebHostEnvironment env
+    )
+    {
+        return exception switch
+        {
+            LogicException or ArgumentException => (400, "Validation error", exception.Message),
+            NotFoundException => (404, "Not found", exception.Message),
+            UnauthorizedAccessException => (401, "Unauthorized", exception.Message),
+            ConnectionException => (503, "Connection error", exception.Message),
+            ExternalApiException => (502, "External API error", exception.Message),
+            null => (
+                500,
+                "Erro interno no servidor",
+                "Erro interno. Verifique os logs do servidor."
+            ),
+            _ => env.IsDevelopment()
+                ? (500, "Erro interno no servidor", exception.Message)
+                : (
+                    500,
+                    "Erro interno no servidor",
+                    "Erro interno. Verifique os logs do servidor."
+                ),
+        };
     }
 }

@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using backend.Core.Settings;
 using backend.Features.Auth.Domain;
 using backend.Infrastructure.Persistence;
@@ -44,20 +45,54 @@ public static class DatabaseServiceCollectionExtensions
         );
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
             .Options;
-        using var dbContext = new AppDbContext(options);
 
-        await dbContext.Database.MigrateAsync(ct).ConfigureAwait(false);
+        const int maxAttempts = 10;
+        TimeSpan delay = TimeSpan.FromSeconds(2);
 
-        // Seed de Roles se necessário
-        if (!await dbContext.Roles.AnyAsync(ct).ConfigureAwait(false))
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            dbContext.Roles.AddRange(
-                [new() { Name = "User" }, new() { Name = "Admin" }, new() { Name = "Manager" }]
-            );
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            try
+            {
+                await using var dbContext = new AppDbContext(options);
+
+                await dbContext.Database.MigrateAsync(ct).ConfigureAwait(false);
+
+                // Seed de Roles se necessário
+                if (!await dbContext.Roles.AnyAsync(ct).ConfigureAwait(false))
+                {
+                    dbContext.Roles.AddRange(
+                        [
+                            new() { Name = "User" },
+                            new() { Name = "Admin" },
+                            new() { Name = "Manager" },
+                        ]
+                    );
+                    await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+                }
+
+                return;
+            }
+            catch (Exception exception) when (IsTransientDatabaseException(exception))
+            {
+                if (attempt >= maxAttempts)
+                {
+                    throw;
+                }
+
+                await Task.Delay(delay, ct).ConfigureAwait(false);
+                delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 10));
+            }
         }
+    }
+
+    private static bool IsTransientDatabaseException(Exception exception)
+    {
+        return exception is NpgsqlException
+            || exception is SocketException
+            || exception is TimeoutException
+            || exception is InvalidOperationException;
     }
 
     internal static class PostgreSqlConnectionStringFactory

@@ -9,16 +9,17 @@ namespace backend.Extensions.App.Logging;
 
 public static class LoggingBuilderExtensions
 {
-    public static ILoggingBuilder AddBueiroInteligenteFileLogging(
+    public static ILoggingBuilder AddBueiroInteligenteLogging(
         this ILoggingBuilder loggingBuilder,
         IConfiguration configuration,
         IHostEnvironment environment
     )
     {
-        ArgumentNullException.ThrowIfNull(loggingBuilder);
-        ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(environment);
+        // 1. Força a saída no terminal do Docker
+        loggingBuilder.AddConsole();
+        loggingBuilder.AddDebug();
 
+        // 2. Configura o Log em Arquivo
         string logDirectory = ResolveLogDirectory(configuration, environment);
         var logFileManager = new DailyLogFileManager(logDirectory);
 
@@ -33,30 +34,11 @@ public static class LoggingBuilderExtensions
         IHostEnvironment environment
     )
     {
-        string? configuredPath =
-            configuration["Logging:Directory"]
-            ?? Environment.GetEnvironmentVariable("LOG_DIRECTORY");
+        // Em Docker/Linux, caminhos relativos podem falhar, usamos o ContentRootPath como base segura
+        string defaultPath = Path.Combine(environment.ContentRootPath, "Logs");
+        string path = configuration["Logging:Directory"] ?? defaultPath;
 
-        if (!string.IsNullOrWhiteSpace(configuredPath))
-        {
-            string expandedPath = Environment.ExpandEnvironmentVariables(configuredPath);
-
-            return Path.IsPathRooted(expandedPath)
-                ? Path.GetFullPath(expandedPath)
-                : Path.GetFullPath(Path.Combine(environment.ContentRootPath, expandedPath));
-        }
-
-        string contentRootName = new DirectoryInfo(environment.ContentRootPath).Name;
-
-        string defaultDirectory = string.Equals(
-            contentRootName,
-            "backend",
-            StringComparison.OrdinalIgnoreCase
-        )
-            ? Path.Combine(environment.ContentRootPath, "..", "log")
-            : Path.Combine(environment.ContentRootPath, "log");
-
-        return Path.GetFullPath(defaultDirectory);
+        return Path.GetFullPath(path);
     }
 }
 

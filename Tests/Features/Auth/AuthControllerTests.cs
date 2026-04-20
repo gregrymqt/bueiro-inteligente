@@ -68,34 +68,38 @@ public sealed class AuthControllerTests
         okResult.Value.Should().BeEquivalentTo(expectedToken);
     }
 
-    [Theory]
-    [InlineData("Unauthorized", "Incorrect email or password.")]
-    [InlineData("BadRequest", "Dados inválidos.")]
-    public async Task Login_CenariosDeErro_DeveRetornarStatusCorreto(
-        string erroTipo,
-        string mensagem
-    )
+    [Fact]
+    public async Task Login_ComCredenciaisInvalidas_DeveRetornarUnauthorized()
     {
         // Arrange
         var request = new LoginRequest("erro@example.com", "123");
 
-        if (erroTipo == "Unauthorized")
-            _authServiceMock
-                .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((TokenResponse?)null);
-        else
-            _authServiceMock
-                .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new LogicException(mensagem));
+        _authServiceMock
+            .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TokenResponse?)null);
 
         // Act
         var result = await _controller.Login(request, default);
 
         // Assert
-        if (erroTipo == "Unauthorized")
-            result.Result.Should().BeOfType<UnauthorizedObjectResult>();
-        else
-            result.Result.Should().BeOfType<BadRequestObjectResult>();
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task Login_QuandoServiceLancaLogicException_DevePropagarExcecao()
+    {
+        // Arrange
+        var request = new LoginRequest("erro@example.com", "123");
+
+        _authServiceMock
+            .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new LogicException("Dados inválidos."));
+
+        // Act
+        Func<Task> act = () => _controller.Login(request, default);
+
+        // Assert
+        await act.Should().ThrowAsync<LogicException>();
     }
 
     [Fact]
