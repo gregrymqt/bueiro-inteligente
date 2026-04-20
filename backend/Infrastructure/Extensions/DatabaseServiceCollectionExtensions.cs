@@ -1,27 +1,30 @@
 using System.Net.Sockets;
-using backend.Core.Settings;
 using backend.Features.Auth.Domain;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace backend.Infrastructure;
 
 public static class DatabaseServiceCollectionExtensions
 {
-    public static IServiceCollection AddBueiroInteligenteDatabase(this IServiceCollection services)
+    public static IServiceCollection AddBueiroInteligenteDatabase(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
         services.AddDbContext<AppDbContext>(
             (sp, options) =>
             {
-                var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-                var connectionString = PostgreSqlConnectionStringFactory.Create(
-                    settings.DatabaseUrl
-                );
+                var connectionString = GetDefaultConnectionString(configuration);
 
                 options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure());
                 options.EnableDetailedErrors();
@@ -33,17 +36,15 @@ public static class DatabaseServiceCollectionExtensions
 
     public static async Task InitializeBueiroInteligenteDatabaseAsync(
         this IServiceProvider sp,
+        IConfiguration configuration,
         CancellationToken ct = default
     )
     {
         ArgumentNullException.ThrowIfNull(sp);
+        ArgumentNullException.ThrowIfNull(configuration);
 
-        var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-
-        // Porta 5432 explícita para migrações em nuvem
-        var connectionString = PostgreSqlConnectionStringFactory.Create(
-            settings.DbLocal ? settings.DatabaseUrl : settings.MigrationsUrl
-        );
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseBootstrap");
+        var connectionString = GetMigrationConnectionString(configuration);
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
@@ -54,37 +55,43 @@ public static class DatabaseServiceCollectionExtensions
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
+            await using var dbContext = new AppDbContext(options);
+
             try
             {
-                await using var dbContext = new AppDbContext(options);
-
                 await dbContext.Database.MigrateAsync(ct).ConfigureAwait(false);
-
-                // Seed de Roles se necessário
-                if (!await dbContext.Roles.AnyAsync(ct).ConfigureAwait(false))
-                {
-                    dbContext.Roles.AddRange(
-                        [
-                            new() { Name = "User" },
-                            new() { Name = "Admin" },
-                            new() { Name = "Manager" },
-                        ]
-                    );
-                    await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-                }
-
-                return;
             }
-            catch (Exception exception) when (IsTransientDatabaseException(exception))
+            catch (Exception exception)
             {
-                if (attempt >= maxAttempts)
+                logger.LogCritical(
+                    exception,
+                    "Falha crítica ao conectar no banco via porta de Migration"
+                );
+
+                if (!IsTransientDatabaseException(exception) || attempt >= maxAttempts)
                 {
                     throw;
                 }
 
                 await Task.Delay(delay, ct).ConfigureAwait(false);
                 delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 10));
+                continue;
             }
+
+            // Seed de Roles se necessário
+            if (!await dbContext.Roles.AnyAsync(ct).ConfigureAwait(false))
+            {
+                dbContext.Roles.AddRange(
+                    [
+                        new() { Name = "User" },
+                        new() { Name = "Admin" },
+                        new() { Name = "Manager" },
+                    ]
+                );
+                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+
+            return;
         }
     }
 
@@ -92,8 +99,27 @@ public static class DatabaseServiceCollectionExtensions
     {
         return exception is NpgsqlException
             || exception is SocketException
-            || exception is TimeoutException
-            || exception is InvalidOperationException;
+            || exception is TimeoutException;
+    }
+
+    private static string GetDefaultConnectionString(IConfiguration configuration) =>
+        PostgreSqlConnectionStringFactory.Create(
+            configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' não definida."
+                )
+        );
+
+    private static string GetMigrationConnectionString(IConfiguration configuration)
+    {
+        string connectionString =
+            configuration.GetConnectionString("MigrationsConnection")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "Connection strings 'MigrationsConnection' ou 'DefaultConnection' não definidas."
+            );
+
+        return PostgreSqlConnectionStringFactory.Create(connectionString);
     }
 
     internal static class PostgreSqlConnectionStringFactory
@@ -101,12 +127,12 @@ public static class DatabaseServiceCollectionExtensions
         public static string Create(string databaseUrl)
         {
             if (string.IsNullOrWhiteSpace(databaseUrl))
-                throw new InvalidOperationException("DATABASE_URL não definida.");
+                throw new InvalidOperationException("Connection string inválida ou ausente.");
 
-            if (
-                !databaseUrl.Contains("://")
-                || !Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri)
-            )
+            if (!databaseUrl.Contains("://", StringComparison.Ordinal))
+                return databaseUrl;
+
+            if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
                 return databaseUrl;
 
             var builder = new NpgsqlConnectionStringBuilder

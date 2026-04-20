@@ -24,8 +24,8 @@ public static class BueiroInteligenteServiceCollectionExtensions
         services.AddBueiroInteligenteOptions(configuration);
         services.AddBueiroInteligenteApp(configuration);
 
-        services.AddBueiroInteligenteDatabase();
-        services.AddBueiroInteligenteRedis();
+        services.AddBueiroInteligenteDatabase(configuration);
+        services.AddBueiroInteligenteRedis(configuration);
         services.AddBueiroInteligenteCache();
 
         services.AddBueiroInteligenteAuth(configuration);

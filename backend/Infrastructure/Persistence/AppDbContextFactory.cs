@@ -1,4 +1,3 @@
-using backend.Core.Settings;
 using backend.Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +15,12 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
                 .AddBueiroInteligenteDotEnvMappings()
                 .Build();
 
-        var settings = configuration.GetSection(DatabaseSettings.SectionName).Get<DatabaseSettings>()
-            ?? new DatabaseSettings();
-        var connectionString = settings.MigrationsUrl;
+        var connectionString =
+            configuration.GetConnectionString("MigrationsConnection")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "Connection strings 'MigrationsConnection' ou 'DefaultConnection' não definidas."
+            );
         var resolvedString =
             DatabaseServiceCollectionExtensions.PostgreSqlConnectionStringFactory.Create(
                 connectionString

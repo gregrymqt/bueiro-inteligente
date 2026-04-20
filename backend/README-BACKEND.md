@@ -57,7 +57,7 @@ backend/
 
 ## Configuracao de ambiente
 
-O backend carrega o arquivo `.env` e as variaveis de ambiente por meio de `Infrastructure/Extensions/ConfigurationServiceExtensions.cs`, que mapeia os valores para options tipadas em `Core/Settings/`.
+O backend carrega o arquivo `.env` e as variaveis de ambiente por meio de `Infrastructure/Extensions/ConfigurationServiceExtensions.cs`, que mapeia os valores para options tipadas em `Core/Settings/` e para `ConnectionStrings`.
 
 Se voce abrir a pasta `backend/` isoladamente, o `.env` do repositorio fica em `../.env`.
 
@@ -65,7 +65,7 @@ As chaves abaixo continuam aceitas tanto no formato plano quanto no formato com 
 
 ### Variaveis usadas pelo backend
 
-As variaveis abaixo sao mapeadas para `GeneralSettings`, `DatabaseSettings`, `JwtSettings`, `GoogleSettings`, `IotSettings`, `RedisSettings` e `RowsSettings`:
+As variaveis abaixo sao mapeadas para `GeneralSettings`, `JwtSettings`, `GoogleSettings`, `IotSettings`, `RowsSettings` e `ConnectionStrings`:
 
 | Variavel | Descricao |
 | --- | --- |
@@ -76,12 +76,9 @@ As variaveis abaixo sao mapeadas para `GeneralSettings`, `DatabaseSettings`, `Jw
 | `ALGORITHM` | Algoritmo JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo de expiracao do token |
 | `HARDWARE_TOKEN` | Token usado pelo firmware/IoT |
-| `REDIS_URL` | URL do Redis quando `REDIS_LOCAL=false` |
-| `REDIS_LOCAL` | Alterna entre Redis local e remoto |
-| `DB_LOCAL` | Alterna entre banco local e cloud |
-| `DATABASE_URL_CLOUD` | URL do banco em cloud |
-| `DATABASE_URL_LOCAL` | URL do banco local |
-| `MIGRATIONS_URL` | URL usada para migracoes |
+| `ConnectionStrings__DefaultConnection` | String de conexao usada pelo runtime |
+| `ConnectionStrings__MigrationsConnection` | String usada no bootstrap de migracoes |
+| `ConnectionStrings__Redis` | String de conexao do Redis |
 | `ROWS_API_KEY` | Chave de integracao com Rows |
 | `ROWS_BASE_URL` | Base URL da API do Rows |
 | `ROWS_SPREADSHEET_ID` | ID da planilha |
@@ -103,12 +100,9 @@ SECRET_KEY=troque-esta-chave
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 HARDWARE_TOKEN=token-do-esp32
-REDIS_URL=redis://redis:6379/0
-REDIS_LOCAL=true
-DB_LOCAL=true
-DATABASE_URL_CLOUD=
-DATABASE_URL_LOCAL=postgresql+asyncpg://bueiro_user:bueiro_password@db:5432/bueiro_db
-MIGRATIONS_URL=postgresql+psycopg2://bueiro_user:bueiro_password@db:5432/bueiro_db
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=bueiro_inteligente;Username=postgres;Password=password;
+ConnectionStrings__MigrationsConnection=Host=localhost;Port=5432;Database=bueiro_inteligente;Username=postgres;Password=password;
+ConnectionStrings__Redis=localhost:6379,abortConnect=false
 ROWS_API_KEY=
 ROWS_BASE_URL=https://api.rows.com/v1
 ROWS_SPREADSHEET_ID=

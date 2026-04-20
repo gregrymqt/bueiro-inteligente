@@ -1,20 +1,28 @@
-using backend.Core.Settings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace backend.Infrastructure;
 
 public static class RedisServiceCollectionExtensions
 {
-    public static IServiceCollection AddBueiroInteligenteRedis(this IServiceCollection services)
+    public static IServiceCollection AddBueiroInteligenteRedis(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        return services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(
-                BuildOptions(sp.GetRequiredService<IOptions<RedisSettings>>().Value)
-            )
-        );
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        return services.AddSingleton<IConnectionMultiplexer>(_ =>
+        {
+            var connectionString =
+                configuration.GetConnectionString("Redis")
+                ?? throw new InvalidOperationException("Connection string 'Redis' não definida.");
+
+            return ConnectionMultiplexer.Connect(connectionString);
+        });
     }
 
     public static async Task InitializeBueiroInteligenteRedisAsync(
@@ -34,39 +42,4 @@ public static class RedisServiceCollectionExtensions
         }
     }
 
-    private static ConfigurationOptions BuildOptions(RedisSettings settings)
-    {
-        if (settings.RedisLocal)
-            return ConfigurationOptions.Parse("redis:6379,abortConnect=false");
-
-        if (string.IsNullOrWhiteSpace(settings.Url))
-            throw new InvalidOperationException("REDIS_URL_CLOUD não definida.");
-
-        if (Uri.TryCreate(settings.Url, UriKind.Absolute, out var uri))
-        {
-            var options = new ConfigurationOptions
-            {
-                AbortOnConnectFail = false,
-                ConnectRetry = 3,
-                ConnectTimeout = 5000,
-                Ssl = uri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
-            };
-
-            options.EndPoints.Add(uri.Host, uri.IsDefaultPort ? 6379 : uri.Port);
-
-            if (!string.IsNullOrWhiteSpace(uri.UserInfo))
-            {
-                var parts = uri.UserInfo.Split(':', 2);
-                options.User = Uri.UnescapeDataString(parts[0]);
-                if (parts.Length > 1)
-                    options.Password = Uri.UnescapeDataString(parts[1]);
-            }
-
-            if (int.TryParse(uri.AbsolutePath.Trim('/'), out int dbIndex))
-                options.DefaultDatabase = dbIndex;
-            return options;
-        }
-
-        return ConfigurationOptions.Parse(settings.Url);
-    }
 }

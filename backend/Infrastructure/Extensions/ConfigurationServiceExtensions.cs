@@ -59,18 +59,6 @@ public static class ConfigurationServiceExtensions
         MapSection(
             mappedValues,
             rawEnv,
-            DatabaseSettings.SectionName,
-            [
-                "DB_LOCAL",
-                "DATABASE_URL_CLOUD",
-                "DATABASE_URL_LOCAL",
-                "MIGRATIONS_URL_CLOUD",
-                "MIGRATIONS_URL_LOCAL",
-            ]
-        );
-        MapSection(
-            mappedValues,
-            rawEnv,
             JwtSettings.SectionName,
             ["SECRET_KEY", "ALGORITHM", "ACCESS_TOKEN_EXPIRE_MINUTES"]
         );
@@ -84,15 +72,23 @@ public static class ConfigurationServiceExtensions
         MapSection(
             mappedValues,
             rawEnv,
-            RedisSettings.SectionName,
-            ["REDIS_LOCAL", "REDIS_URL_LOCAL", "REDIS_URL_CLOUD"]
-        );
-        MapSection(
-            mappedValues,
-            rawEnv,
             RowsSettings.SectionName,
             ["ROWS_API_KEY", "ROWS_BASE_URL", "ROWS_SPREADSHEET_ID", "ROWS_TABLE_ID"]
         );
+
+        MapConnectionString(
+            mappedValues,
+            rawEnv,
+            "DefaultConnection",
+            "CONNECTIONSTRINGS__DEFAULTCONNECTION"
+        );
+        MapConnectionString(
+            mappedValues,
+            rawEnv,
+            "MigrationsConnection",
+            "CONNECTIONSTRINGS__MIGRATIONSCONNECTION"
+        );
+        MapConnectionString(mappedValues, rawEnv, "Redis", "CONNECTIONSTRINGS__REDIS");
 
         // Fallbacks para compatibilidade com Middlewares que lêem a raiz
         mappedValues["AllowedHosts"] = Resolve(rawEnv, "ALLOWED_HOSTS");
@@ -110,11 +106,9 @@ public static class ConfigurationServiceExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.Configure<GeneralSettings>(config.GetSection(GeneralSettings.SectionName));
-        services.Configure<DatabaseSettings>(config.GetSection(DatabaseSettings.SectionName));
         services.Configure<JwtSettings>(config.GetSection(JwtSettings.SectionName));
         services.Configure<GoogleSettings>(config.GetSection(GoogleSettings.SectionName));
         services.Configure<IotSettings>(config.GetSection(IotSettings.SectionName));
-        services.Configure<RedisSettings>(config.GetSection(RedisSettings.SectionName));
         services.Configure<RowsSettings>(config.GetSection(RowsSettings.SectionName));
 
         return services;
@@ -159,6 +153,20 @@ public static class ConfigurationServiceExtensions
 
         for (int i = 0; i < values.Length; i++)
             target[$"{section}:{property}:{i}"] = Sanitize(values[i]);
+    }
+
+    private static void MapConnectionString(
+        Dictionary<string, string?> target,
+        IReadOnlyDictionary<string, string> source,
+        string name,
+        string envKey
+    )
+    {
+        var rawValue = Resolve(source, envKey);
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return;
+
+        target[$"ConnectionStrings:{name}"] = rawValue;
     }
 
     private static string? Resolve(IReadOnlyDictionary<string, string> source, string key) =>
