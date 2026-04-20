@@ -109,12 +109,29 @@ public sealed class AuthController(
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<UserResponse>> Register(
-        [FromBody] UserCreateRequest request,
-        CancellationToken ct
-    )
+    [FromBody] UserCreateRequest request,
+    CancellationToken ct
+)
     {
-        var result = await _authService.RegisterAsync(request, ct).ConfigureAwait(false);
-        return Created("/auth/users/me", result);
+        try
+        {
+            var result = await _authService.RegisterAsync(request, ct).ConfigureAwait(false);
+            return Created("/auth/users/me", result);
+        }
+        catch (Exception ex)
+        {
+            // TÁTICA DE GUERRILHA: Ignora o Serilog e escreve direto na veia do console do Docker
+            Console.WriteLine("\n================= FANTASMA REVELADO =================");
+            Console.WriteLine($"MENSAGEM: {ex.Message}");
+            Console.WriteLine($"STACK TRACE: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"CAUSA RAIZ: {ex.InnerException.Message}");
+            }
+            Console.WriteLine("=====================================================\n");
+
+            throw; // Repassa o erro para o seu handler cuspir o JSON 500 no front
+        }
     }
 
     [HttpPost("logout")]

@@ -2,35 +2,55 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
+EXPOSE 8081
 
-# Estágio de Build
+# Estágio de Build e Ferramentas
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# 1. Copia o .csproj para restaurar dependências (otimiza o cache do Docker)
-# O caminho deve ser relativo à raiz do repositório
-COPY ["backend/backend.csproj", "backend/"]
-RUN dotnet restore "backend/backend.csproj"
+# Instala o dotnet-ef globalmente para rodar as migrations
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 
-# 2. Copia todo o conteúdo da pasta backend para o container
-COPY ["backend/", "backend/"]
+# Copia o contexto inteiro e normaliza o caminho do projeto para /tmp/backend-work
+COPY . .
+RUN set -eux; \
+	if [ -f /src/backend/backend.csproj ]; then \
+		PROJECT_DIR=/src/backend; \
+	elif [ -f /src/backend.csproj ]; then \
+		PROJECT_DIR=/src; \
+	else \
+		echo "backend.csproj not found in build context"; \
+		exit 1; \
+	fi; \
+	rm -rf /tmp/backend-work; \
+	mkdir -p /tmp/backend-work; \
+	cp -R "$PROJECT_DIR"/. /tmp/backend-work/; \
+	if [ ! -f /tmp/backend-work/entrypoint.sh ]; then \
+		echo "entrypoint.sh not found in build context"; \
+		exit 1; \
+	fi
 
-# 3. Define o diretório de trabalho onde o arquivo de projeto realmente está
-WORKDIR "/src/backend"
+WORKDIR /tmp/backend-work
+RUN dotnet restore "backend.csproj"
 RUN dotnet build "backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Estágio de Publicação
+# Publicação da aplicação
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+WORKDIR /tmp/backend-work
 RUN dotnet publish "backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Estágio Final
+# Estágio Final (Copia apenas o necessário para rodar)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Variável para o .NET 8 e Render
-ENV ASPNETCORE_HTTP_PORTS=8080
+# Copia o script de entrada e dá permissão de execução
+COPY --from=build /tmp/backend-work/entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["dotnet", "backend.dll"]
+# O entrypoint gerencia migrations e o início da app
+ENTRYPOINT ["/entrypoint.sh"]
