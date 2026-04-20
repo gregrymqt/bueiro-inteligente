@@ -47,10 +47,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Copia o script de entrada e dá permissão de execução
-COPY --from=build /tmp/backend-work/entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Variável para o .NET 8 e Render
+ENV ASPNETCORE_HTTP_PORTS=8080
 
-# O entrypoint gerencia migrations e o início da app
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["dotnet", "backend.dll"]
