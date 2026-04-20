@@ -10,57 +10,53 @@ public static class ExceptionHandlingExtensions
         IWebHostEnvironment env
     )
     {
-        if (env.IsDevelopment())
+        app.UseExceptionHandler(handler =>
         {
-            // Em dev, mostra a página detalhada padrão para facilitar o seu debug
-            app.UseDeveloperExceptionPage();
-        }
-        else
-        {
-            // Em produção/Render, captura exceções e retorna JSON
-            app.UseExceptionHandler(handler =>
+            handler.Run(async context =>
             {
-                handler.Run(async context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    context.Response.ContentType = "application/problem+json";
+                var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+                var exception = exceptionFeature?.Error;
 
-                    var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
-                    var exception = exceptionFeature?.Error;
+                // O ASP.NET já loga automaticamente exceções não tratadas.
+                // Mas como você prefere logs, você pode injetar um ILogger aqui se desejar um log customizado.
 
-                    await context.Response.WriteAsJsonAsync(
-                        new ProblemDetails
-                        {
-                            Title = "Erro interno no servidor",
-                            Detail = exception?.Message ?? "Ocorreu um erro inesperado.",
-                            Status = StatusCodes.Status500InternalServerError,
-                            Instance = context.Request.Path,
-                        }
-                    );
-                });
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/problem+json";
+
+                await context.Response.WriteAsJsonAsync(
+                    new ProblemDetails
+                    {
+                        Title = "Erro interno no servidor",
+                        // Em Dev, mostramos a mensagem real da Exception no JSON para facilitar seu debug.
+                        // Em Prod, mostramos uma mensagem genérica por segurança.
+                        Detail = env.IsDevelopment()
+                            ? exception?.Message
+                            : "Ocorreu um erro inesperado.",
+                        Status = StatusCodes.Status500InternalServerError,
+                        Instance = context.Request.Path,
+                    }
+                );
             });
+        });
 
+        if (!env.IsDevelopment())
+        {
             app.UseHsts();
         }
 
-        // Adicione este bloco no final do seu método UseBueiroInteligenteExceptionHandling
+        // Mantemos seu middleware de status codes (404, 403) para rotas /api
         app.Use(
             async (context, next) =>
             {
                 await next();
 
-                // Se chegou aqui com 404, significa que nem o Controller nem o SignalR acharam a rota
-                if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
+                if (
+                    context.Response.StatusCode >= 400
+                    && context.Request.Path.StartsWithSegments("/api")
+                    && !context.Response.HasStarted
+                )
                 {
                     context.Response.ContentType = "application/problem+json";
-                    await context.Response.WriteAsJsonAsync(
-                        new ProblemDetails
-                        {
-                            Title = "Não Encontrado",
-                            Detail = $"A rota '{context.Request.Path}' não existe nesta API.",
-                            Status = 404,
-                        }
-                    );
                 }
             }
         );

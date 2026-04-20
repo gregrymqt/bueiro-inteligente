@@ -10,9 +10,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       PORT: "8080"
-      PROJECT__NAME: "${PROJECT_NAME}"
+      PROJECT__NAME: "${PROJECT__NAME}"
       VERSION: "${VERSION}"
-      API__STR: "${API_STR}"
+      API__STR: "${API__STR}"
       SECRET__KEY: "${SECRET__KEY}"
       ALGORITHM: "${ALGORITHM}"
       ACCESS__TOKEN__EXPIRE__MINUTES: "${ACCESS__TOKEN__EXPIRE__MINUTES}"
