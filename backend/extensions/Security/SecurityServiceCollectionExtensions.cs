@@ -91,9 +91,7 @@ public static class SecurityServiceCollectionExtensions
 
     private static bool IsTransientRedisBootstrapError(Exception exception)
     {
-        return exception is RedisConnectionException
-            or SocketException
-            or TimeoutException
+        return exception is RedisConnectionException or SocketException or TimeoutException
             || exception.InnerException is RedisConnectionException
             || exception.InnerException is SocketException
             || exception.InnerException is TimeoutException;

@@ -1,42 +1,53 @@
+using System.Runtime.ExceptionServices;
 using backend.Extensions;
 using backend.Extensions.App;
-using backend.Extensions.App.Logging;
 using backend.Infrastructure.Extensions;
 using Serilog;
-using System.Runtime.ExceptionServices;
+
+var logFilePath = Path.GetFullPath(
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "log", "log-.txt")
+);
 
 // Configura o Serilog estático para pegar erros antes do Host estar pronto
 Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
     .WriteTo.Console()
-    .CreateBootstrapLogger();
-
+    .WriteTo.File(
+        logFilePath,
+        shared: true,
+        rollingInterval: RollingInterval.Day,
+        flushToDiskInterval: TimeSpan.FromSeconds(1),
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+    )
+    .CreateLogger();
 try
 {
     Log.Information("Iniciando o ecossistema Bueiro Inteligente...");
-    
+
     var builder = WebApplication.CreateBuilder(args);
 
     AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
-{
-    // Ignoramos exceções normais de cancelamento de requisição para não sujar o log
-    if (eventArgs.Exception is OperationCanceledException) return;
+    {
+        // Ignoramos exceções normais de cancelamento de requisição para não sujar o log
+        if (eventArgs.Exception is OperationCanceledException)
+            return;
 
-    // Se o erro envolver Injeção de Dependência, Falha de Instância ou Validação Crítica, ele grita aqui!
-    Console.WriteLine($"\n🚨 [ALERTA DE PRIMEIRA CHANCE - ERRO ANTES DO CONTROLLER] 🚨");
-    Console.WriteLine($"TIPO: {eventArgs.Exception.GetType().Name}");
-    Console.WriteLine($"MENSAGEM: {eventArgs.Exception.Message}");
-    Console.WriteLine($"LOCAL: {eventArgs.Exception.TargetSite?.Name}");
-    Console.WriteLine($"============================================================\n");
-};
+        // Se o erro envolver Injeção de Dependência, Falha de Instância ou Validação Crítica, ele grita aqui!
+        Console.WriteLine($"\n🚨 [ALERTA DE PRIMEIRA CHANCE - ERRO ANTES DO CONTROLLER] 🚨");
+        Console.WriteLine($"TIPO: {eventArgs.Exception.GetType().Name}");
+        Console.WriteLine($"MENSAGEM: {eventArgs.Exception.Message}");
+        Console.WriteLine($"LOCAL: {eventArgs.Exception.TargetSite?.Name}");
+        Console.WriteLine($"============================================================\n");
+    };
+
+    builder.Host.UseSerilog();
 
     // 1. Configurações e Logs
     builder.Configuration.AddEnvironmentVariables().AddBueiroInteligenteDotEnvMappings();
-    builder.Host.AddBueiroInteligenteLogging(builder.Configuration, builder.Environment);
 
-    builder.Services.AddBueiroInteligenteServices(
-        builder.Configuration,
-        builder.Environment
-    ); // Agrupador de serviços
+    builder.Services.AddBueiroInteligenteServices(builder.Configuration, builder.Environment); // Agrupador de serviços
 
     var app = builder.Build();
 

@@ -147,8 +147,8 @@ dotnet run --launch-profile http
 
 Rotas locais padrao do `launchSettings.json`:
 
-- HTTP: `http://localhost:5273`
-- HTTPS: `https://localhost:7061`
+- HTTP: `http://localhost:8080`
+- HTTPS: `https://localhost:8081`
 
 ## Migracoes do banco
 

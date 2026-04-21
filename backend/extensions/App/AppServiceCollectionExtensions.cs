@@ -1,5 +1,5 @@
-using backend.Core.Settings;
 using System.Text.Json;
+using backend.Core.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +21,8 @@ public static class AppServiceCollectionExtensions
             .AddControllers()
             .AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+                options.JsonSerializerOptions.PropertyNamingPolicy =
+                    JsonNamingPolicy.SnakeCaseLower;
                 options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
             });
 

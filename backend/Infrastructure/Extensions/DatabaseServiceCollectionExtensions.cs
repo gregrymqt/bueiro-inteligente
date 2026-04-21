@@ -17,16 +17,23 @@ public static class DatabaseServiceCollectionExtensions
     public static IServiceCollection AddBueiroInteligenteDatabase(
         this IServiceCollection services,
         IConfiguration configuration,
-        IHostEnvironment environment) // Injetado para checar se é ambiente de Dev
+        IHostEnvironment environment
+    ) // Injetado para checar se é ambiente de Dev
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' não encontrada.");
-        var resolvedConnectionString = ResolveDevelopmentConnectionString(connectionString, environment);
+        var connectionString =
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "Connection string 'DefaultConnection' não encontrada."
+            );
+        var resolvedConnectionString = ResolveDevelopmentConnectionString(
+            connectionString,
+            environment
+        );
 
         if (environment.IsDevelopment())
         {
@@ -42,14 +49,18 @@ public static class DatabaseServiceCollectionExtensions
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseNpgsql(resolvedConnectionString, npgsql =>
-            {
-                // Parâmetros explícitos são melhores para cloud (Render/Supabase)
-                npgsql.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(15),
-                    errorCodesToAdd: null);
-            });
+            options.UseNpgsql(
+                resolvedConnectionString,
+                npgsql =>
+                {
+                    // Parâmetros explícitos são melhores para cloud (Render/Supabase)
+                    npgsql.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(15),
+                        errorCodesToAdd: null
+                    );
+                }
+            );
 
             // Ativa logs detalhados APENAS em desenvolvimento
             if (environment.IsDevelopment())
@@ -67,18 +78,22 @@ public static class DatabaseServiceCollectionExtensions
 
     public static async Task InitializeBueiroInteligenteDatabaseAsync(
         this IServiceProvider sp,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         ArgumentNullException.ThrowIfNull(sp);
 
         using var scope = sp.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseBootstrap");
+        var logger = scope
+            .ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("DatabaseBootstrap");
 
         // 1. Busca a ConnectionString exclusiva para Migrations. Se não achar, faz fallback para a Default.
-        var migrationsConnectionString = configuration.GetConnectionString("MigrationsConnection")
-                                      ?? configuration.GetConnectionString("DefaultConnection")
-                                      ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada.");
+        var migrationsConnectionString =
+            configuration.GetConnectionString("MigrationsConnection")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada.");
 
         // 2. Criamos um construtor de opções manual apontando para a porta 5432 (MigrationsConnection)
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
@@ -94,14 +109,22 @@ public static class DatabaseServiceCollectionExtensions
         {
             try
             {
-                logger.LogInformation("Tentativa {Attempt}/{MaxAttempts}: Verificando conexão (Modo Migration)...", attempt, maxAttempts);
+                logger.LogInformation(
+                    "Tentativa {Attempt}/{MaxAttempts}: Verificando conexão (Modo Migration)...",
+                    attempt,
+                    maxAttempts
+                );
 
                 if (!await migrationContext.Database.CanConnectAsync(ct).ConfigureAwait(false))
                 {
-                    throw new NpgsqlException("CanConnectAsync retornou falso. Banco de dados indisponível.");
+                    throw new NpgsqlException(
+                        "CanConnectAsync retornou falso. Banco de dados indisponível."
+                    );
                 }
 
-                logger.LogInformation("Conexão para Migração estabelecida na porta correta. Aplicando migrações pendentes...");
+                logger.LogInformation(
+                    "Conexão para Migração estabelecida na porta correta. Aplicando migrações pendentes..."
+                );
                 await migrationContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
                 await SeedRolesAsync(migrationContext, ct);
@@ -109,15 +132,23 @@ public static class DatabaseServiceCollectionExtensions
                 logger.LogInformation("Banco de dados inicializado e migrado com sucesso.");
                 return; // Sai do loop em caso de sucesso
             }
-            catch (Exception exception) when (IsTransientDatabaseException(exception) && attempt < maxAttempts)
+            catch (Exception exception)
+                when (IsTransientDatabaseException(exception) && attempt < maxAttempts)
             {
-                logger.LogWarning(exception, "Falha transiente ao conectar ao banco. Tentando novamente em {Delay}s...", delay.TotalSeconds);
+                logger.LogWarning(
+                    exception,
+                    "Falha transiente ao conectar ao banco. Tentando novamente em {Delay}s...",
+                    delay.TotalSeconds
+                );
                 await Task.Delay(delay, ct).ConfigureAwait(false);
                 delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 10)); // Backoff exponencial
             }
             catch (Exception exception)
             {
-                logger.LogCritical(exception, "Falha crítica e irrecuperável ao inicializar o banco de dados.");
+                logger.LogCritical(
+                    exception,
+                    "Falha crítica e irrecuperável ao inicializar o banco de dados."
+                );
                 throw;
             }
         }
@@ -227,7 +258,10 @@ public static class DatabaseServiceCollectionExtensions
             return builder.ConnectionString;
         }
 
-        private static void ApplyQueryParameters(NpgsqlConnectionStringBuilder builder, string query)
+        private static void ApplyQueryParameters(
+            NpgsqlConnectionStringBuilder builder,
+            string query
+        )
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -235,17 +269,18 @@ public static class DatabaseServiceCollectionExtensions
             }
 
             foreach (
-                var pair in query.TrimStart('?').Split(
-                    '&',
-                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-                )
+                var pair in query
+                    .TrimStart('?')
+                    .Split(
+                        '&',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
             )
             {
                 var keyValue = pair.Split('=', 2);
                 var key = Uri.UnescapeDataString(keyValue[0]).Trim();
-                var value = keyValue.Length > 1
-                    ? Uri.UnescapeDataString(keyValue[1]).Trim()
-                    : string.Empty;
+                var value =
+                    keyValue.Length > 1 ? Uri.UnescapeDataString(keyValue[1]).Trim() : string.Empty;
 
                 switch (key.ToLowerInvariant())
                 {

@@ -1,7 +1,8 @@
 using backend.Core;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace backend.Extensions.App.Middleware;
 
@@ -19,33 +20,7 @@ public static class ExceptionHandlingExtensions
                 var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
                 var exception = exceptionFeature?.Error;
 
-                var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger("GlobalExceptionHandler");
-
-                var (statusCode, title, detail) = ResolveProblemDetails(exception, env);
-
-                try
-                {
-                    logger.LogError(
-                        exception,
-                        "ERRO CRÍTICO: Rota {Method} {Path} falhou com status {StatusCode}. Mensagem: {Message}",
-                        context.Request.Method,
-                        context.Request.Path,
-                        statusCode,
-                        exception?.Message
-                    );
-                }
-                catch
-                {
-                    Log.ForContext("SourceContext", "GlobalExceptionHandler").Error(
-                        exception,
-                        "ERRO CRÍTICO: Rota {Method} {Path} falhou com status {StatusCode}. Mensagem: {Message}",
-                        context.Request.Method,
-                        context.Request.Path,
-                        statusCode,
-                        exception?.Message
-                    );
-                }
+                var (statusCode, title, detail) = ResolveProblemDetails(context, exception, env);
 
                 context.Response.StatusCode = statusCode;
                 context.Response.ContentType = "application/problem+json";
@@ -67,7 +42,6 @@ public static class ExceptionHandlingExtensions
             app.UseHsts();
         }
 
-        // Mantemos seu middleware de status codes (404, 403) para rotas /api
         app.Use(
             async (context, next) =>
             {
@@ -86,21 +60,26 @@ public static class ExceptionHandlingExtensions
     }
 
     private static (int StatusCode, string Title, string Detail) ResolveProblemDetails(
-    Exception? exception,
-    IWebHostEnvironment env
-)
+        HttpContext context,
+        Exception? exception,
+        IWebHostEnvironment env
+    )
     {
-        // TÁTICA KAMIKAZE: Ignora se é Development, ignora segurança.
-        // Vamos forçar o erro real (com Stack Trace completa) a ir direto para o Frontend!
+        var logger = context
+            .RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("GlobalExceptionHandler");
 
-        var errorDetail = exception != null
-            ? exception.ToString() // Pega a mensagem e a linha exata onde explodiu
-            : "MISTÉRIO FATAL: A exceção chegou NULA no handler!";
+        var frontendDetail = env.IsDevelopment()
+            ? exception?.Message ?? "MISTÉRIO FATAL: A exceção chegou NULA no handler!"
+            : "Ocorreu um erro interno ao processar a requisição.";
 
-        return (
-            500,
-            "FANTASMA CAPTURADO",
-            errorDetail
+        logger.LogError(
+            exception,
+            "Unhandled exception while processing {Method} {Path}.",
+            context.Request.Method,
+            context.Request.Path
         );
+
+        return (500, "oi", frontendDetail);
     }
 }

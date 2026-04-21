@@ -17,9 +17,7 @@ public static class AppPipelineExtensions
 
         // 1. Inicialização de Serviços (Onde costuma dar erro 500)
         await scopedServices.GetRequiredService<AuthExtension>().OpenAsync().ConfigureAwait(false);
-        await scopedServices
-            .InitializeBueiroInteligenteDatabaseAsync()
-            .ConfigureAwait(false);
+        await scopedServices.InitializeBueiroInteligenteDatabaseAsync().ConfigureAwait(false);
         await scopedServices.InitializeBueiroInteligenteRedisAsync().ConfigureAwait(false);
         await scopedServices.InitializeBueiroInteligenteSecurityAsync().ConfigureAwait(false);
 
