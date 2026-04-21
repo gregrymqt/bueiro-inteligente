@@ -100,8 +100,8 @@ SECRET_KEY=troque-esta-chave
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 HARDWARE_TOKEN=token-do-esp32
-ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=bueiro_inteligente;Username=postgres;Password=password;
-ConnectionStrings__MigrationsConnection=Host=localhost;Port=5432;Database=bueiro_inteligente;Username=postgres;Password=password;
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=bueiro_db;Username=bueiro_user;Password=bueiro_password;
+ConnectionStrings__MigrationsConnection=Host=localhost;Port=5432;Database=bueiro_db;Username=bueiro_user;Password=bueiro_password;
 ConnectionStrings__Redis=localhost:6379,abortConnect=false
 ROWS_API_KEY=
 ROWS_BASE_URL=https://api.rows.com/v1

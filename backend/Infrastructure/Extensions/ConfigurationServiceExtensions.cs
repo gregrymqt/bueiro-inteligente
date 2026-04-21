@@ -169,8 +169,32 @@ public static class ConfigurationServiceExtensions
         target[$"ConnectionStrings:{name}"] = rawValue;
     }
 
-    private static string? Resolve(IReadOnlyDictionary<string, string> source, string key) =>
-        source.TryGetValue(key.Replace("_", ""), out var value) ? Sanitize(value) : null;
+    private static string? Resolve(IReadOnlyDictionary<string, string> source, string key)
+    {
+        var normalizedKey = NormalizeKey(key);
+
+        if (source.TryGetValue(normalizedKey, out var exactValue))
+        {
+            return Sanitize(exactValue);
+        }
+
+        var comparisonKey = RemoveUnderscores(normalizedKey);
+        foreach (var entry in source)
+        {
+            if (
+                string.Equals(
+                    RemoveUnderscores(entry.Key),
+                    comparisonKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                return Sanitize(entry.Value);
+            }
+        }
+
+        return null;
+    }
 
     private static string? Sanitize(string? value) => value?.Trim().Trim('"', '\'');
 
@@ -197,17 +221,24 @@ public static class ConfigurationServiceExtensions
                 var parts = line.Split('=', 2);
                 if (parts.Length != 2 || line.TrimStart().StartsWith('#'))
                     continue;
-                var key = parts[0].Replace("export ", "").Trim();
-                dict[key.Replace("_", "")] = parts[1].Trim();
+                var key = NormalizeKey(parts[0].Replace("export ", ""));
+                dict[key] = parts[1].Trim();
             }
         }
 
         // 2. Sobrescreve com Variáveis de Sistema (Docker/Render tem prioridade)
         foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
-            dict[env.Key.ToString()!.Replace("_", "")] = env.Value?.ToString() ?? "";
+        {
+            var key = NormalizeKey(env.Key.ToString()!);
+            dict[key] = env.Value?.ToString() ?? "";
+        }
 
         return dict;
     }
+
+    private static string NormalizeKey(string key) => key.Trim();
+
+    private static string RemoveUnderscores(string key) => key.Replace("_", "");
 
     private static string? FindDotEnv(string path)
     {

@@ -1,9 +1,11 @@
+using System.Net.Sockets;
 using backend.Extensions.Security.Abstractions;
 using backend.Extensions.Security.Infrastructure;
 using backend.Infrastructure.Cache;
 using backend.Infrastructure.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 
 namespace backend.Extensions.Security;
 
@@ -37,11 +39,63 @@ public static class SecurityServiceCollectionExtensions
         return services;
     }
 
-    public static void InitializeBueiroInteligenteSecurity(this IServiceProvider serviceProvider)
+    public static async Task InitializeBueiroInteligenteSecurityAsync(
+        this IServiceProvider serviceProvider,
+        CancellationToken ct = default
+    )
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        _ = serviceProvider.GetRequiredService<RateLimiter>();
-        _ = serviceProvider.GetRequiredService<WebSocketRateLimiter>();
+        var logger = serviceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("SecurityBootstrap");
+
+        const int maxAttempts = 5;
+        var delay = TimeSpan.FromSeconds(2);
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                _ = serviceProvider.GetRequiredService<RateLimiter>();
+                _ = serviceProvider.GetRequiredService<WebSocketRateLimiter>();
+
+                logger.LogInformation("Rate limiter inicializado com sucesso.");
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts && IsTransientRedisBootstrapError(ex))
+            {
+                logger.LogWarning(
+                    ex,
+                    "Rate limiter ainda não está pronto na tentativa {Attempt}/{MaxAttempts}. Retentando em {Delay}s...",
+                    attempt,
+                    maxAttempts,
+                    delay.TotalSeconds
+                );
+
+                await Task.Delay(delay, ct).ConfigureAwait(false);
+                delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 10));
+            }
+            catch (Exception ex)
+            {
+                logger.LogCritical(
+                    ex,
+                    "Falha ao inicializar o rate limiter após {MaxAttempts} tentativas. A aplicação continuará sem warm-up de segurança.",
+                    maxAttempts
+                );
+
+                return;
+            }
+        }
+    }
+
+    private static bool IsTransientRedisBootstrapError(Exception exception)
+    {
+        return exception is RedisConnectionException
+            or SocketException
+            or TimeoutException
+            || exception.InnerException is RedisConnectionException
+            || exception.InnerException is SocketException
+            || exception.InnerException is TimeoutException;
     }
 }

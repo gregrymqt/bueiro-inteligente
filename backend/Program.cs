@@ -13,7 +13,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Iniciando o ecossistema Bueiro Inteligente...");
-
+    
     var builder = WebApplication.CreateBuilder(args);
 
     AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>

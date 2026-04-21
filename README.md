@@ -67,6 +67,6 @@ No hardware, use a pasta [hardware/esp_bueiro/](hardware/esp_bueiro/) na Arduino
 ## Notas
 
 - O backend segue a arquitetura `Controller -> Service -> Repository`.
-- O banco local usa `DB_LOCAL=true` e `DATABASE_URL_LOCAL`.
+- O banco local usa `ConnectionStrings__DefaultConnection` e `ConnectionStrings__MigrationsConnection`; eles precisam apontar para o PostgreSQL ativo no ambiente, seja via Docker Compose ou via banco local.
 - O serviço de tempo real usa `SignalR` em `/realtime/ws`.
 - Mantenha os arquivos `.env` fora do controle de versão.

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Serilog;
 
 namespace backend.Infrastructure.Extensions; // Ajuste o namespace conforme seu padrão
 
@@ -25,10 +26,23 @@ public static class DatabaseServiceCollectionExtensions
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' não encontrada.");
+        var resolvedConnectionString = ResolveDevelopmentConnectionString(connectionString, environment);
+
+        if (environment.IsDevelopment())
+        {
+            var diagnostic = new NpgsqlConnectionStringBuilder(resolvedConnectionString);
+            Log.Information(
+                "Database diagnostics: Host={Host}, Database={Database}, User={User}, RunningInContainer={RunningInContainer}",
+                diagnostic.Host,
+                diagnostic.Database,
+                diagnostic.Username,
+                IsRunningInsideContainer()
+            );
+        }
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseNpgsql(connectionString, npgsql =>
+            options.UseNpgsql(resolvedConnectionString, npgsql =>
             {
                 // Parâmetros explícitos são melhores para cloud (Render/Supabase)
                 npgsql.EnableRetryOnFailure(
@@ -114,11 +128,45 @@ public static class DatabaseServiceCollectionExtensions
 
     private static bool IsTransientDatabaseException(Exception exception)
     {
+        if (exception is PostgresException postgresException)
+        {
+            return postgresException.SqlState is not "28P01" and not "28000";
+        }
+
         return exception is NpgsqlException
             || exception is SocketException
             || exception is TimeoutException
             || exception.InnerException is SocketException
             || exception.InnerException is TimeoutException;
+    }
+
+    private static string ResolveDevelopmentConnectionString(
+        string connectionString,
+        IHostEnvironment environment
+    )
+    {
+        if (!environment.IsDevelopment() || IsRunningInsideContainer())
+        {
+            return connectionString;
+        }
+
+        var builder = new NpgsqlConnectionStringBuilder(
+            PostgreSqlConnectionStringFactory.Create(connectionString)
+        );
+
+        if (string.Equals(builder.Host, "db", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Host = "localhost";
+        }
+
+        return builder.ConnectionString;
+    }
+
+    private static bool IsRunningInsideContainer()
+    {
+        var value = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER");
+        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "1", StringComparison.OrdinalIgnoreCase);
     }
 
     public static class PostgreSqlConnectionStringFactory
