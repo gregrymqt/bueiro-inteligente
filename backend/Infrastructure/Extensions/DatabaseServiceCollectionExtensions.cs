@@ -71,32 +71,42 @@ public static class DatabaseServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(sp);
 
-        // Cria um escopo para resolver o DbContext de forma segura
         using var scope = sp.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseBootstrap");
 
-        const int maxAttempts = 5; // Reduzido, pois o Render/Supabase já tem boa disponibilidade
+        // 1. Busca a ConnectionString exclusiva para Migrations. Se não achar, faz fallback para a Default.
+        var migrationsConnectionString = configuration.GetConnectionString("MigrationsConnection")
+                                      ?? configuration.GetConnectionString("DefaultConnection")
+                                      ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada.");
+
+        // 2. Criamos um construtor de opções manual apontando para a porta 5432 (MigrationsConnection)
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+        optionsBuilder.UseNpgsql(migrationsConnectionString);
+
+        // 3. Instanciamos um DbContext isolado apenas para a rotina de boot
+        using var migrationContext = new AppDbContext(optionsBuilder.Options);
+
+        const int maxAttempts = 5;
         TimeSpan delay = TimeSpan.FromSeconds(3);
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             try
             {
-                logger.LogInformation("Tentativa {Attempt}/{MaxAttempts}: Verificando conexão com o banco de dados...", attempt, maxAttempts);
+                logger.LogInformation("Tentativa {Attempt}/{MaxAttempts}: Verificando conexão (Modo Migration)...", attempt, maxAttempts);
 
-                // Substitui o método manual inteiro de 'Probe' pelo recurso nativo do EF Core
-                if (!await dbContext.Database.CanConnectAsync(ct).ConfigureAwait(false))
+                if (!await migrationContext.Database.CanConnectAsync(ct).ConfigureAwait(false))
                 {
                     throw new NpgsqlException("CanConnectAsync retornou falso. Banco de dados indisponível.");
                 }
 
-                logger.LogInformation("Conexão estabelecida. Aplicando migrações pendentes...");
-                await dbContext.Database.MigrateAsync(ct).ConfigureAwait(false);
+                logger.LogInformation("Conexão para Migração estabelecida na porta correta. Aplicando migrações pendentes...");
+                await migrationContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
-                await SeedRolesAsync(dbContext, ct);
+                await SeedRolesAsync(migrationContext, ct);
 
-                logger.LogInformation("Banco de dados inicializado com sucesso.");
+                logger.LogInformation("Banco de dados inicializado e migrado com sucesso.");
                 return; // Sai do loop em caso de sucesso
             }
             catch (Exception exception) when (IsTransientDatabaseException(exception) && attempt < maxAttempts)
