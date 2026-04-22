@@ -11,8 +11,10 @@ import { type ITokenService, tokenService } from './TokenService';
 export interface IApiClient {
   get<TResponse>(url: string): Promise<TResponse>;
   post<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
+  postFile<TResponse>(url: string, body: FormData): Promise<TResponse>;
   put<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
   patch<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse>;
+  patchFile<TResponse>(url: string, body: FormData): Promise<TResponse>;
   delete<TResponse>(url: string): Promise<TResponse>;
 }
 
@@ -35,12 +37,15 @@ export class ApiClient implements IApiClient {
   }
 
   // Método privado para montar os cabeçalhos padrão e injetar o JWT
-  private getHeaders(): HeadersInit {
+  private getHeaders(isFormData: boolean = false): HeadersInit {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
       'X-App-Id': resolveAppId(),
     };
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     const token = this.tokenService.getToken();
     if (token) {
@@ -95,16 +100,21 @@ export class ApiClient implements IApiClient {
     method: HttpMethod,
     url: string,
     body?: TBody,
+    isFormData: boolean = false,
   ): Promise<TResponse> {
     this.enforceRateLimit();
 
     const requestInit: RequestInit = {
       method,
-      headers: this.getHeaders(),
+      headers: this.getHeaders(isFormData),
     };
 
     if (body !== undefined) {
-      requestInit.body = JSON.stringify(body);
+      if (isFormData) {
+        requestInit.body = body as unknown as FormData;
+      } else {
+        requestInit.body = JSON.stringify(body);
+      }
     }
 
     const response = await fetch(`${this.baseUrl}${url}`, requestInit);
@@ -123,12 +133,20 @@ export class ApiClient implements IApiClient {
     return this.executeRequest<TResponse, TBody>('POST', url, body);
   }
 
+  public async postFile<TResponse>(url: string, body: FormData): Promise<TResponse> {
+    return this.executeRequest<TResponse, FormData>('POST', url, body, true);
+  }
+
   public async put<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
     return this.executeRequest<TResponse, TBody>('PUT', url, body);
   }
 
   public async patch<TResponse, TBody = unknown>(url: string, body?: TBody): Promise<TResponse> {
     return this.executeRequest<TResponse, TBody>('PATCH', url, body);
+  }
+
+  public async patchFile<TResponse>(url: string, body: FormData): Promise<TResponse> {
+    return this.executeRequest<TResponse, FormData>('PATCH', url, body, true);
   }
 
   public async delete<TResponse>(url: string): Promise<TResponse> {
