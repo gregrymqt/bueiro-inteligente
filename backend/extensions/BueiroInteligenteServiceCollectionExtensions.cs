@@ -6,6 +6,7 @@ using backend.Features.Rows.Infrastructure.Extensions;
 using backend.Infrastructure;
 using backend.Infrastructure.Cache;
 using backend.Infrastructure.Extensions;
+using backend.Extensions.Uploads;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,6 +41,7 @@ public static class BueiroInteligenteServiceCollectionExtensions
         services.AddBueiroInteligenteRealtime();
         services.AddBueiroInteligenteRows();
         services.AddBueiroInteligenteScheduler();
+        services.AddBueiroInteligenteUploads();
 
         return services;
     }
