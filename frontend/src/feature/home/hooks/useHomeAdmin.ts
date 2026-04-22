@@ -4,8 +4,6 @@ import { AlertService } from '@/core/alert/AlertService';
 import type { 
   CarouselContent, 
   StatCardContent, 
-  CarouselCreatePayload, 
-  CarouselUpdatePayload,
   StatCardCreatePayload,
   StatCardUpdatePayload
 } from '../types';
@@ -39,7 +37,7 @@ export function useHomeAdmin() {
   // Operações de Carousel
   // ==========================================
 
-  const addBanner = async (payload: CarouselCreatePayload) => {
+  const addBanner = async (payload: FormData) => {
     setIsSaving(true);
     try {
       const newItem = await HomeService.createCarouselItem(payload, USE_HOME_ADMIN_MOCK);
@@ -55,7 +53,7 @@ export function useHomeAdmin() {
     }
   };
 
-  const updateBanner = async (id: string, payload: CarouselUpdatePayload) => {
+  const updateBanner = async (id: string, payload: FormData) => {
     setIsSaving(true);
     try {
       const updatedItem = await HomeService.updateCarouselItem(id, payload, USE_HOME_ADMIN_MOCK);

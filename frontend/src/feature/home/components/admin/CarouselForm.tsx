@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
 import { HomeService } from '../../services/HomeService';
-import type { CarouselContent, CarouselCreatePayload } from '../../types';
+import type { CarouselContent } from '../../types';
 import './AdminForms.scss';
 import { AlertService } from '@/core/alert/AlertService';
+import { validateFileSize } from '@/core/utils/FileUploadWrapper';
+
 
 interface CarouselFormProps {
   initialData?: CarouselContent;
@@ -17,7 +19,7 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
 
   const isEditing = !!initialData?.id;
 
-  const fields: FormField<CarouselCreatePayload>[] = [
+  const fields: FormField<any>[] = [
     {
       name: 'title',
       label: 'Título',
@@ -32,10 +34,11 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       colSpan: 12
     },
     {
-      name: 'image_url',
-      label: 'URL da Imagem',
-      type: 'text',
-      validation: { required: 'URL da imagem é obrigatória' },
+      name: 'image',
+      label: 'Imagem (10MB máx)',
+      type: 'file',
+      accept: 'image/jpeg, image/png, image/webp',
+      validation: { required: isEditing ? false : 'Imagem é obrigatória' },
       colSpan: 12
     },
     {
@@ -68,20 +71,31 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
     }
   ];
 
-  const handleSubmit = async (data: CarouselCreatePayload) => {
+  const handleSubmit = async (data: any) => {
     setIsLoading(true);
 
-    // Converte order para número caso chegue como string
-    const payload = {
-      ...data,
-      order: Number(data.order)
-    };
+    let file: File | undefined;
+    if (data.image && data.image.length > 0) {
+      file = data.image[0];
+      if (!validateFileSize(file!, 10)) {
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('title', data.title);
+    if (data.subtitle) formData.append('subtitle', data.subtitle);
+    if (file) formData.append('image', file);
+    if (data.action_url) formData.append('action_url', data.action_url);
+    formData.append('order', String(Number(data.order)));
+    formData.append('section', data.section);
 
     try {
-      if (isEditing && initialData.id) {
-        await HomeService.updateCarouselItem(initialData.id, payload, useMock);
+      if (isEditing && initialData?.id) {
+        await HomeService.updateCarouselItem(initialData.id, formData, useMock);
       } else {
-        await HomeService.createCarouselItem(payload, useMock);
+        await HomeService.createCarouselItem(formData, useMock);
       }
       
       if (onSuccess) {
@@ -97,14 +111,12 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
   const defaultValues = initialData ? {
     title: initialData.title,
     subtitle: initialData.subtitle || '',
-    image_url: initialData.image_url,
     action_url: initialData.action_url || '',
     order: initialData.order,
     section: initialData.section
   } : {
     title: '',
     subtitle: '',
-    image_url: '',
     action_url: '',
     order: 0,
     section: 'hero' as const
@@ -115,7 +127,7 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       <div className="form-header">
         <h3>{isEditing ? 'Editar Banner' : 'Novo Banner'}</h3>
       </div>
-      <GenericForm<CarouselCreatePayload>
+      <GenericForm<any>
         fields={fields}
         onSubmit={handleSubmit}
         defaultValues={defaultValues}
