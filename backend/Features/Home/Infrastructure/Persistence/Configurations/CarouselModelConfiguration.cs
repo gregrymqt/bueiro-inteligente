@@ -18,11 +18,12 @@ public sealed class CarouselModelConfiguration : IEntityTypeConfiguration<Carous
 
         builder.Property(x => x.Subtitle).HasColumnName("subtitle").HasMaxLength(255);
 
-        builder
-            .Property(x => x.ImageUrl)
-            .HasColumnName("image_url")
-            .HasMaxLength(2048)
-            .IsRequired();
+        builder.Property(x => x.UploadId).HasColumnName("upload_id").HasColumnType("uuid").IsRequired();
+
+        builder.HasOne(x => x.Upload)
+            .WithMany()
+            .HasForeignKey(x => x.UploadId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.ActionUrl).HasColumnName("action_url").HasMaxLength(2048);
 

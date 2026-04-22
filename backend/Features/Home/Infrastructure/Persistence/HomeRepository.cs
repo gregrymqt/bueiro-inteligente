@@ -27,6 +27,7 @@ public sealed class HomeRepository(AppDbContext dbContext, ILogger<HomeRepositor
         {
             return await dbContext
                 .HomeCarousels.AsNoTracking()
+                .Include(c => c.Upload)
                 .OrderBy(c => c.Order)
                 .ThenBy(c => c.Id)
                 .ToListAsync(ct)
@@ -49,6 +50,7 @@ public sealed class HomeRepository(AppDbContext dbContext, ILogger<HomeRepositor
         {
             return await dbContext
                 .HomeCarousels.AsNoTracking()
+                .Include(c => c.Upload)
                 .FirstOrDefaultAsync(c => c.Id == id, ct)
                 .ConfigureAwait(false);
         }

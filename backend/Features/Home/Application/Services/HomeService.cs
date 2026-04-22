@@ -89,6 +89,11 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
             var created = await _homeRepository
                 .CreateCarouselAsync(MapToCarouselModel(request), ct)
                 .ConfigureAwait(false);
+
+            // Reload to get the Included Upload for mapping
+            created = await _homeRepository.GetCarouselByIdAsync(created.Id, ct).ConfigureAwait(false)
+                ?? created;
+
             _logger.LogInformation("Carousel created: {CarouselId}", created.Id);
             return MapToCarouselResponse(created);
         }
@@ -123,12 +128,17 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
                 c.Section = MapEnum<HomeDomain.CarouselSection>(req.Section.Value);
             if (req.Title is not null)
                 c.Title = Normalize(req.Title, nameof(req.Title));
-            if (req.ImageUrl is not null)
-                c.ImageUrl = Normalize(req.ImageUrl, nameof(req.ImageUrl));
+            if (req.UploadId.HasValue)
+                c.UploadId = req.UploadId.Value;
             c.Subtitle = req.Subtitle is not null ? req.Subtitle.Trim() : c.Subtitle;
             c.ActionUrl = req.ActionUrl is not null ? req.ActionUrl.Trim() : c.ActionUrl;
 
             var updated = await _homeRepository.UpdateCarouselAsync(c, ct).ConfigureAwait(false);
+
+            // Reload to get the Included Upload for mapping
+            updated = await _homeRepository.GetCarouselByIdAsync(updated.Id, ct).ConfigureAwait(false)
+                ?? updated;
+
             return MapToCarouselResponse(updated);
         }
         catch (Exception ex)
@@ -218,6 +228,7 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
             var created = await _homeRepository
                 .CreateStatCardAsync(MapToStatCardModel(request), ct)
                 .ConfigureAwait(false);
+
             return MapToStatCardResponse(created);
         }
         catch (Exception ex)
@@ -300,7 +311,7 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
             c.Id,
             c.Title,
             c.Subtitle,
-            c.ImageUrl,
+            c.Upload?.StoragePath ?? string.Empty,
             c.ActionUrl,
             c.Order,
             MapEnum<HomeDtos.CarouselSection>(c.Section)
@@ -311,7 +322,7 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
         {
             Title = Normalize(r.Title, nameof(r.Title)),
             Subtitle = r.Subtitle?.Trim(),
-            ImageUrl = Normalize(r.ImageUrl, nameof(r.ImageUrl)),
+            UploadId = r.UploadId,
             ActionUrl = r.ActionUrl?.Trim(),
             Order = r.Order,
             Section = MapEnum<HomeDomain.CarouselSection>(r.Section),

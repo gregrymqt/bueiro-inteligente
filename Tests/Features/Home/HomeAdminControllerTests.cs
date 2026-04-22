@@ -35,7 +35,7 @@ public sealed class HomeAdminControllerTests
         var request = new CarouselCreateDto(
             "Novo",
             "Sub",
-            "url",
+            Guid.NewGuid(),
             "action",
             1,
             CarouselSection.alerts

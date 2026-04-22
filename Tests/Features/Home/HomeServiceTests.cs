@@ -20,7 +20,8 @@ public sealed class HomeServiceTests
             Id = id ?? Guid.NewGuid(),
             Title = title,
             Subtitle = "Subtítulo",
-            ImageUrl = "https://example.com/img.jpg",
+            UploadId = Guid.NewGuid(),
+            Upload = new backend.Features.Uploads.Domain.UploadModel { StoragePath = "https://example.com/img.jpg" },
             ActionUrl = "https://example.com/action",
             Order = 1,
             Section = HomeDomain.CarouselSection.hero,
@@ -63,10 +64,11 @@ public sealed class HomeServiceTests
     public async Task CreateCarouselAsync_DeveTratarEspacosETitleCase()
     {
         // Arrange
+        var uploadId = Guid.NewGuid();
         var request = new CarouselCreateDto(
             " Banner Novo ",
             " Sub ",
-            "url",
+            uploadId,
             "action",
             1,
             CarouselSection.alerts
