@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GenericForm, type FormField } from '../../../../components/layout/Form/GenericForm';
 import { HomeService } from '../../services/HomeService';
-import type { CarouselContent } from '../../types';
+import type { CarouselContent, CarouselCreatePayload, CarouselUpdatePayload } from '../../types';
 import './AdminForms.scss';
 import { AlertService } from '@/core/alert/AlertService';
 import { validateFileSize } from '@/core/utils/FileUploadWrapper';
@@ -83,19 +83,19 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       }
     }
 
-    const formData = new FormData();
-    formData.append('title', data.title);
-    if (data.subtitle) formData.append('subtitle', data.subtitle);
-    if (file) formData.append('image', file);
-    if (data.action_url) formData.append('action_url', data.action_url);
-    formData.append('order', String(Number(data.order)));
-    formData.append('section', data.section);
+    const dataPayload: CarouselCreatePayload = {
+      title: data.title,
+      order: Number(data.order),
+      section: data.section
+    };
+    if (data.subtitle) dataPayload.subtitle = data.subtitle;
+    if (data.action_url) dataPayload.action_url = data.action_url;
 
     try {
       if (isEditing && initialData?.id) {
-        await HomeService.updateCarouselItem(initialData.id, formData, useMock);
+        await HomeService.updateCarouselItem(initialData.id, dataPayload as CarouselUpdatePayload, useMock, file);
       } else {
-        await HomeService.createCarouselItem(formData, useMock);
+        await HomeService.createCarouselItem(dataPayload, useMock, file);
       }
       
       if (onSuccess) {

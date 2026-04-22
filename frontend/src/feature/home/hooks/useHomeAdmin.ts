@@ -3,6 +3,8 @@ import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
 import type { 
   CarouselContent, 
+  CarouselCreatePayload,
+  CarouselUpdatePayload,
   StatCardContent, 
   StatCardCreatePayload,
   StatCardUpdatePayload
@@ -37,10 +39,10 @@ export function useHomeAdmin() {
   // Operações de Carousel
   // ==========================================
 
-  const addBanner = async (payload: FormData) => {
+  const addBanner = async (payload: CarouselCreatePayload, imageFile?: File) => {
     setIsSaving(true);
     try {
-      const newItem = await HomeService.createCarouselItem(payload, USE_HOME_ADMIN_MOCK);
+      const newItem = await HomeService.createCarouselItem(payload, USE_HOME_ADMIN_MOCK, imageFile);
       // Atualização otimista: insere o novo item na lista sem recarregar a página
       setCarousels((prev) => [...prev, newItem].sort((a, b) => a.order - b.order));
       AlertService.success('Banner criado com sucesso!');
@@ -53,10 +55,10 @@ export function useHomeAdmin() {
     }
   };
 
-  const updateBanner = async (id: string, payload: FormData) => {
+  const updateBanner = async (id: string, payload: CarouselUpdatePayload, imageFile?: File) => {
     setIsSaving(true);
     try {
-      const updatedItem = await HomeService.updateCarouselItem(id, payload, USE_HOME_ADMIN_MOCK);
+      const updatedItem = await HomeService.updateCarouselItem(id, payload, USE_HOME_ADMIN_MOCK, imageFile);
       // Atualização otimista
       setCarousels((prev) => 
         prev.map(item => item.id === id ? updatedItem : item).sort((a, b) => a.order - b.order)

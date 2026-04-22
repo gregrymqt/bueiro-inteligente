@@ -11,7 +11,15 @@ export interface CarouselContent {
   section: CarouselSection; 
 }
 
-export type CarouselCreatePayload = Omit<CarouselContent, 'id'>;
+export interface CarouselCreatePayload {
+  title: string;
+  subtitle?: string;
+  upload_id?: string;
+  action_url?: string;
+  order: number;
+  section: CarouselSection;
+}
+
 export type CarouselUpdatePayload = Partial<CarouselCreatePayload>;
 
 export interface StatCardContent {
