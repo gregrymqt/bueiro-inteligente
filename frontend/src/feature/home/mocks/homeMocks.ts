@@ -210,6 +210,7 @@ export const createMockCarouselItem = async (payload: CarouselCreatePayload): Pr
   withMockLatency(() => {
     const createdItem: CarouselContent = {
       id: createCarouselId(),
+      image_url: 'https://via.placeholder.com/800x400?text=Mock+Image', // Fallback for image_url
       ...payload,
     };
 

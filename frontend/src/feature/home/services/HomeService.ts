@@ -42,24 +42,22 @@ export class HomeService {
    * [ADMIN] Cria uma nova imagem/alerta para o Carousel da Home.
    */
   public static async createCarouselItem(
-    data: FormData,
+    data: CarouselCreatePayload,
     useMock: boolean,
+    imageFile?: File,
   ): Promise<CarouselContent> {
-    if (!useMock) {
-      return apiClient.postFile<CarouselContent>(`${this.BASE_API_ADMIN}/carousel`, data);
+    if (imageFile) {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', imageFile);
+      const uploadId = await apiClient.postFile<string>('/api/v1/uploads', uploadFormData);
+      data.upload_id = uploadId;
     }
 
-    // Adapt mock to handle FormData if needed, but since mock doesn't support FormData well,
-    // we just cast it for now or extract basic fields.
-    const mockData: CarouselCreatePayload = {
-      title: data.get('title') as string,
-      subtitle: data.get('subtitle') as string,
-      image_url: 'mock_image_url.jpg',
-      action_url: data.get('action_url') as string,
-      order: Number(data.get('order')),
-      section: data.get('section') as any
-    };
-    return createMockCarouselItem(mockData);
+    if (!useMock) {
+      return apiClient.post<CarouselContent>(`${this.BASE_API_ADMIN}/carousel`, data);
+    }
+
+    return createMockCarouselItem(data);
   }
 
   /**
@@ -67,24 +65,25 @@ export class HomeService {
    */
   public static async updateCarouselItem(
     id: string,
-    data: FormData,
+    data: CarouselUpdatePayload,
     useMock: boolean,
+    imageFile?: File,
   ): Promise<CarouselContent> {
+    if (imageFile) {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', imageFile);
+      const uploadId = await apiClient.postFile<string>('/api/v1/uploads', uploadFormData);
+      data.upload_id = uploadId;
+    }
+
     if (!useMock) {
-      return apiClient.patchFile<CarouselContent>(
+      return apiClient.patch<CarouselContent>(
         `${this.BASE_API_ADMIN}/carousel/${id}`,
         data,
       );
     }
 
-    const mockData: CarouselUpdatePayload = {};
-    if (data.has('title')) mockData.title = data.get('title') as string;
-    if (data.has('subtitle')) mockData.subtitle = data.get('subtitle') as string;
-    if (data.has('action_url')) mockData.action_url = data.get('action_url') as string;
-    if (data.has('order')) mockData.order = Number(data.get('order'));
-    if (data.has('section')) mockData.section = data.get('section') as any;
-
-    return updateMockCarouselItem(id, mockData);
+    return updateMockCarouselItem(id, data);
   }
 
   /**
