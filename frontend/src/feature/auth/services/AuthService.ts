@@ -1,6 +1,12 @@
 import { apiClient } from '@/core/http/ApiClient';
+import { normalizeRoles } from '@/core/http/TokenService';
 import type { LoginRequestDTO, LoginResponseDTO, UserDTO, RegisterRequestDTO } from '../types';
 import { getMockAuthenticatedUser, loginWithMockCredentials, logoutMockSession, registerWithMockData } from '../mocks/authMocks';
+
+const normalizeUserRoles = (user: UserDTO): UserDTO => ({
+  ...user,
+  roles: normalizeRoles(user.roles),
+});
 
 export class AuthService {
   private static readonly BASE_API = '/api/v1/auth';
@@ -9,10 +15,11 @@ export class AuthService {
    */
   public static async register(data: RegisterRequestDTO, useMock: boolean): Promise<UserDTO> {
     if (!useMock) {
-      return apiClient.post<UserDTO, RegisterRequestDTO>(`${this.BASE_API}/register`, data);
+      const user = await apiClient.post<UserDTO, RegisterRequestDTO>(`${this.BASE_API}/register`, data);
+      return normalizeUserRoles(user);
     }
 
-    return registerWithMockData(data);
+    return normalizeUserRoles(await registerWithMockData(data));
   }
 
   /**
@@ -42,9 +49,10 @@ export class AuthService {
    */
   public static async getMe(useMock: boolean): Promise<UserDTO> {
     if (!useMock) {
-      return apiClient.get<UserDTO>(`${this.BASE_API}/users/me`);
+      const user = await apiClient.get<UserDTO>(`${this.BASE_API}/users/me`);
+      return normalizeUserRoles(user);
     }
 
-    return getMockAuthenticatedUser();
+    return normalizeUserRoles(await getMockAuthenticatedUser());
   }
 }

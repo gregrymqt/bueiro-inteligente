@@ -6,8 +6,8 @@ import { ProtectedLayout } from './middleware/ProtectedLayout';
 import { RoleMiddleware } from './middleware/RoleMiddleware';
 import Home from '@/pages/Home/Home';
 import About from '@/pages/About/About';
-import { Login } from '@/pages/Auth/Login'; 
-import { HomeManagement } from '@/pages/Admin/HomeManagement'; 
+import { Login } from '@/pages/Auth/Login';
+import { HomeManagement } from '@/pages/Admin/HomeManagement';
 import { DrainManagement } from '@/pages/Admin/DrainManagement';
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
@@ -16,10 +16,15 @@ import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
+import { AuthProvider } from '@/feature/auth/hooks/AuthContext';
 
 export const router = createBrowserRouter([
   {
-    element: <AuthInterceptor />, // Ouve o evento de Unauthorized (Token expirado/inválido)
+    element: (
+      <AuthProvider>
+        <AuthInterceptor />
+      </AuthProvider>
+    ), // Ouve o evento de Unauthorized (Token expirado/inválido)
     children: [
       // ==========================================
       // 1. ROTAS PÚBLICAS (Sem verificação de JWT)
@@ -67,7 +72,7 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      
+
       // ==========================================
       // 2. ROTAS PROTEGIDAS (A mágica acontece aqui)
       // ==========================================
@@ -101,12 +106,12 @@ export const router = createBrowserRouter([
       }
     ],
   },
-  
+
   // ==========================================
   // ROTA DE FALLBACK (Página não encontrada)
   // ==========================================
   {
     path: '*',
-    element: <Navigate to="/dashboard" replace />, 
+    element: <Navigate to="/dashboard" replace />,
   }
 ]);

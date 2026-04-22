@@ -1,7 +1,9 @@
+import type { FrontendRole } from '@/core/http/TokenService';
+
 export interface UserDTO {
   email: string;
   full_name: string | null;
-  roles: string[]; // ['admin', 'manutencao', 'cidadao']
+  roles: FrontendRole[];
 }
 
 export interface RegisterRequestDTO {

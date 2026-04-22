@@ -1,3 +1,6 @@
+export type FrontendRole = 'admin' | 'manutencao' | 'cidadao';
+export type BackendRole = 'Admin' | 'Manager' | 'User';
+
 // 1. O Contrato (Interface)
 export interface ITokenService {
   getToken(): string | null;
@@ -12,9 +15,47 @@ import { jwtDecode } from "jwt-decode";
 
 export interface DecodedToken {
   sub: string;
-  role: "admin" | "manutencao" | "cidadao";
+  role?: string;
+  roles?: string[] | string;
   exp: number;
 }
+
+const ROLE_PRIORITY: FrontendRole[] = ['admin', 'manutencao', 'cidadao'];
+
+const ROLE_ALIASES: Record<string, FrontendRole> = {
+  admin: 'admin',
+  Admin: 'admin',
+  MANUTENCAO: 'manutencao',
+  manutencao: 'manutencao',
+  Manager: 'manutencao',
+  manager: 'manutencao',
+  cidadao: 'cidadao',
+  User: 'cidadao',
+  user: 'cidadao',
+};
+
+export const normalizeRole = (
+  role: string | null | undefined,
+): FrontendRole | null => {
+  if (!role) {
+    return null;
+  }
+
+  return ROLE_ALIASES[role.trim()] ?? null;
+};
+
+export const normalizeRoles = (
+  roles: ReadonlyArray<string | null | undefined> | string | null | undefined,
+): FrontendRole[] => {
+  const values = Array.isArray(roles) ? roles : roles ? [roles] : [];
+  const normalizedRoles = values
+    .map((role) => normalizeRole(role))
+    .filter((role): role is FrontendRole => role !== null);
+
+  return [...new Set(normalizedRoles)].sort(
+    (left, right) => ROLE_PRIORITY.indexOf(left) - ROLE_PRIORITY.indexOf(right),
+  );
+};
 
 // 2. A Implementação Concreta
 export class TokenService implements ITokenService {
@@ -35,10 +76,14 @@ export class TokenService implements ITokenService {
     return Date.now() >= exp * 1000;
   }
 
-  public getRole(): string | null {
+  public getRole(): FrontendRole | null {
     const token = this.getToken();
     if (!token) return null;
-    return jwtDecode<DecodedToken>(token).role;
+
+    const decodedToken = jwtDecode<DecodedToken>(token);
+    const normalizedRoles = normalizeRoles(decodedToken.roles ?? decodedToken.role);
+
+    return normalizedRoles[0] ?? null;
   }
 
   public saveToken(token: string): void {

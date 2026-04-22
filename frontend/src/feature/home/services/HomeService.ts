@@ -19,7 +19,7 @@ import {
 } from "../mocks/homeMocks";
 
 export class HomeService {
-  private static readonly BASE_API_ADMIN = "/api/v1/admin/home";
+  private static readonly BASE_API_ADMIN = "/api/v1/homeadmin";
   private static readonly BASE_API = "/api/v1/home";
 
   /**

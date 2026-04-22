@@ -86,10 +86,6 @@ namespace backend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("hashed_password");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -98,9 +94,37 @@ namespace backend.Migrations
                     b.HasIndex("GoogleId")
                         .IsUnique();
 
-                    b.HasIndex("RoleId");
+                    b.HasMany("backend.Features.Auth.Domain.Role", "Roles")
+                        .WithMany("Users")
+                        .UsingEntity(
+                            "user_roles",
+                            right => right
+                                .HasOne("backend.Features.Auth.Domain.Role")
+                                .WithMany()
+                                .HasForeignKey("role_id")
+                                .OnDelete(DeleteBehavior.Cascade),
+                            left => left
+                                .HasOne("backend.Features.Auth.Domain.User")
+                                .WithMany()
+                                .HasForeignKey("user_id")
+                                .OnDelete(DeleteBehavior.Cascade),
+                            join =>
+                            {
+                                join.ToTable("user_roles");
+                                join.HasKey("user_id", "role_id");
+                                join.Property<Guid>("user_id")
+                                    .HasColumnName("user_id")
+                                    .HasColumnType("uuid");
+                                join.Property<Guid>("role_id")
+                                    .HasColumnName("role_id")
+                                    .HasColumnType("uuid");
+                                join.HasIndex("role_id");
+                            }
+                        );
 
                     b.ToTable("users", (string)null);
+
+                    b.Navigation("Roles");
                 });
 
             modelBuilder.Entity("backend.Features.Drain.Domain.Drain", b =>
@@ -298,17 +322,6 @@ namespace backend.Migrations
                     b.HasIndex("DrainIdentifier");
 
                     b.ToTable("drain_status", (string)null);
-                });
-
-            modelBuilder.Entity("backend.Features.Auth.Domain.User", b =>
-                {
-                    b.HasOne("backend.Features.Auth.Domain.Role", "Role")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("backend.Features.Auth.Domain.Role", b =>

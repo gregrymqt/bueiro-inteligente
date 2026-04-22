@@ -59,11 +59,11 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Qualquer requisição que comece com /api será redirecionada
         "/api/v1/": {
-          target: env.VITE_BACKEND_URL || "http://localhost:8080",
+          target: env.VITE_BACKEND_URL || "http://localhost:5045",
           changeOrigin: true,
         },
         "/realtime/ws": {
-          target: env.VITE_BACKEND_URL || "http://localhost:8080",
+          target: env.VITE_BACKEND_URL || "http://localhost:5045",
           changeOrigin: true,
           ws: true, // <- MUITO IMPORTANTE: Diz ao Vite para habilitar o upgrade para WebSocket
         },

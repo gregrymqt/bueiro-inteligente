@@ -59,27 +59,26 @@ public static class ExceptionHandlingExtensions
         );
     }
 
+    // Remova a dependência desnecessária do ILoggerFactory
     private static (int StatusCode, string Title, string Detail) ResolveProblemDetails(
         HttpContext context,
         Exception? exception,
         IWebHostEnvironment env
     )
     {
-        var logger = context
-            .RequestServices.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("GlobalExceptionHandler");
-
+        // AQUI ESTÁ A MUDANÇA: Use Serilog.Log estático em vez de ILoggerFactory
         var frontendDetail = env.IsDevelopment()
             ? exception?.Message ?? "MISTÉRIO FATAL: A exceção chegou NULA no handler!"
             : "Ocorreu um erro interno ao processar a requisição.";
 
-        logger.LogError(
+        // Log usando o motor que já provou funcionar na inicialização
+        Serilog.Log.Error(
             exception,
             "Unhandled exception while processing {Method} {Path}.",
             context.Request.Method,
             context.Request.Path
         );
 
-        return (500, "oi", frontendDetail);
+        return (500, "Erro Interno", frontendDetail);
     }
 }

@@ -16,7 +16,6 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File(
         logFilePath,
-        shared: true,
         rollingInterval: RollingInterval.Day,
         flushToDiskInterval: TimeSpan.FromSeconds(1),
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
@@ -25,7 +24,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Iniciando o ecossistema Bueiro Inteligente...");
-
+    Console.WriteLine("🚀 VERSÃO 2.0 - AGORA VAI!");
     var builder = WebApplication.CreateBuilder(args);
 
     AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>

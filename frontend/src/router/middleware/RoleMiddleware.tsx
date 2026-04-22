@@ -1,13 +1,13 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { tokenService } from '@/core/http/TokenService';
+import { tokenService, type FrontendRole } from '@/core/http/TokenService';
 
 interface RoleMiddlewareProps {
-  allowedRoles: Array<'admin' | 'manutencao' | 'cidadao'>;
+  allowedRoles: FrontendRole[];
 }
 
 export const RoleMiddleware: React.FC<RoleMiddlewareProps> = ({ allowedRoles }) => {
-  const userRole = tokenService.getRole() as 'admin' | 'manutencao' | 'cidadao' | null;
+  const userRole = tokenService.getRole();
 
   // Se não tiver role, ou a role do usuário não estiver entre as permitidas:
   if (!userRole || !allowedRoles.includes(userRole)) {
