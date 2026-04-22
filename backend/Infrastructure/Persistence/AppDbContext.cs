@@ -15,6 +15,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<CarouselModel> HomeCarousels => Set<CarouselModel>();
     public DbSet<StatCardModel> HomeStats => Set<StatCardModel>();
     public DbSet<DrainStatus> DrainStatuses => Set<DrainStatus>();
+    public DbSet<backend.Features.Uploads.Domain.UploadModel> Uploads => Set<backend.Features.Uploads.Domain.UploadModel>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
