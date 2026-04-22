@@ -1,9 +1,11 @@
+using backend.Features.Uploads.Domain;
+
 namespace backend.Features.Home.Domain;
 
 public sealed class CarouselModel(
     Guid id = default,
     string title = "",
-    string imageUrl = "",
+    Guid uploadId = default,
     CarouselSection section = CarouselSection.hero,
     string? subtitle = null,
     string? actionUrl = null,
@@ -16,7 +18,9 @@ public sealed class CarouselModel(
 
     public string? Subtitle { get; set; } = subtitle;
 
-    public required string ImageUrl { get; set; } = imageUrl;
+    public required Guid UploadId { get; set; } = uploadId;
+
+    public UploadModel? Upload { get; set; }
 
     public string? ActionUrl { get; set; } = actionUrl;
 

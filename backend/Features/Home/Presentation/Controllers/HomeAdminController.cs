@@ -25,6 +25,7 @@ public sealed class HomeAdminController(IHomeService homeService) : ApiControlle
     ) => Ok(await _homeService.GetCarouselByIdAsync(carouselId, ct).ConfigureAwait(false));
 
     [HttpPost("carousel")]
+    [backend.Extensions.App.Filters.MaxFileSize]
     public async Task<ActionResult<CarouselResponseDto>> CreateCarousel(
         [FromBody] CarouselCreateDto request,
         CancellationToken ct
@@ -35,6 +36,7 @@ public sealed class HomeAdminController(IHomeService homeService) : ApiControlle
     }
 
     [HttpPatch("carousel/{carouselId:guid}")]
+    [backend.Extensions.App.Filters.MaxFileSize]
     public async Task<ActionResult<CarouselResponseDto>> UpdateCarousel(
         Guid carouselId,
         [FromBody] CarouselUpdateDto request,
