@@ -16,4 +16,7 @@ interface CacheDao {
 
     @Query("SELECT * FROM cache_entries WHERE cache_key = :key LIMIT 1")
     suspend fun get(key: String): CacheEntity?
+
+    @Query("DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND expires_at <= :currentTime")
+    suspend fun clearExpired(currentTime: Long)
 }
