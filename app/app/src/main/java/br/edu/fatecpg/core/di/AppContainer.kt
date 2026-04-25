@@ -26,6 +26,8 @@ import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
@@ -36,6 +38,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     private val appContext = context.applicationContext
     private val gson: Gson by lazy { Gson() }
     private var roomDatabase: AppDatabase? = null
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val tokenManager: TokenManager by lazy {
         try {
@@ -64,10 +67,10 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
             ApiClient.init(tokenManager, baseUrl)
             Log.i("AppContainer", "ApiClient inicializado via AppContainer")
 
-            CoroutineScope(Dispatchers.IO).launch {
+            applicationScope.launch {
                 try {
                     localCacheService.clearExpired()
-                    Log.i("AppContainer", "Cache expirado limpo na inicialização")
+                    Log.i("AppContainer", "Cache expirado limpo na inicialização com isolamento de falhas")
                 } catch (e: Exception) {
                     Log.e("AppContainer", "Erro ao limpar cache expirado na inicialização", e)
                 }
@@ -128,6 +131,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     fun close() {
         try {
             Log.i("AppContainer", "Fechando recursos do AppContainer")
+            applicationScope.cancel()
             roomDatabase?.close()
             roomDatabase = null
         } catch (e: Exception) {

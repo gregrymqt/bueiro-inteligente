@@ -4,6 +4,9 @@ using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Infrastructure.Cache;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
+using System.Globalization;
 
 namespace backend.Features.Monitoring.Application.Services;
 
@@ -42,6 +45,12 @@ public sealed class MonitoringService(
             double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance), 2);
             string status = ResolveStatus(obstructionLevel);
 
+            DateTimeOffset ultimaAtualizacao = payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow;
+
+            string rawHash = $"{payload.IdBueiro}|{normalizedDistance.ToString(CultureInfo.InvariantCulture)}|{ultimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)}";
+            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawHash));
+            string dataHash = Convert.ToHexString(hashBytes);
+
             var result = new DrainStatusDTO(
                 payload.IdBueiro,
                 normalizedDistance,
@@ -49,7 +58,8 @@ public sealed class MonitoringService(
                 status,
                 payload.Latitude,
                 payload.Longitude,
-                DateTimeOffset.UtcNow
+                ultimaAtualizacao,
+                dataHash
             );
 
             await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
