@@ -64,10 +64,10 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
             ApiClient.init(tokenManager, baseUrl)
             Log.i("AppContainer", "ApiClient inicializado via AppContainer")
 
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
                 try {
                     localCacheService.clearExpired()
-                    Log.i("AppContainer", "Cache expirado limpo na inicialização")
+                    Log.i("AppContainer", "Cache expirado limpo na inicialização com prioridade (SupervisorJob)")
                 } catch (e: Exception) {
                     Log.e("AppContainer", "Erro ao limpar cache expirado na inicialização", e)
                 }

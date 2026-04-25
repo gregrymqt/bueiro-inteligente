@@ -64,6 +64,7 @@ public sealed class MonitoringRepository(
                     Longitude = data.Longitude,
                     LastUpdate = data.UltimaAtualizacao,
                     SyncedToRows = false,
+                    DataHash = data.DataHash
                 };
 
                 await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
@@ -76,6 +77,13 @@ public sealed class MonitoringRepository(
                     data.IdBueiro
                 );
             }
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            logger.LogInformation(
+                "Leitura duplicada ignorada para o bueiro {Id}",
+                data.IdBueiro
+            );
         }
         catch (DbUpdateException ex)
         {
@@ -190,6 +198,7 @@ public sealed class MonitoringRepository(
             s.Status,
             s.Latitude,
             s.Longitude,
-            s.LastUpdate
+            s.LastUpdate,
+            s.DataHash
         );
 }

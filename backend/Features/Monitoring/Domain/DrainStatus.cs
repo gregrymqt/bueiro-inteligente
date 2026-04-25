@@ -9,7 +9,8 @@ public sealed class DrainStatus(
     double? latitude = null,
     double? longitude = null,
     DateTimeOffset lastUpdate = default,
-    bool syncedToRows = false
+    bool syncedToRows = false,
+    string dataHash = ""
 )
 {
     public Guid Id { get; set; } = id == Guid.Empty ? Guid.NewGuid() : id;
@@ -30,4 +31,6 @@ public sealed class DrainStatus(
         lastUpdate == default ? DateTimeOffset.UtcNow : lastUpdate;
 
     public bool SyncedToRows { get; set; } = syncedToRows;
+
+    public required string DataHash { get; set; } = dataHash;
 }

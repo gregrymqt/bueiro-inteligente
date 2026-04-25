@@ -44,5 +44,13 @@ public sealed class DrainStatusConfiguration : IEntityTypeConfiguration<DrainSta
             .Property(x => x.SyncedToRows)
             .HasColumnName("sincronizado_rows")
             .HasDefaultValue(false);
+
+        builder
+            .Property(x => x.DataHash)
+            .HasColumnName("data_hash")
+            .HasMaxLength(64)
+            .IsRequired();
+
+        builder.HasIndex(x => x.DataHash).IsUnique();
     }
 }
