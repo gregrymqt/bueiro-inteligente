@@ -137,4 +137,38 @@ public sealed class MonitoringServiceTests
             Times.Once
         );
     }
+
+    [Fact]
+    public async Task ProcessSensorData_DeveGerarHashDeterministico()
+    {
+        // Arrange
+        var dataFixa = new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        var payload = new SensorPayloadDTO("DRN-01", 90.0, -23.9, -46.3, dataFixa);
+
+        // Act
+        var result1 = await _service.ProcessSensorDataAsync(payload);
+        var result2 = await _service.ProcessSensorDataAsync(payload);
+
+        // Assert
+        result1.DataHash.Should().NotBeNullOrWhiteSpace();
+        result2.DataHash.Should().NotBeNullOrWhiteSpace();
+
+        result1.DataHash.Should().Be(result2.DataHash);
+        result1.DataHash.Length.Should().Be(64);
+    }
+
+    [Fact]
+    public async Task ProcessSensorData_UltimaAtualizacaoNula_DeveNaoLancarErro_E_PreencherDataHashComFallback()
+    {
+        // Arrange
+        var payload = new SensorPayloadDTO("DRN-NULL-TEST", 50.0); // UltimaAtualizacao is null
+
+        // Act
+        var result = await _service.ProcessSensorDataAsync(payload);
+
+        // Assert
+        result.DataHash.Should().NotBeNullOrWhiteSpace();
+        result.DataHash.Length.Should().Be(64);
+        result.UltimaAtualizacao.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(2));
+    }
 }

@@ -64,6 +64,7 @@ public sealed class MonitoringRepository(
                     Longitude = data.Longitude,
                     LastUpdate = data.UltimaAtualizacao,
                     SyncedToRows = false,
+                    DataHash = data.DataHash
                 };
 
                 await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
@@ -76,6 +77,26 @@ public sealed class MonitoringRepository(
                     data.IdBueiro
                 );
             }
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            if (pgEx.ConstraintName == "IX_drain_status_data_hash")
+            {
+                logger.LogInformation(
+                    "Leitura duplicada ignorada (idempotência via Constraint) para o bueiro {DrainIdentifier}",
+                    data.IdBueiro
+                );
+                return;
+            }
+
+            logger.LogError(
+                ex,
+                "Erro de violação de unicidade não esperada no PostgreSQL para {IdBueiro}. Constraint: {Constraint}. Payload: {@Payload}",
+                data.IdBueiro,
+                pgEx.ConstraintName,
+                data
+            );
+            throw;
         }
         catch (DbUpdateException ex)
         {
@@ -190,6 +211,7 @@ public sealed class MonitoringRepository(
             s.Status,
             s.Latitude,
             s.Longitude,
-            s.LastUpdate
+            s.LastUpdate,
+            s.DataHash
         );
 }
