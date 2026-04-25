@@ -2,6 +2,9 @@ package br.edu.fatecpg.core.di
 
 import android.content.Context
 import android.util.Log
+import androidx.room.Room
+import br.edu.fatecpg.core.data.local.AppDatabase
+import br.edu.fatecpg.core.data.local.LocalCacheService
 import br.edu.fatecpg.core.navigation.AndroidLocationHandler
 import br.edu.fatecpg.core.navigation.LocationHandler
 import br.edu.fatecpg.core.network.ApiClient
@@ -20,17 +23,21 @@ import br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import br.edu.fatecpg.feature.realtime.services.RealtimeService
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
+import com.google.gson.Gson
 
 /**
  * Container de Injeo de Dependncias manual (Service Locator).
  * Mantm instncias globais nicas (Singleton/Lazy) para o ciclo de vida do aplicativo.
  */
 class AppContainer(private val context: Context, private val baseUrl: String, private val wsUrl: String) {
+    private val appContext = context.applicationContext
+    private val gson: Gson by lazy { Gson() }
+    private var roomDatabase: AppDatabase? = null
 
     val tokenManager: TokenManager by lazy {
         try {
             Log.i("AppContainer", "Criando TokenManager")
-            TokenManager(context)
+            TokenManager(appContext)
         } catch (e: Exception) {
             Log.e("AppContainer", "Erro ao criar TokenManager", e)
             throw e
@@ -62,9 +69,15 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     private val authService: AuthService by lazy { ApiClient.createService(AuthService::class.java) }
     private val authRepository: AuthRepository by lazy { AuthRepository(authService, tokenManager) }
 
+    private val localCacheService: LocalCacheService by lazy {
+        LocalCacheService(database.cacheDao(), gson)
+    }
+
     // --- Monitoring Feature ---
     private val monitoringService: MonitoringService by lazy { ApiClient.createService(MonitoringService::class.java) }
-    private val monitoringRepository: MonitoringRepository by lazy { MonitoringRepository(monitoringService) }
+    private val monitoringRepository: MonitoringRepository by lazy {
+        MonitoringRepository(monitoringService, localCacheService)
+    }
 
     // --- Profile Feature ---
     private val profileService: ProfileService by lazy { ApiClient.createService(ProfileService::class.java) }
@@ -99,4 +112,34 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler) }
 
     val profileViewModelFactory by lazy { ProfileViewModelFactory(profileRepository) }
+
+    fun close() {
+        try {
+            Log.i("AppContainer", "Fechando recursos do AppContainer")
+            roomDatabase?.close()
+            roomDatabase = null
+        } catch (e: Exception) {
+            Log.e("AppContainer", "Erro ao fechar o banco local Room", e)
+        }
+    }
+
+    private val database: AppDatabase
+        get() {
+            roomDatabase?.let { return it }
+
+            return try {
+                Log.i("AppContainer", "Inicializando Room Database local")
+                Room.databaseBuilder(
+                    appContext,
+                    AppDatabase::class.java,
+                    "bueiro_inteligente_cache.db"
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { roomDatabase = it }
+            } catch (e: Exception) {
+                Log.e("AppContainer", "Erro ao criar o Room Database local", e)
+                throw e
+            }
+        }
 }

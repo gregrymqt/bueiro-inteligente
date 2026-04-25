@@ -104,7 +104,8 @@ public sealed class MonitoringService(
                     async () =>
                         await monitoringRepository
                             .GetLatestStatusAsync(drainId, ct)
-                            .ConfigureAwait(false) ?? throw new NotFoundException("Bueiro", drainId),
+                            .ConfigureAwait(false)
+                        ?? throw new NotFoundException("Bueiro", drainId),
                     CacheTtl
                 )
                 .ConfigureAwait(false);

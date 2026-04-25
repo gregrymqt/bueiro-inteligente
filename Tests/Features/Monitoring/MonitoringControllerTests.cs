@@ -1,8 +1,13 @@
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
+
 namespace backend.Tests.Features.Monitoring;
 
 public sealed class MonitoringControllerTests
 {
     private readonly Mock<IMonitoringService> _monitoringServiceMock = new();
+    private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<IAuthExtension> _authExtensionMock = new();
     private readonly MonitoringController _controller;
 
@@ -10,6 +15,7 @@ public sealed class MonitoringControllerTests
     {
         _controller = new MonitoringController(
             _monitoringServiceMock.Object,
+            _backgroundJobClientMock.Object,
             _authExtensionMock.Object,
             Mock.Of<ILogger<MonitoringController>>()
         );
@@ -49,6 +55,18 @@ public sealed class MonitoringControllerTests
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
 
+        _backgroundJobClientMock.Verify(
+            j =>
+                j.Create(
+                    It.Is<Job>(job =>
+                        job.Type == typeof(IMonitoringService)
+                        && job.Method.Name == nameof(IMonitoringService.ProcessSensorDataAsync)
+                        && job.Args.Count == 2
+                    ),
+                    It.IsAny<IState>()
+                ),
+            Times.Never
+        );
         _monitoringServiceMock.Verify(
             s =>
                 s.ProcessSensorDataAsync(
@@ -90,29 +108,36 @@ public sealed class MonitoringControllerTests
     {
         // Arrange
         var payload = BuildPayload();
-        var expectedStatus = new DrainStatusDTO(
-            payload.IdBueiro,
-            payload.DistanciaCm,
-            30.0,
-            "NORMAL",
-            payload.Latitude,
-            payload.Longitude,
-            DateTime.UtcNow
-        );
         SetupContext(queryToken: "valid-token");
-
-        _monitoringServiceMock
-            .Setup(s => s.ProcessSensorDataAsync(payload, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedStatus);
 
         // Act
         var result = await _controller.ReceiveSensorData(payload, default);
 
         // Assert
-        result
-            .Result.Should()
-            .BeOfType<OkObjectResult>()
-            .Which.Value.Should()
-            .BeEquivalentTo(expectedStatus);
+        result.Should().BeOfType<AcceptedResult>();
+
+        _backgroundJobClientMock.Verify(
+            j =>
+                j.Create(
+                    It.Is<Job>(job =>
+                        job.Type == typeof(IMonitoringService)
+                        && job.Method.Name == nameof(IMonitoringService.ProcessSensorDataAsync)
+                        && job.Args.Count == 2
+                        && job.Args[0].GetType() == typeof(SensorPayloadDTO)
+                        && (SensorPayloadDTO)job.Args[0] == payload
+                    ),
+                    It.Is<IState>(state => state.GetType() == typeof(EnqueuedState))
+                ),
+            Times.Once
+        );
+
+        _monitoringServiceMock.Verify(
+            s =>
+                s.ProcessSensorDataAsync(
+                    It.IsAny<SensorPayloadDTO>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
     }
 }

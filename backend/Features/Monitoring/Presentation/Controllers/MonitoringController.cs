@@ -1,6 +1,7 @@
 using backend.Extensions.Auth.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Services;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,7 @@ namespace backend.Features.Monitoring.Presentation.Controllers;
 [Authorize(Roles = "User,Admin,Manager")]
 public sealed class MonitoringController(
     IMonitoringService monitoringService,
+    IBackgroundJobClient backgroundJobs,
     IAuthExtension authExtension,
     ILogger<MonitoringController> logger
 ) : ApiControllerBase
@@ -16,6 +18,8 @@ public sealed class MonitoringController(
     // C# 12: Campos injetados via Primary Constructor
     private readonly IMonitoringService _monitoringService =
         monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
+    private readonly IBackgroundJobClient _backgroundJobs =
+        backgroundJobs ?? throw new ArgumentNullException(nameof(backgroundJobs));
     private readonly IAuthExtension _authExtension =
         authExtension ?? throw new ArgumentNullException(nameof(authExtension));
     private readonly ILogger<MonitoringController> _logger =
@@ -23,7 +27,7 @@ public sealed class MonitoringController(
 
     [HttpPost("medicoes")]
     [AllowAnonymous] // O hardware usa token próprio via Query ou Header
-    public async Task<ActionResult<DrainStatusDTO>> ReceiveSensorData(
+    public async Task<IActionResult> ReceiveSensorData(
         [FromBody] SensorPayloadDTO payload,
         CancellationToken ct
     )
@@ -37,9 +41,11 @@ public sealed class MonitoringController(
             Request.Query["token"].ToString()
         );
 
-        return Ok(
-            await _monitoringService.ProcessSensorDataAsync(payload, ct).ConfigureAwait(false)
+        _backgroundJobs.Enqueue<IMonitoringService>(service =>
+            service.ProcessSensorDataAsync(payload, CancellationToken.None)
         );
+
+        return Accepted();
     }
 
     [HttpGet("{id}/status")]

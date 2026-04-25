@@ -1,35 +1,40 @@
 package br.edu.fatecpg.feature.monitoring.repository
 
 import android.util.Log
+import br.edu.fatecpg.core.data.local.LocalCacheService
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
-class MonitoringRepository(private val monitoringService: MonitoringService) {  
+class MonitoringRepository(
+    private val monitoringService: MonitoringService,
+    private val localCacheService: LocalCacheService
+) {
+    private companion object {
+        private const val CACHE_TTL_MILLIS = 10 * 60 * 1000L
+        private const val ALL_DRAINS_CACHE_KEY = "monitoring:drains:all"
+
+        fun drainStatusCacheKey(bueiroId: String): String = "monitoring:drains:$bueiroId"
+    }
 
     suspend fun getAllDrains(): Result<List<DrainStatusDTO>> {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("MonitoringRepository", "Buscando todos os bueiros na API")
-                val response = monitoringService.getAllDrains()
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        Log.i("MonitoringRepository", "Bueiros resgatados com sucesso: ${body.size} encontrados")
-                        Result.success(body)
-                    } else {
-                        Log.w("MonitoringRepository", "Acesso concluido mas com a lista de bueiros vazia (body null).")
-                        Result.failure(Exception("A lista de bueiros retornou vazia."))
-                    }
-                } else {
-                    Log.w("MonitoringRepository", "Erro na resposta da API ao listar bueiros. Codigo: ${response.code()}")
-                    when (response.code()) {
-                        403 -> Result.failure(Exception("Acesso negado para listar os bueiros."))
-                        else -> Result.failure(Exception("Erro na requisição: Código HTTP ${response.code()}"))
-                    }
+                Log.d("MonitoringRepository", "Buscando todos os bueiros com cache local")
+                val cachedDrains = localCacheService.getOrSet(
+                    key = ALL_DRAINS_CACHE_KEY,
+                    expiryMillis = CACHE_TTL_MILLIS
+                ) {
+                    fetchAllDrainsFromNetwork()
                 }
+
+                Log.i(
+                    "MonitoringRepository",
+                    "Bueiros resgatados com sucesso: ${cachedDrains.size} encontrados"
+                )
+                Result.success(cachedDrains.toList())
             } catch (e: IOException) {
                 Log.e("MonitoringRepository", "Falha de rede ao tentar listar os bueiros", e)
                 Result.failure(Exception("Falha de rede. A API pode estar fora do ar ou sem internet.", e))
@@ -40,31 +45,54 @@ class MonitoringRepository(private val monitoringService: MonitoringService) {
         }
     }
 
-    suspend fun getDrainStatus(bueiroId: String): Result<DrainStatusDTO> {      
+    suspend fun getDrainStatus(bueiroId: String): Result<DrainStatusDTO> {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("MonitoringRepository", "Buscando status do bueiro ID: $bueiroId")
-                val response = monitoringService.getDrainStatus(bueiroId)       
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        Log.i("MonitoringRepository", "Status do bueiro $bueiroId resgatado.")
-                        Result.success(body)
-                    } else {
-                        Log.w("MonitoringRepository", "Resposta vazia ao tentar pegar o bueiro $bueiroId")
-                        Result.failure(Exception("Resposta vazia da API."))     
-                    }
-                } else {
-                    Log.w("MonitoringRepository", "Falha na resposta HTTP (getDrainStatus): ${response.code()}")
-                    Result.failure(Exception("Erro na requisição: Código HTTP ${response.code()}"))
+                Log.d("MonitoringRepository", "Buscando status do bueiro ID: $bueiroId com cache local")
+                val drainStatus = localCacheService.getOrSet(
+                    key = drainStatusCacheKey(bueiroId),
+                    expiryMillis = CACHE_TTL_MILLIS
+                ) {
+                    fetchDrainStatusFromNetwork(bueiroId)
                 }
+
+                Log.i("MonitoringRepository", "Status do bueiro $bueiroId resgatado.")
+                Result.success(drainStatus)
             } catch (e: IOException) {
                 Log.e("MonitoringRepository", "Erro de rede no bueiro $bueiroId", e)
-                Result.failure(Exception("Falha de rede. Verifique sua conexão de internet.", e))
+                Result.failure(Exception("Falha de rede. Verifique sua conexï¿½o de internet.", e))
             } catch (e: Exception) {
-                Log.e("MonitoringRepository", "Falha critica não de rede ao buscar bueiro ID $bueiroId", e)
+                Log.e("MonitoringRepository", "Falha critica nï¿½o de rede ao buscar bueiro ID $bueiroId", e)
                 Result.failure(Exception("Ocorreu um erro inesperado: ${e.localizedMessage}", e))
             }
         }
+    }
+
+    private suspend fun fetchAllDrainsFromNetwork(): Array<DrainStatusDTO> {
+        val response = monitoringService.getAllDrains()
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Erro na requisiÃ§Ã£o ao listar bueiros: cÃ³digo HTTP ${response.code()}"
+            )
+        }
+
+        val body = response.body()
+            ?: throw IllegalStateException("A lista de bueiros retornou vazia.")
+
+        return body.toTypedArray()
+    }
+
+    private suspend fun fetchDrainStatusFromNetwork(bueiroId: String): DrainStatusDTO {
+        val response = monitoringService.getDrainStatus(bueiroId)
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Erro na requisiÃ§Ã£o ao buscar o bueiro $bueiroId: cÃ³digo HTTP ${response.code()}"
+            )
+        }
+
+        return response.body()
+            ?: throw IllegalStateException("Resposta vazia da API para o bueiro $bueiroId.")
     }
 }
