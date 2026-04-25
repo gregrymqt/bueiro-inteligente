@@ -3,7 +3,7 @@ using Hangfire.Redis.StackExchange;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Infrastructure.Extensions;
+namespace backend.Extensions.Scheduler;
 
 public static class HangfireServiceExtensions
 {
