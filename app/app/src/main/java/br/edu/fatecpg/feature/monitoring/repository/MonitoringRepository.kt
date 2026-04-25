@@ -13,7 +13,7 @@ class MonitoringRepository(
     private val localCacheService: LocalCacheService
 ) {
     private companion object {
-        private const val CACHE_TTL_MILLIS = 10 * 60 * 1000L
+        private const val CACHE_TTL_MILLIS = 60 * 60 * 1000L
         private const val ALL_DRAINS_CACHE_KEY = "monitoring:drains:all"
 
         fun drainStatusCacheKey(bueiroId: String): String = "monitoring:drains:$bueiroId"

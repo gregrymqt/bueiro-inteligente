@@ -24,6 +24,9 @@ import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import br.edu.fatecpg.feature.realtime.services.RealtimeService
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Container de Injeo de Dependncias manual (Service Locator).
@@ -60,6 +63,15 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
             // Inicializa o ApiClient para todo o aplicativo
             ApiClient.init(tokenManager, baseUrl)
             Log.i("AppContainer", "ApiClient inicializado via AppContainer")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    localCacheService.clearExpired()
+                    Log.i("AppContainer", "Cache expirado limpo na inicialização")
+                } catch (e: Exception) {
+                    Log.e("AppContainer", "Erro ao limpar cache expirado na inicialização", e)
+                }
+            }
         } catch (e: Exception) {
             Log.e("AppContainer", "Falha critica no INIT do AppContainer", e)
         }
