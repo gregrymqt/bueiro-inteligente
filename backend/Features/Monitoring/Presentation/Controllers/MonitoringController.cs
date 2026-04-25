@@ -15,16 +15,6 @@ public sealed class MonitoringController(
     ILogger<MonitoringController> logger
 ) : ApiControllerBase
 {
-    // C# 12: Campos injetados via Primary Constructor
-    private readonly IMonitoringService _monitoringService =
-        monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
-    private readonly IBackgroundJobClient _backgroundJobs =
-        backgroundJobs ?? throw new ArgumentNullException(nameof(backgroundJobs));
-    private readonly IAuthExtension _authExtension =
-        authExtension ?? throw new ArgumentNullException(nameof(authExtension));
-    private readonly ILogger<MonitoringController> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-
     [HttpPost("medicoes")]
     [AllowAnonymous] // O hardware usa token próprio via Query ou Header
     public async Task<IActionResult> ReceiveSensorData(
@@ -34,21 +24,33 @@ public sealed class MonitoringController(
     {
         ArgumentNullException.ThrowIfNull(payload);
 
-        _logger.LogInformation("Recebendo medição do bueiro {Id}", payload.IdBueiro);
+        logger.LogInformation("Recebendo medição do bueiro {Id}", payload.IdBueiro);
 
-        _authExtension.VerifyHardwareToken(
+        authExtension.VerifyHardwareToken(
             Request.Headers.Authorization.ToString(),
             Request.Query["token"].ToString()
         );
 
-        _backgroundJobs.Enqueue<IMonitoringService>(service =>
-            service.ProcessSensorDataAsync(payload, CancellationToken.None)
-        );
+        try
+        {
+            backgroundJobs.Enqueue<IMonitoringService>(service =>
+                service.ProcessSensorDataAsync(payload, CancellationToken.None)
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(
+                ex,
+                "Falha ao enfileirar processamento (Redis Down) para o bueiro {IdBueiro}",
+                payload.IdBueiro
+            );
+            return Problem(detail: "Falha ao enfileirar processamento (Redis Down)", statusCode: 500);
+        }
 
         return Accepted();
     }
 
     [HttpGet("{id}/status")]
     public async Task<ActionResult<DrainStatusDTO>> GetStatus(string id, CancellationToken ct) =>
-        Ok(await _monitoringService.GetDrainStatusAsync(id, ct).ConfigureAwait(false));
+        Ok(await monitoringService.GetDrainStatusAsync(id, ct).ConfigureAwait(false));
 }

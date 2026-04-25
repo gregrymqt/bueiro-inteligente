@@ -61,13 +61,11 @@ public sealed class MonitoringService(
                 {
                     await realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    logger.LogError(
-                        ex,
-                        "Erro ao publicar medição no SignalR para o bueiro {Id}. Payload: {@Payload}",
-                        result.IdBueiro,
-                        result
+                    logger.LogWarning(
+                        "Falha no Realtime Broadcast para o bueiro {Id}. O socket pode estar instável.",
+                        result.IdBueiro
                     );
                 }
             }

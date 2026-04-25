@@ -7,6 +7,7 @@ using backend.Features.Rows.Infrastructure.Extensions;
 using backend.Infrastructure;
 using backend.Infrastructure.Cache;
 using backend.Infrastructure.Extensions;
+using backend.Extensions.Scheduler;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

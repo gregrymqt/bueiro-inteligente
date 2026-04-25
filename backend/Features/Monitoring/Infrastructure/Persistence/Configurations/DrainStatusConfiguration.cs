@@ -38,6 +38,8 @@ public sealed class DrainStatusConfiguration : IEntityTypeConfiguration<DrainSta
             .HasColumnType("timestamptz")
             .HasDefaultValueSql("now()");
 
+        builder.HasIndex(x => new { x.DrainIdentifier, x.LastUpdate }).IsUnique();
+
         builder
             .Property(x => x.SyncedToRows)
             .HasColumnName("sincronizado_rows")

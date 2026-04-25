@@ -38,23 +38,44 @@ public sealed class MonitoringRepository(
             );
         }
 
-        // 2. Persistência Histórica (PostgreSQL)
-        DrainStatus entity = new()
-        {
-            DrainIdentifier = data.IdBueiro,
-            DistanceCm = data.DistanciaCm,
-            ObstructionLevel = data.NivelObstrucao,
-            Status = data.Status,
-            Latitude = data.Latitude,
-            Longitude = data.Longitude,
-            LastUpdate = data.UltimaAtualizacao,
-            SyncedToRows = false,
-        };
-
+        // 2. Verificação de Idempotência e Persistência Histórica (PostgreSQL)
         try
         {
-            await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            var latestRecord = await dbContext
+                .DrainStatuses.AsNoTracking()
+                .Where(s => s.DrainIdentifier == data.IdBueiro)
+                .OrderByDescending(s => s.LastUpdate)
+                .FirstOrDefaultAsync(ct)
+                .ConfigureAwait(false);
+
+            if (
+                latestRecord is null
+                || Math.Abs(latestRecord.DistanceCm - data.DistanciaCm) > 0.01
+                || (data.UltimaAtualizacao - latestRecord.LastUpdate).TotalMinutes >= 1
+            )
+            {
+                DrainStatus entity = new()
+                {
+                    DrainIdentifier = data.IdBueiro,
+                    DistanceCm = data.DistanciaCm,
+                    ObstructionLevel = data.NivelObstrucao,
+                    Status = data.Status,
+                    Latitude = data.Latitude,
+                    Longitude = data.Longitude,
+                    LastUpdate = data.UltimaAtualizacao,
+                    SyncedToRows = false,
+                };
+
+                await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
+                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Leitura duplicada ignorada (idempotência) para o bueiro {DrainIdentifier}",
+                    data.IdBueiro
+                );
+            }
         }
         catch (DbUpdateException ex)
         {
