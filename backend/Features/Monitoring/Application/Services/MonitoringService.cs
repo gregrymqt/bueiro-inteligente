@@ -17,9 +17,6 @@ public sealed class MonitoringService(
     ILogger<MonitoringService> logger
 ) : IMonitoringService
 {
-    private const double MaxBucketDepthCm = 120.0;
-    private const double CriticalThreshold = 80.0;
-    private const double AlertThreshold = 50.0;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
 
     public async Task<DrainStatusDTO> ProcessSensorDataAsync(
@@ -39,11 +36,13 @@ public sealed class MonitoringService(
             if (string.IsNullOrWhiteSpace(payload.IdBueiro))
                 throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
 
-            ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm);
+            var config = await monitoringRepository.GetConfigByIdAsync(payload.IdBueiro, ct).ConfigureAwait(false);
+
+            ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm, config.MaxHeight);
 
             double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
-            double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance), 2);
-            string status = ResolveStatus(obstructionLevel);
+            double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance, config.MaxHeight), 2);
+            string status = ResolveStatus(obstructionLevel, config.CriticalThreshold, config.AlertThreshold);
 
             DateTimeOffset ultimaAtualizacao = payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow;
 
@@ -127,13 +126,13 @@ public sealed class MonitoringService(
         }
     }
 
-    private void ValidateSensorNoise(string id, double distanceCm)
+    private void ValidateSensorNoise(string id, double distanceCm, double maxHeight)
     {
         if (
             double.IsNaN(distanceCm)
             || double.IsInfinity(distanceCm)
             || distanceCm < 0
-            || distanceCm > MaxBucketDepthCm
+            || distanceCm > maxHeight
         )
         {
             logger.LogWarning("Ruído detectado: {DistanceCm} ignorada para {Id}", distanceCm, id);
@@ -141,14 +140,14 @@ public sealed class MonitoringService(
         }
     }
 
-    private static double CalculateObstructionLevel(double dist) =>
-        ((MaxBucketDepthCm - dist) / MaxBucketDepthCm) * 100d;
+    private static double CalculateObstructionLevel(double dist, double maxHeight) =>
+        ((maxHeight - dist) / maxHeight) * 100d;
 
-    private static string ResolveStatus(double level) =>
+    private static string ResolveStatus(double level, double criticalThreshold, double alertThreshold) =>
         level switch
         {
-            >= CriticalThreshold => "Crítico",
-            >= AlertThreshold => "Alerta",
+            var l when l >= criticalThreshold => "Crítico",
+            var l when l >= alertThreshold => "Alerta",
             _ => "Normal",
         };
 }

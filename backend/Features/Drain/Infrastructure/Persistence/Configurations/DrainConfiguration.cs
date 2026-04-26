@@ -32,6 +32,12 @@ public sealed class DrainConfiguration : IEntityTypeConfiguration<DrainEntity>
 
         builder.HasIndex(x => x.HardwareId).IsUnique();
 
+        builder.Property(x => x.MaxHeight).HasColumnName("max_height").HasDefaultValue(120.0);
+
+        builder.Property(x => x.CriticalThreshold).HasColumnName("critical_threshold").HasDefaultValue(80.0);
+
+        builder.Property(x => x.AlertThreshold).HasColumnName("alert_threshold").HasDefaultValue(50.0);
+
         builder
             .Property(x => x.CreatedAt)
             .HasColumnName("created_at")

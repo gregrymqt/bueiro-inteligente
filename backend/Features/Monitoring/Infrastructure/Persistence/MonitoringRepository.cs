@@ -171,6 +171,30 @@ public sealed class MonitoringRepository(
         }
     }
 
+    public async Task<BueiroConfiguration> GetConfigByIdAsync(string id, CancellationToken ct = default)
+    {
+        var drainConfig = await dbContext.Drains
+            .AsNoTracking()
+            .Where(d => d.HardwareId == id)
+            .Select(d => new BueiroConfiguration
+            {
+                IdBueiro = d.HardwareId,
+                MaxHeight = d.MaxHeight,
+                CriticalThreshold = d.CriticalThreshold,
+                AlertThreshold = d.AlertThreshold
+            })
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
+        return drainConfig ?? new BueiroConfiguration
+        {
+            IdBueiro = id,
+            MaxHeight = 120.0,
+            CriticalThreshold = 80.0,
+            AlertThreshold = 50.0
+        };
+    }
+
     public async Task MarkAsSyncedAsync(
         IReadOnlyCollection<string> drainIds,
         CancellationToken ct = default
