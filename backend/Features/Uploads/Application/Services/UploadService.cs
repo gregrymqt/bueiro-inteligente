@@ -1,23 +1,31 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using backend.Features.Uploads.Domain;
 using backend.Features.Uploads.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Uploads.Application.Services;
 
 public class UploadService : IUploadService
 {
     private readonly IUploadRepository _repository;
-    // In a real application, you might inject a storage service/provider here.
-    // For now, we'll store files locally.
-    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<UploadService> _logger;
+    private readonly string _storagePath;
 
-    public UploadService(IUploadRepository repository)
+    public UploadService(IUploadRepository repository, IConfiguration configuration, ILogger<UploadService> logger)
     {
         _repository = repository;
+        _configuration = configuration;
+        _logger = logger;
+
+        _storagePath = _configuration["UploadSettings:StoragePath"]
+            ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
         if (!Directory.Exists(_storagePath))
         {
@@ -42,23 +50,60 @@ public class UploadService : IUploadService
             throw new ArgumentException("File is empty or null.");
         }
 
+        // Sanitize file name (Path Traversal protection)
+        var sanitizedFileName = Path.GetFileName(file.FileName);
+
         var uploadId = Guid.NewGuid();
-        var extension = Path.GetExtension(file.FileName);
+        var extension = Path.GetExtension(sanitizedFileName);
         var storedFileName = $"{uploadId}{extension}";
         var filePath = Path.Combine(_storagePath, storedFileName);
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        // Check disk space
+        var driveInfo = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(_storagePath)) ?? string.Empty);
+        if (driveInfo.IsReady && driveInfo.AvailableFreeSpace < file.Length)
         {
-            await file.CopyToAsync(stream);
+            throw new IOException("Not enough disk space to save the file.");
+        }
+
+        string checksumHex;
+
+        try
+        {
+            // Optimize FileStream with larger buffer and asynchronous flag
+            const int bufferSize = 81920; // 80 KB
+            using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.Asynchronous);
+
+            // Compute Checksum while saving
+            using var sha256 = SHA256.Create();
+            using var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Write);
+
+            await file.CopyToAsync(cryptoStream);
+
+            // Ensure all data is written and hashes computed
+            cryptoStream.FlushFinalBlock();
+            var checksumBytes = sha256.Hash;
+            checksumHex = BitConverter.ToString(checksumBytes!).Replace("-", "").ToLowerInvariant();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "Unauthorized access while attempting to save file to {Path}", filePath);
+            throw new IOException("Access to the storage path is denied.", ex);
+        }
+        catch (IOException ex)
+        {
+            _logger.LogError(ex, "IO error occurred while saving file to {Path}", filePath);
+            throw;
         }
 
         var uploadModel = new UploadModel
         {
             Id = uploadId,
-            FileName = file.FileName,
+            FileName = sanitizedFileName,
             ContentType = file.ContentType,
             Size = file.Length,
             StoragePath = filePath,
+            Extension = extension,
+            Checksum = checksumHex,
             CreatedAt = DateTime.UtcNow
         };
 
