@@ -9,6 +9,16 @@ public sealed class MonitoringServiceTests
 
     public MonitoringServiceTests()
     {
+        _repositoryMock
+            .Setup(r => r.GetConfigByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new backend.Features.Monitoring.Domain.BueiroConfiguration
+            {
+                IdBueiro = "DRN-01",
+                MaxHeight = 120.0,
+                CriticalThreshold = 80.0,
+                AlertThreshold = 50.0
+            });
+
         _service = new MonitoringService(
             _repositoryMock.Object,
             _cacheMock.Object,

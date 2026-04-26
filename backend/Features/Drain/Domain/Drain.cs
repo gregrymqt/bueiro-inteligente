@@ -25,6 +25,12 @@ public sealed class Drain(
 
     public required string HardwareId { get; set; } = hardwareId;
 
+    public double MaxHeight { get; set; } = 120.0;
+
+    public double CriticalThreshold { get; set; } = 80.0;
+
+    public double AlertThreshold { get; set; } = 50.0;
+
     public DateTimeOffset CreatedAt { get; set; } =
         CreatedAt == default ? DateTimeOffset.UtcNow : CreatedAt;
 }

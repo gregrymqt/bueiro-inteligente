@@ -11,4 +11,5 @@ public interface IMonitoringRepository
         CancellationToken ct = default
     );
     Task MarkAsSyncedAsync(IReadOnlyCollection<string> drainIds, CancellationToken ct = default);
+    Task<BueiroConfiguration> GetConfigByIdAsync(string id, CancellationToken ct = default);
 }
