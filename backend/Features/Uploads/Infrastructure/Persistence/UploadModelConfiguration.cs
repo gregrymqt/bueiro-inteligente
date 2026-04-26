@@ -13,5 +13,7 @@ public class UploadModelConfiguration : IEntityTypeConfiguration<UploadModel>
         builder.Property(x => x.FileName).IsRequired().HasMaxLength(255);
         builder.Property(x => x.ContentType).IsRequired().HasMaxLength(100);
         builder.Property(x => x.StoragePath).IsRequired().HasMaxLength(1024);
+        builder.Property(x => x.Extension).IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Checksum).IsRequired().HasMaxLength(128);
     }
 }
