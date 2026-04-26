@@ -1,0 +1,32 @@
+--- ./backend/Features/Uploads/Application/Services/UploadService.cs
++++ ./backend/Features/Uploads/Application/Services/UploadService.cs
+@@ -122,4 +122,29 @@
+             await _repository.DeleteAsync(id);
+         }
+     }
++
++    private bool IsValidImage(IFormFile file)
++    {
++        if (file.Length < 4)
++        {
++            return false;
++        }
++
++        var headerBytes = new byte[4];
++        using (var stream = file.OpenReadStream())
++        {
++            stream.Read(headerBytes, 0, 4);
++        }
++
++        string headerHex = BitConverter.ToString(headerBytes).Replace("-", "").ToUpperInvariant();
++        var contentType = file.ContentType.ToLowerInvariant();
++
++        if (headerHex.StartsWith("FFD8FF") && (contentType == "image/jpeg" || contentType == "image/jpg")) return true;
++        if (headerHex.StartsWith("89504E47") && contentType == "image/png") return true;
++        if (headerHex.StartsWith("47494638") && contentType == "image/gif") return true;
++        if (headerHex.StartsWith("424D") && contentType == "image/bmp") return true;
++        if (headerHex.StartsWith("52494646") && contentType == "image/webp") return true;
++
++        return false;
++    }
+ }
