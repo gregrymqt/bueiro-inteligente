@@ -29,7 +29,7 @@ float medirDistancia() {
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
-  digitalWrite(trig, HIGH);
+  digitalWrite(trig, LOW);
   // mede quanto tempo o echo ficou ativo, esse é o tempo de ida e volta do som
   long duracao = pulseIn(echo, HIGH);
   //multiplica a duração pelo pela velocidade do som em cm por microsegundo assim tendo a distância
@@ -149,8 +149,8 @@ void loop() {
   }
 
   float delta = jaEnviouLeitura
-    ? (distancia >= ultimaDistancia ? distancia - ultimaDistancia : ultimaDistancia - distancia)
-    : DELTA_MINIMO + 1.0;
+                  ? (distancia >= ultimaDistancia ? distancia - ultimaDistancia : ultimaDistancia - distancia)
+                  : DELTA_MINIMO + 1.0;
   unsigned long agora = millis();
   bool heartbeatVencido = jaEnviouLeitura && (agora - ultimoEnvioMillis >= HEARTBEAT_MS);
   bool deveEnviar = !jaEnviouLeitura || delta > DELTA_MINIMO || heartbeatVencido;

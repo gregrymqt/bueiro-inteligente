@@ -1,3 +1,5 @@
+using backend.Features.Auth.Domain;
+
 namespace backend.Features.Drain.Domain;
 
 public sealed class Drain(
@@ -30,6 +32,9 @@ public sealed class Drain(
     public double CriticalThreshold { get; set; } = 80.0;
 
     public double AlertThreshold { get; set; } = 50.0;
+
+    public Guid UserId { get; set; }
+    public User User { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; } =
         CreatedAt == default ? DateTimeOffset.UtcNow : CreatedAt;

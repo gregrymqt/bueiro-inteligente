@@ -76,16 +76,16 @@ public class UploadService : IUploadService
         {
             // Optimize FileStream with larger buffer and asynchronous flag
             const int bufferSize = 81920; // 80 KB
-            using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.Asynchronous);
+            await using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.Asynchronous);
 
             // Compute Checksum while saving
             using var sha256 = SHA256.Create();
-            using var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Write);
+            await using var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Write);
 
             await file.CopyToAsync(cryptoStream);
 
             // Ensure all data is written and hashes computed
-            cryptoStream.FlushFinalBlock();
+            await cryptoStream.FlushFinalBlockAsync();
             var checksumBytes = sha256.Hash;
             checksumHex = BitConverter.ToString(checksumBytes!).Replace("-", "").ToLowerInvariant();
         }
@@ -138,18 +138,16 @@ public class UploadService : IUploadService
         var headerBytes = new byte[4];
         using (var stream = file.OpenReadStream())
         {
-            stream.Read(headerBytes, 0, 4);
+            stream.ReadExactly(headerBytes, 0, 4);
         }
 
-        string headerHex = BitConverter.ToString(headerBytes).Replace("-", "").ToUpperInvariant();
+        var headerHex = BitConverter.ToString(headerBytes).Replace("-", "").ToUpperInvariant();
         var contentType = file.ContentType.ToLowerInvariant();
 
         if (headerHex.StartsWith("FFD8FF") && (contentType == "image/jpeg" || contentType == "image/jpg")) return true;
         if (headerHex.StartsWith("89504E47") && contentType == "image/png") return true;
         if (headerHex.StartsWith("47494638") && contentType == "image/gif") return true;
         if (headerHex.StartsWith("424D") && contentType == "image/bmp") return true;
-        if (headerHex.StartsWith("52494646") && contentType == "image/webp") return true;
-
-        return false;
+        return headerHex.StartsWith("52494646") && contentType == "image/webp";
     }
 }
