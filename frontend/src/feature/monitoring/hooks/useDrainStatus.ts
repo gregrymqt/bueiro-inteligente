@@ -10,7 +10,7 @@ import {
 } from '../mocks/monitoringMocks';
 import type { DrainStatus } from '../types';
 
-const USE_MONITORING_MOCK = true;
+const USE_MONITORING_MOCK = false; // Toggle para usar dados mockados ou reais
 
 export const useDrainStatus = (bueiroId: string) => {
   const [data, setData] = useState<DrainStatus | null>(null);

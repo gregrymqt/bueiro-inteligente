@@ -12,7 +12,7 @@ using backend.Infrastructure.Persistence;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260412160203_InitialCreate")]
+    [Migration("20260427213526_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -56,16 +56,32 @@ namespace backend.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("avatar_url");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("email");
 
+                    b.Property<bool>("EmailConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("email_confirmed");
+
                     b.Property<string>("FullName")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("full_name");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("google_id");
 
                     b.Property<string>("HashedPassword")
                         .IsRequired()
@@ -73,16 +89,13 @@ namespace backend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("hashed_password");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("RoleId");
+                    b.HasIndex("GoogleId")
+                        .IsUnique();
 
                     b.ToTable("users", (string)null);
                 });
@@ -99,11 +112,23 @@ namespace backend.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("address");
 
+                    b.Property<double>("AlertThreshold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(50.0)
+                        .HasColumnName("alert_threshold");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<double>("CriticalThreshold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(80.0)
+                        .HasColumnName("critical_threshold");
 
                     b.Property<string>("HardwareId")
                         .IsRequired()
@@ -125,16 +150,27 @@ namespace backend.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("longitude");
 
+                    b.Property<double>("MaxHeight")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(120.0)
+                        .HasColumnName("max_height");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("HardwareId")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("drains", (string)null);
                 });
@@ -149,12 +185,6 @@ namespace backend.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)")
                         .HasColumnName("action_url");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)")
-                        .HasColumnName("image_url");
 
                     b.Property<int>("Order")
                         .ValueGeneratedOnAdd()
@@ -179,7 +209,13 @@ namespace backend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("title");
 
+                    b.Property<Guid>("UploadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("upload_id");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UploadId");
 
                     b.ToTable("home_carousels", (string)null);
                 });
@@ -237,14 +273,20 @@ namespace backend.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("DataHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("data_hash");
+
                     b.Property<double>("DistanceCm")
                         .HasColumnType("double precision")
                         .HasColumnName("distancia_cm");
 
                     b.Property<string>("DrainIdentifier")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("id_bueiro");
 
                     b.Property<DateTimeOffset>("LastUpdate")
@@ -279,25 +321,133 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DataHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_drain_status_data_hash");
+
                     b.HasIndex("DrainIdentifier");
+
+                    b.HasIndex("DrainIdentifier", "LastUpdate")
+                        .IsUnique();
 
                     b.ToTable("drain_status", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Auth.Domain.User", b =>
+            modelBuilder.Entity("backend.Features.Uploads.Domain.UploadModel", b =>
                 {
-                    b.HasOne("backend.Features.Auth.Domain.Role", "Role")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("checksum");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("extension");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("storage_path");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("uploads", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Checksum = "A1B2C3D4E5F6",
+                            ContentType = "image/jpeg",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Extension = ".jpg",
+                            FileName = "sample_home_photo.jpg",
+                            Size = 102400L,
+                            StoragePath = "/var/www/uploads/11111111-1111-1111-1111-111111111111.jpg"
+                        });
+                });
+
+            modelBuilder.Entity("user_roles", b =>
+                {
+                    b.Property<Guid>("user_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("role_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("user_id", "role_id");
+
+                    b.HasIndex("role_id");
+
+                    b.ToTable("user_roles", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Features.Drain.Domain.Drain", b =>
+                {
+                    b.HasOne("backend.Features.Auth.Domain.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("backend.Features.Home.Domain.CarouselModel", b =>
+                {
+                    b.HasOne("backend.Features.Uploads.Domain.UploadModel", "Upload")
+                        .WithMany()
+                        .HasForeignKey("UploadId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Role");
+                    b.Navigation("Upload");
                 });
 
-            modelBuilder.Entity("backend.Features.Auth.Domain.Role", b =>
+            modelBuilder.Entity("user_roles", b =>
                 {
-                    b.Navigation("Users");
+                    b.HasOne("backend.Features.Auth.Domain.Role", null)
+                        .WithMany()
+                        .HasForeignKey("role_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Features.Auth.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("user_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

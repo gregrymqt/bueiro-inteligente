@@ -91,6 +91,7 @@ public sealed class AuthExtension(
 
         string email = GetRequiredClaim(claims, "sub", "email");
         string jti = GetRequiredClaim(claims, "jti");
+        Guid? userId = TryGetOptionalGuidClaim(claims, "user_id");
 
         if (await IsBlacklistedAsync(jti).ConfigureAwait(false))
         {
@@ -109,7 +110,7 @@ public sealed class AuthExtension(
             roles = ["User"];
         }
 
-        return new UserTokenData(email, roles, jti);
+        return new UserTokenData(email, roles, jti, userId);
     }
 
     public string VerifyHardwareToken(string? auth = null, string? query = null)
@@ -209,5 +210,24 @@ public sealed class AuthExtension(
         }
 
         throw new UnauthorizedAccessException($"Claim JWT obrigatória ausente: {keys[0]}.");
+    }
+
+    private static Guid? TryGetOptionalGuidClaim(Dictionary<string, object?> claims, string key)
+    {
+        if (!claims.TryGetValue(key, out object? value) || value is null)
+        {
+            return null;
+        }
+
+        string text = value.ToString()?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return Guid.TryParse(text, out var parsed)
+            ? parsed
+            : throw new UnauthorizedAccessException($"Claim JWT inválida: {key}.");
     }
 }

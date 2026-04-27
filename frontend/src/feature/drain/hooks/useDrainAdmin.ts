@@ -3,7 +3,7 @@ import { AlertService } from '@/core/alert/AlertService';
 import { DrainService } from '../services/DrainService';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
 
-const USE_DRAIN_ADMIN_MOCK = true;
+const USE_DRAIN_ADMIN_MOCK = false;
 
 const sortDrains = (drains: Drain[]): Drain[] => {
   return [...drains].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' }));

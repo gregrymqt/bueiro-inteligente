@@ -4,10 +4,12 @@ public sealed class DrainsControllerTests
 {
     private readonly Mock<IDrainService> _drainServiceMock = new(); // Loose por padrão
     private readonly DrainsController _controller;
+    private readonly Guid _userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public DrainsControllerTests()
     {
         _controller = new DrainsController(_drainServiceMock.Object);
+        SetAuthenticatedUser(_userId);
     }
 
     #region Helpers (Molde para o seu agente)
@@ -23,6 +25,25 @@ public sealed class DrainsControllerTests
             "HW-TEST",
             DateTimeOffset.UtcNow
         );
+
+    private void SetAuthenticatedUser(Guid userId)
+    {
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        [
+                            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                            new Claim(ClaimTypes.Email, "admin@teste.com"),
+                        ],
+                        "TestAuth"
+                    )
+                )
+            }
+        };
+    }
 
     #endregion
 
@@ -54,7 +75,7 @@ public sealed class DrainsControllerTests
         var response = CreateResponse(name: request.Name);
 
         _drainServiceMock
-            .Setup(s => s.CreateDrainAsync(request, It.IsAny<CancellationToken>()))
+            .Setup(s => s.CreateDrainAsync(request, _userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
 
         // Act
@@ -64,6 +85,10 @@ public sealed class DrainsControllerTests
         var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         createdResult.ActionName.Should().Be(nameof(DrainsController.GetById));
         createdResult.Value.Should().BeEquivalentTo(response);
+        _drainServiceMock.Verify(
+            s => s.CreateDrainAsync(request, _userId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Theory]

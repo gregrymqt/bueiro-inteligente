@@ -11,7 +11,7 @@ import styles from './DashboardLayout.module.scss';
 import './DashboardLayout.scss';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
-const USE_DASHBOARD_MOCK = true;
+const USE_DASHBOARD_MOCK = false;
 
 // SVGs simples para os ícones (Em produção, você pode usar Lucide ou Phosphor Icons)
 const MonitorIcon = () => (

@@ -49,13 +49,14 @@ public sealed class DrainServiceTests
     {
         // Arrange
         var request = new DrainCreateRequest("Novo", "Rua", 0, 0, "HW-DUPLICADO", true);
+        var userId = Guid.NewGuid();
         _repositoryMock
             .Setup(r => r.GetByHardwareIdAsync(request.HardwareId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildEntity(hwId: request.HardwareId));
 
         // Act & Assert
         await _service
-            .Invoking(s => s.CreateDrainAsync(request))
+            .Invoking(s => s.CreateDrainAsync(request, userId))
             .Should()
             .ThrowAsync<LogicException>()
             .WithMessage($"*{request.HardwareId}*");
@@ -63,6 +64,35 @@ public sealed class DrainServiceTests
         _repositoryMock.Verify(
             r => r.CreateAsync(It.IsAny<DrainEntity>(), It.IsAny<CancellationToken>()),
             Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task CreateDrainAsync_DeveAssociarUsuarioAutenticadoAoBueiro()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var request = new DrainCreateRequest("Novo", "Rua", 0, 0, "HW-OK", true);
+
+        _repositoryMock
+            .Setup(r => r.GetByHardwareIdAsync(request.HardwareId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DrainEntity?)null);
+        _repositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<DrainEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DrainEntity drain, CancellationToken _) => drain);
+
+        // Act
+        var result = await _service.CreateDrainAsync(request, userId);
+
+        // Assert
+        result.Name.Should().Be(request.Name);
+        _repositoryMock.Verify(
+            r =>
+                r.CreateAsync(
+                    It.Is<DrainEntity>(d => d.UserId == userId && d.HardwareId == request.HardwareId),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
         );
     }
 

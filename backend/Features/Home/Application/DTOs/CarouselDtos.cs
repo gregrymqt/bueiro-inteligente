@@ -7,24 +7,32 @@ namespace backend.Features.Home.Application.DTOs;
 /// Payload used to create a carousel item.
 /// </summary>
 public sealed record CarouselCreateDto(
-    [property: Required, StringLength(255), Display(Name = "Título", Description = "Título do carousel")] string Title,
-    [property: StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")] string? Subtitle,
-    [property: Required, JsonPropertyName("upload_id"), Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")] Guid UploadId,
-    [property: Url, StringLength(2048), JsonPropertyName("action_url"), Display(Name = "URL de ação", Description = "URL opcional de ação do carousel")] string? ActionUrl,
-    [property: Range(0, int.MaxValue), Display(Name = "Ordem", Description = "Ordem de exibição do carousel")] int Order,
-    [property: Required, Display(Name = "Seção", Description = "Seção do carousel na Home")] CarouselSection Section
+    [Required, StringLength(255), Display(Name = "Título", Description = "Título do carousel")] string Title,
+    [StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")] string? Subtitle,
+    [Required, Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")]
+    [property: JsonPropertyName("upload_id")]
+        Guid UploadId,
+    [Url, StringLength(2048), Display(Name = "URL de ação", Description = "URL opcional de ação do carousel")]
+    [property: JsonPropertyName("action_url")]
+        string? ActionUrl,
+    [Range(0, int.MaxValue), Display(Name = "Ordem", Description = "Ordem de exibição do carousel")] int Order,
+    [Required, Display(Name = "Seção", Description = "Seção do carousel na Home")] CarouselSection Section
 );
 
 /// <summary>
 /// Payload used to update a carousel item.
 /// </summary>
 public sealed record CarouselUpdateDto(
-    [property: StringLength(255), Display(Name = "Título", Description = "Título do carousel")] string? Title = null,
-    [property: StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")] string? Subtitle = null,
-    [property: JsonPropertyName("upload_id"), Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")] Guid? UploadId = null,
-    [property: Url, StringLength(2048), JsonPropertyName("action_url"), Display(Name = "URL de ação", Description = "URL opcional de ação do carousel")] string? ActionUrl = null,
-    [property: Range(0, int.MaxValue), Display(Name = "Ordem", Description = "Ordem de exibição do carousel")] int? Order = null,
-    [property: Display(Name = "Seção", Description = "Seção do carousel na Home")] CarouselSection? Section = null
+    [StringLength(255), Display(Name = "Título", Description = "Título do carousel")] string? Title = null,
+    [StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")] string? Subtitle = null,
+    [Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")]
+    [property: JsonPropertyName("upload_id")]
+        Guid? UploadId = null,
+    [Url, StringLength(2048), Display(Name = "URL de ação", Description = "URL opcional de ação do carousel")]
+    [property: JsonPropertyName("action_url")]
+        string? ActionUrl = null,
+    [Range(0, int.MaxValue), Display(Name = "Ordem", Description = "Ordem de exibição do carousel")] int? Order = null,
+    [Display(Name = "Seção", Description = "Seção do carousel na Home")] CarouselSection? Section = null
 );
 
 /// <summary>

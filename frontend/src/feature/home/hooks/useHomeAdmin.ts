@@ -10,7 +10,7 @@ import type {
   StatCardUpdatePayload
 } from '../types';
 
-const USE_HOME_ADMIN_MOCK = true;
+const USE_HOME_ADMIN_MOCK = false;
 
 export function useHomeAdmin() {
   const [carousels, setCarousels] = useState<CarouselContent[]>([]);

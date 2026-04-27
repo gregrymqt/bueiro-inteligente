@@ -48,6 +48,7 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         {
             return await dbContext.Drains
                 .AsNoTracking()
+                .OrderByDescending(d => d.CreatedAt)
                 .Skip(skip)
                 .Take(limit)
                 .ToListAsync(ct)

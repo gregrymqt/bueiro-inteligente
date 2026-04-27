@@ -2,14 +2,17 @@ namespace backend.Extensions.Auth.Models;
 
 public sealed class UserTokenData
 {
-    public UserTokenData(string email, IReadOnlyList<string> roles, string jti)
+    public UserTokenData(string email, IReadOnlyList<string> roles, string jti, Guid? userId = null)
     {
         Email = email;
         Roles = NormalizeRoles(roles);
         Jti = jti;
+        UserId = userId;
     }
 
     public string Email { get; }
+
+    public Guid? UserId { get; }
 
     public IReadOnlyList<string> Roles { get; set; }
 

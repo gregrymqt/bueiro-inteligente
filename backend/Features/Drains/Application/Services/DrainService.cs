@@ -57,16 +57,15 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
         }
     }
 
-    public async Task<DrainResponse> CreateDrainAsync(
-        DrainCreateRequest request,
-        CancellationToken ct = default
-    )
+    public async Task<DrainResponse> CreateDrainAsync(DrainCreateRequest request, Guid userId, CancellationToken ct = default)
     {
         _logger.LogInformation("Criando bueiro. Request: {@Request}", request);
 
         try
         {
             ArgumentNullException.ThrowIfNull(request);
+            if (userId == Guid.Empty)
+                throw LogicException.InvalidValue(nameof(userId), userId);
             ValidateField(request.HardwareId, nameof(request.HardwareId));
 
             if (
@@ -83,6 +82,7 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
                 Longitude = request.Longitude,
                 HardwareId = request.HardwareId,
                 IsActive = request.IsActive,
+                UserId = userId,
             };
 
             var created = await _repository.CreateAsync(drain, ct).ConfigureAwait(false);

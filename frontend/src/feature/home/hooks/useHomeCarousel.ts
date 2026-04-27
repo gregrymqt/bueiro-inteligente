@@ -3,7 +3,7 @@ import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
 import type { CarouselContent, StatCardContent } from '../types';
 
-const USE_HOME_CAROUSEL_MOCK = true;
+const USE_HOME_CAROUSEL_MOCK = false;
 
 interface UseHomeCarouselResult {
   heroSlides: CarouselContent[];

@@ -67,7 +67,7 @@ public sealed class AuthService(
 
             var roleNames = ResolveUserRoleNames(user.Email, user.Roles);
             var accessToken = _authExtension.CreateAccessToken(
-                BuildTokenPayload(user.Email, roleNames)
+                BuildTokenPayload(user.Id, user.Email, roleNames)
             );
 
             return new TokenResponse(accessToken, "bearer");
@@ -190,7 +190,7 @@ public sealed class AuthService(
             }
 
             var accessToken = _authExtension.CreateAccessToken(
-                BuildTokenPayload(user.Email, ResolveUserRoleNames(email, user.Roles))
+                BuildTokenPayload(user.Id, user.Email, ResolveUserRoleNames(email, user.Roles))
             );
 
             httpContext.Response.Cookies.Append(
@@ -290,16 +290,17 @@ public sealed class AuthService(
             _ => 3,
         };
 
-    private static SharedTokenPayload BuildTokenPayload(
-        string email,
-        IReadOnlyList<string> roleNames
-    )
+    private static SharedTokenPayload BuildTokenPayload(Guid userId, string email, IReadOnlyList<string> roleNames)
     {
         var normalized = NormalizeRoleNames(roleNames);
         return new SharedTokenPayload(
             email,
             normalized.FirstOrDefault() ?? DefaultRoleName,
-            new Dictionary<string, object?> { ["roles"] = normalized.ToArray() }
+            new Dictionary<string, object?>
+            {
+                ["roles"] = normalized.ToArray(),
+                ["user_id"] = userId.ToString(),
+            }
         );
     }
 

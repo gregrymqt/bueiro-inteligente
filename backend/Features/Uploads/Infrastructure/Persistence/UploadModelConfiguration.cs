@@ -8,13 +8,17 @@ public class UploadModelConfiguration : IEntityTypeConfiguration<UploadModel>
 {
     public void Configure(EntityTypeBuilder<UploadModel> builder)
     {
-        builder.ToTable("Uploads");
+        builder.ToTable("uploads");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.FileName).IsRequired().HasMaxLength(255);
-        builder.Property(x => x.ContentType).IsRequired().HasMaxLength(100);
-        builder.Property(x => x.StoragePath).IsRequired().HasMaxLength(1024);
-        builder.Property(x => x.Extension).IsRequired().HasMaxLength(50);
-        builder.Property(x => x.Checksum).IsRequired().HasMaxLength(128);
+        
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.FileName).HasColumnName("file_name").IsRequired().HasMaxLength(255);
+        builder.Property(x => x.ContentType).HasColumnName("content_type").IsRequired().HasMaxLength(100);
+        builder.Property(x => x.Size).HasColumnName("size");
+        builder.Property(x => x.StoragePath).HasColumnName("storage_path").IsRequired().HasMaxLength(1024);
+        builder.Property(x => x.Extension).HasColumnName("extension").IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Checksum).HasColumnName("checksum").IsRequired().HasMaxLength(128);
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
 
         builder.HasData(
             new UploadModel

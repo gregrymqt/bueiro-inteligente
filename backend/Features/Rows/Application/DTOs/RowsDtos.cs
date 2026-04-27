@@ -9,7 +9,7 @@ public sealed record RowsAppendRequest(
 );
 
 /// <summary> Payload para criação de tabelas. </summary>
-public sealed record RowsCreateTableRequest([property: Required, StringLength(255)] string Name);
+public sealed record RowsCreateTableRequest([Required, StringLength(255)] string Name);
 
 /// <summary> Resposta de criação de tabela. </summary>
 public sealed record RowsCreateTableResponse(

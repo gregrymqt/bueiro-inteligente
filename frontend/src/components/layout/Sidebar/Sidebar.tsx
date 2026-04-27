@@ -40,10 +40,10 @@ interface SidebarProps {
   showMobileSubheader?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
+export const Sidebar: React.FC<SidebarProps> = ({
   id,
-  items, 
-  activeId, 
+  items,
+  activeId,
   onNavigate,
   isOpenMobile,
   onCloseMobile,
@@ -182,26 +182,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside id={id} className={`sidebar ${isOpenMobile ? 'sidebar--open' : ''}`}>
         <div className="sidebar__header">
-          <h1 className="sidebar__logo">Bueiro Inteligente</h1>
+          <h1 className="sidebar__logo" onClick={(e) => {
+            e.stopPropagation();
+            onNavigate('home');
+            onCloseMobile();
+          }}>
+            Bueiro Inteligente
+          </h1>
           {/* Opcional: botão de fechar para mobile */}
           <button
             type="button"
             className="sidebar__close-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCloseMobile();
-            }}
-          >
-            &times;
-          </button>
-        </div>
+          onClick={(e) => {
+            e.stopPropagation();
+            onCloseMobile();
+          }}
+        >
+          &times;
+        </button>
+      </div>
 
-        <nav className="sidebar__nav">
-          <ul className="sidebar__list">
-            {renderNavigationItems(items)}
-          </ul>
-        </nav>
-      </aside>
+      <nav className="sidebar__nav">
+        <ul className="sidebar__list">
+          {renderNavigationItems(items)}
+        </ul>
+      </nav>
+    </aside >
     </>
   );
 };

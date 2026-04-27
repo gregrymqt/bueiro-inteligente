@@ -4,36 +4,16 @@ using System.Text.Json.Serialization;
 namespace backend.Features.Drains.Application.DTOs;
 
 public sealed record DrainCreateRequest(
-    [property:
-        Required,
-        StringLength(255),
-        Display(Name = "Nome do bueiro", Description = "Nome do bueiro")
-    ]
+    [Required, StringLength(255), Display(Name = "Nome do bueiro", Description = "Nome do bueiro")]
         string Name,
-    [property:
-        Required,
-        StringLength(500),
-        Display(Name = "Endereço do bueiro", Description = "Endereço do bueiro")
-    ]
+    [Required, StringLength(500), Display(Name = "Endereço do bueiro", Description = "Endereço do bueiro")]
         string Address,
-    [property:
-        Required,
-        Range(-90, 90),
-        Display(Name = "Latitude do bueiro", Description = "Latitude do bueiro")
-    ]
+    [Required, Range(-90, 90), Display(Name = "Latitude do bueiro", Description = "Latitude do bueiro")]
         double Latitude,
-    [property:
-        Required,
-        Range(-180, 180),
-        Display(Name = "Longitude do bueiro", Description = "Longitude do bueiro")
-    ]
+    [Required, Range(-180, 180), Display(Name = "Longitude do bueiro", Description = "Longitude do bueiro")]
         double Longitude,
-    [property:
-        Required,
-        StringLength(100),
-        JsonPropertyName("hardware_id"),
-        Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")
-    ]
+    [Required, StringLength(100), Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")]
+    [property: JsonPropertyName("hardware_id")]
         string HardwareId,
     [property:
         JsonPropertyName("is_active"),
@@ -43,33 +23,21 @@ public sealed record DrainCreateRequest(
 );
 
 public sealed record DrainUpdateRequest(
-    [property: StringLength(255), Display(Name = "Nome do bueiro", Description = "Nome do bueiro")]
+    [StringLength(255), Display(Name = "Nome do bueiro", Description = "Nome do bueiro")]
         string? Name = null,
-    [property:
-        StringLength(500),
-        Display(Name = "Endereço do bueiro", Description = "Endereço do bueiro")
-    ]
+    [StringLength(500), Display(Name = "Endereço do bueiro", Description = "Endereço do bueiro")]
         string? Address = null,
-    [property:
-        Range(-90, 90),
-        Display(Name = "Latitude do bueiro", Description = "Latitude do bueiro")
-    ]
+    [Range(-90, 90), Display(Name = "Latitude do bueiro", Description = "Latitude do bueiro")]
         double? Latitude = null,
-    [property:
-        Range(-180, 180),
-        Display(Name = "Longitude do bueiro", Description = "Longitude do bueiro")
-    ]
+    [Range(-180, 180), Display(Name = "Longitude do bueiro", Description = "Longitude do bueiro")]
         double? Longitude = null,
     [property:
         JsonPropertyName("is_active"),
         Display(Name = "Bueiro ativo", Description = "Status de atividade do bueiro")
     ]
         bool? IsActive = null,
-    [property:
-        StringLength(100),
-        JsonPropertyName("hardware_id"),
-        Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")
-    ]
+    [StringLength(100), Display(Name = "ID do hardware", Description = "ID único do hardware associado ao bueiro")]
+    [property: JsonPropertyName("hardware_id")]
         string? HardwareId = null
 );
 

@@ -2,6 +2,7 @@ using backend.Features.Drains.Application.DTOs;
 using backend.Features.Drains.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace backend.Features.Drains.Presentation.Controllers;
 
@@ -32,7 +33,12 @@ public sealed class DrainsController(IDrainService drainService) : ApiController
         CancellationToken ct = default
     )
     {
-        var result = await _drainService.CreateDrainAsync(request, ct).ConfigureAwait(false);
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(rawUserId, out var userId) || userId == Guid.Empty)
+            return Unauthorized();
+
+        var result = await _drainService.CreateDrainAsync(request, userId, ct).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetById), new { drainId = result.Id }, result);
     }
 

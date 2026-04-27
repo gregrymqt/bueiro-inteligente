@@ -63,7 +63,7 @@ public sealed class BueiroInteligenteAuthenticationHandler(
             // C# 12: Collection Expressions para as claims iniciais
             List<Claim> claims =
             [
-                new(ClaimTypes.NameIdentifier, currentUser.Email),
+                new(ClaimTypes.NameIdentifier, currentUser.UserId?.ToString() ?? currentUser.Email),
                 new(ClaimTypes.Email, currentUser.Email),
                 new(ClaimTypes.Name, currentUser.Email),
                 new("jti", currentUser.Jti),
