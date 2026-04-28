@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../feature/auth/hooks/useAuth';
 
 import styles from './Navbar.module.scss';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const canAccessAdminPanel = user?.roles.includes('admin') ?? false;
 
 
   return (
@@ -19,15 +21,6 @@ export const Navbar: React.FC = () => {
 
         {/* NAV MENU E AUTENTICAÇÃO */}
         <nav className={styles.navMenu} aria-label="Menu da conta">
-          <div className={styles.navLinks}>
-            <NavLink
-              to="/sobre"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
-            >
-              Sobre nós
-            </NavLink>
-          </div>
-
           <div className={styles.authSection}>
             {user ? (
               <div className={styles.userDropdownContainer}>
@@ -42,6 +35,19 @@ export const Navbar: React.FC = () => {
                 </button>
                 {isDropdownOpen && (
                   <div className={styles.dropdownMenu} role="menu" aria-label="Menu do utilizador">
+                    {canAccessAdminPanel && (
+                      <button
+                        className={styles.logoutBtn}
+                        onClick={() => {
+                          navigate('/admin');
+                          setIsDropdownOpen(false);
+                        }}
+                        type="button"
+                        role="menuitem"
+                      >
+                        Painel Admin
+                      </button>
+                    )}
                     <button
                       className={styles.logoutBtn}
                       onClick={async () => {

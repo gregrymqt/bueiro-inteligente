@@ -64,15 +64,14 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
         try
         {
             ArgumentNullException.ThrowIfNull(request);
-            if (userId == Guid.Empty)
-                throw LogicException.InvalidValue(nameof(userId), userId);
-            ValidateField(request.HardwareId, nameof(request.HardwareId));
 
-            if (
-                await _repository.GetByHardwareIdAsync(request.HardwareId, ct).ConfigureAwait(false)
-                is not null
-            )
-                throw new LogicException($"hardware_id '{request.HardwareId}' já está em uso.");
+            // Validação defensiva para evitar o erro de FK
+            if (userId == Guid.Empty)
+                throw new LogicException("O ID do usuário é obrigatório para criar um bueiro.");
+
+            // Verifica se o hardware já existe (como você já faz)
+            if (await _repository.GetByHardwareIdAsync(request.HardwareId, ct).ConfigureAwait(false) is not null)
+                throw new LogicException($"O hardware_id '{request.HardwareId}' já está em uso.");
 
             DrainEntity drain = new()
             {

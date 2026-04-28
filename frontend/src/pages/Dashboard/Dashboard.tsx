@@ -1,13 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
+import React, { useMemo } from 'react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
 import { resolveRowsEmbedUrl } from '@/core/http/environment';
+import { useSearchParams } from 'react-router-dom';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
 
 // Importando o estilo do layout da página
-import styles from './DashboardLayout.module.scss';
 import './DashboardLayout.scss';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
@@ -80,8 +79,7 @@ const findFirstRenderableNavigationItem = (items: NavigationItem[]): NavigationI
 };
 
 export const Dashboard: React.FC = () => {
-  // Estado para controlar a aba ativa (por padrão, a visão em tempo real)
-  const [activeTabId, setActiveTabId] = useState<string>('tempo-real');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // useMemo garante que o array não seja recriado a cada renderização da página
   const rowsEmbedUrl = useMemo(() => {
@@ -117,11 +115,20 @@ export const Dashboard: React.FC = () => {
     }
   ], [rowsEmbedUrl]);
 
+  const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
+  const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
+  const activeTabId = mobileNavItems.some((item) => item.id === requestedTabId)
+    ? requestedTabId
+    : 'tempo-real';
+
   const activeItem = findNavigationItem(navItems, activeTabId);
   const activeRenderableItem =
     (activeItem?.component ? activeItem : findFirstRenderableNavigationItem(navItems)) ??
     navItems[0];
-  const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
+
+  const handleMobileTabChange = (tabId: string) => {
+    setSearchParams({ tab: tabId });
+  };
 
   if (!navItems || navItems.length === 0 || !activeRenderableItem?.component) {
     return (
@@ -136,17 +143,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard-layout">
-      <div className={styles.dashboardSidebarContainer}>
-        <Sidebar
-          id="dashboard-sidebar"
-          items={navItems}
-          activeId={activeTabId}
-          onNavigate={setActiveTabId}
-          isOpenMobile={false}
-          onCloseMobile={() => {}}
-        />
-      </div>
-
       <div className="dashboard-main">
         <main className="dashboard-content">
           <div className="dashboard-content__header">
@@ -158,7 +154,7 @@ export const Dashboard: React.FC = () => {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveTabId(item.id)}
+                onClick={() => handleMobileTabChange(item.id)}
                 className={activeTabId === item.id ? 'tabActive' : 'tab'}
                 aria-current={activeTabId === item.id ? 'page' : undefined}
               >

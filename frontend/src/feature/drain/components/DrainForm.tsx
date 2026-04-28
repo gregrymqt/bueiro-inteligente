@@ -5,11 +5,21 @@ import { Button } from '@/components/ui/Button/Button';
 import type { Drain, DrainCreatePayload } from '../types';
 import styles from './DrainForm.module.scss';
 
+const formatCoordinate = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length === 0) return '';
+  const truncated = numbers.slice(0, 8);
+  if (truncated.length > 2) {
+    return `-${truncated.slice(0, 2)}.${truncated.slice(2)}`;
+  }
+  return `-${truncated}`;
+};
+
 interface DrainFormValues {
   name: string;
   address: string;
-  latitude: number | '';
-  longitude: number | '';
+  latitude: string;
+  longitude: string;
   hardware_id: string;
   is_active: string;
 }
@@ -25,8 +35,8 @@ const getDefaultValues = (initialData?: Drain): DrainFormValues => {
   return {
     name: initialData?.name ?? '',
     address: initialData?.address ?? '',
-    latitude: initialData?.latitude ?? '',
-    longitude: initialData?.longitude ?? '',
+    latitude: initialData?.latitude ? String(initialData.latitude) : '',
+    longitude: initialData?.longitude ? String(initialData.longitude) : '',
     hardware_id: initialData?.hardware_id ?? '',
     is_active: initialData ? String(initialData.is_active) : 'true',
   };
@@ -38,14 +48,15 @@ export const DrainForm = ({ initialData, onSubmit, onCancel, isLoading = false }
     defaultValues: getDefaultValues(initialData),
     mode: 'onSubmit',
   });
+  const { setValue } = methods;
 
   useEffect(() => {
     methods.reset(getDefaultValues(initialData));
   }, [initialData, methods]);
 
   const handleSubmit = async (values: DrainFormValues): Promise<void> => {
-    const latitude = typeof values.latitude === 'number' ? values.latitude : Number(values.latitude);
-    const longitude = typeof values.longitude === 'number' ? values.longitude : Number(values.longitude);
+    const latitude = parseFloat(values.latitude);
+    const longitude = parseFloat(values.longitude);
 
     await onSubmit({
       name: values.name.trim(),
@@ -96,14 +107,19 @@ export const DrainForm = ({ initialData, onSubmit, onCancel, isLoading = false }
           <Form.Input
             name="latitude"
             label="Latitude"
-            type="number"
-            step="any"
-            inputMode="decimal"
+            type="text"
             placeholder="-23.550520"
             validation={{
               required: 'Latitude é obrigatória',
-              valueAsNumber: true,
-              validate: (value: number | '') => (value !== '' && !Number.isNaN(value) ? true : 'Latitude é obrigatória'),
+              validate: (value: string) => (value.trim() !== '' ? true : 'Latitude é obrigatória'),
+            }}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const formattedValue = formatCoordinate(event.target.value);
+              setValue('latitude', formattedValue, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              });
             }}
             colSpan={4}
           />
@@ -111,14 +127,19 @@ export const DrainForm = ({ initialData, onSubmit, onCancel, isLoading = false }
           <Form.Input
             name="longitude"
             label="Longitude"
-            type="number"
-            step="any"
-            inputMode="decimal"
+            type="text"
             placeholder="-46.633308"
             validation={{
               required: 'Longitude é obrigatória',
-              valueAsNumber: true,
-              validate: (value: number | '') => (value !== '' && !Number.isNaN(value) ? true : 'Longitude é obrigatória'),
+              validate: (value: string) => (value.trim() !== '' ? true : 'Longitude é obrigatória'),
+            }}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const formattedValue = formatCoordinate(event.target.value);
+              setValue('longitude', formattedValue, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              });
             }}
             colSpan={4}
           />

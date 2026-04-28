@@ -33,7 +33,8 @@ public sealed class DrainsController(IDrainService drainService) : ApiController
         CancellationToken ct = default
     )
     {
-        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? User.FindFirstValue("sub");
 
         if (!Guid.TryParse(rawUserId, out var userId) || userId == Guid.Empty)
             return Unauthorized();

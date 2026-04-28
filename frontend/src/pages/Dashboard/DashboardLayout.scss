@@ -11,15 +11,6 @@
   }
 }
 
-.dashboardSidebarContainer {
-  display: none;
-  flex-shrink: 0;
-
-  @include respond-to('md') {
-    display: block;
-  }
-}
-
 .dashboard-main {
   flex: 1;
   display: flex;
@@ -31,6 +22,7 @@
 .mobileTabs {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   width: 100%;
   max-width: 1000px;
