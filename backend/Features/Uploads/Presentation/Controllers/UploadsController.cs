@@ -1,4 +1,5 @@
 using backend.Extensions.App.Filters;
+using backend.Features.Uploads.Application.DTOs;
 using backend.Features.Uploads.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,7 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
 
     [HttpPost]
     [MaxFileSize]
-    public async Task<IActionResult> UploadFile(IFormFile file)
+    public async Task<ActionResult<UploadDto>> UploadFile(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -20,6 +21,25 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
         }
 
         var result = await _uploadService.ProcessUploadAsync(file).ConfigureAwait(false);
-        return StatusCode(StatusCodes.Status201Created, result.Id);
+        var absoluteUrl = BuildAbsoluteUploadUrl(HttpContext.Request, result.StoragePath);
+
+        var response = new UploadDto(
+            result.Id,
+            result.FileName,
+            result.ContentType,
+            result.Size,
+            absoluteUrl,
+            result.CreatedAt
+        );
+
+        return Created(absoluteUrl, response);
+    }
+
+    private static string BuildAbsoluteUploadUrl(HttpRequest request, string storagePath)
+    {
+        var fileName = Path.GetFileName(storagePath);
+        var relativePath = $"/uploads/{fileName}";
+
+        return $"{request.Scheme}://{request.Host}{request.PathBase}{relativePath}";
     }
 }

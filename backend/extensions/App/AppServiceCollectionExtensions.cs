@@ -1,5 +1,6 @@
 using System.Text.Json;
 using backend.Core.Settings;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,6 +26,19 @@ public static class AppServiceCollectionExtensions
                     JsonNamingPolicy.SnakeCaseLower;
                 options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
             });
+
+        services.AddHttpContextAccessor();
+
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor
+                | ForwardedHeaders.XForwardedHost
+                | ForwardedHeaders.XForwardedProto;
+
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
 
         var generalSettings =
             configuration.GetSection(GeneralSettings.SectionName).Get<GeneralSettings>()

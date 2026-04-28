@@ -3,6 +3,7 @@ using backend.Extensions.Auth;
 using backend.Extensions.Security;
 using backend.Infrastructure;
 using backend.Infrastructure.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using MonitoringHub = backend.Features.Realtime.Presentation.MonitoringHub;
 
@@ -24,8 +25,11 @@ public static class AppPipelineExtensions
         // 2. Middleware Pipeline
         app.UseBueiroInteligenteExceptionHandling(app.Environment);
 
+        app.UseForwardedHeaders();
         app.UseHttpsRedirection();
         app.UseRouting();
+
+        app.UseStaticFiles();
 
         // Log de requisições HTTP do Serilog
         app.UseSerilogRequestLogging();

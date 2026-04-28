@@ -1,19 +1,27 @@
 using backend.Core;
 using backend.Features.Home.Application.Interfaces;
 using backend.Features.Home.Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.IO;
 using HomeDomain = backend.Features.Home.Domain;
 using HomeDtos = backend.Features.Home.Application.DTOs;
 
 namespace backend.Features.Home.Application.Services;
 
-public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeService> logger)
+public sealed class HomeService(
+    IHomeRepository homeRepository,
+    ILogger<HomeService> logger,
+    IHttpContextAccessor httpContextAccessor
+)
     : IHomeService
 {
     private readonly IHomeRepository _homeRepository =
         homeRepository ?? throw new ArgumentNullException(nameof(homeRepository));
     private readonly ILogger<HomeService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IHttpContextAccessor _httpContextAccessor =
+        httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 
     public async Task<HomeDtos.HomeResponseDto> GetHomeContentAsync(CancellationToken ct = default)
     {
@@ -306,12 +314,12 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
 
     #region Helpers & Mappings
 
-    private static HomeDtos.CarouselResponseDto MapToCarouselResponse(HomeDomain.CarouselModel c) =>
+    private HomeDtos.CarouselResponseDto MapToCarouselResponse(HomeDomain.CarouselModel c) =>
         new(
             c.Id,
             c.Title,
             c.Subtitle,
-            c.Upload?.StoragePath ?? string.Empty,
+            BuildPublicUploadUrl(c.Upload),
             c.ActionUrl,
             c.Order,
             MapEnum<HomeDtos.CarouselSection>(c.Section)
@@ -357,6 +365,25 @@ public sealed class HomeService(IHomeRepository homeRepository, ILogger<HomeServ
         !string.IsNullOrWhiteSpace(value)
             ? value.Trim()
             : throw LogicException.InvalidValue(param, value);
+
+    private string BuildPublicUploadUrl(backend.Features.Uploads.Domain.UploadModel? upload)
+    {
+        if (upload is null || string.IsNullOrWhiteSpace(upload.StoragePath))
+        {
+            return string.Empty;
+        }
+
+        var request = _httpContextAccessor.HttpContext?.Request;
+        var fileName = Path.GetFileName(upload.StoragePath);
+        var relativePath = $"/uploads/{fileName}";
+
+        if (request is null)
+        {
+            return relativePath;
+        }
+
+        return $"{request.Scheme}://{request.Host}{request.PathBase}{relativePath}";
+    }
 
     #endregion
 }

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Http;
 using HomeDomain = backend.Features.Home.Domain;
+using System.IO;
 
 namespace backend.Tests.Features.Home;
 
@@ -9,7 +11,18 @@ public sealed class HomeServiceTests
 
     public HomeServiceTests()
     {
-        _service = new HomeService(_repositoryMock.Object, Mock.Of<ILogger<HomeService>>());
+        var httpContextAccessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext(),
+        };
+        httpContextAccessor.HttpContext!.Request.Scheme = "https";
+        httpContextAccessor.HttpContext.Request.Host = new HostString("example.com");
+
+        _service = new HomeService(
+            _repositoryMock.Object,
+            Mock.Of<ILogger<HomeService>>(),
+            httpContextAccessor
+        );
     }
 
     #region Helpers (O padrão para o seu projeto)
@@ -21,7 +34,10 @@ public sealed class HomeServiceTests
             Title = title,
             Subtitle = "Subtítulo",
             UploadId = Guid.NewGuid(),
-            Upload = new backend.Features.Uploads.Domain.UploadModel { StoragePath = "https://example.com/img.jpg" },
+            Upload = new backend.Features.Uploads.Domain.UploadModel
+            {
+                StoragePath = Path.Combine("C:\\temp", "img.jpg"),
+            },
             ActionUrl = "https://example.com/action",
             Order = 1,
             Section = HomeDomain.CarouselSection.hero,
