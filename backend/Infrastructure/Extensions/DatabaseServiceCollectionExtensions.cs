@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net.Sockets;
 using backend.Features.Auth.Domain;
 using backend.Infrastructure.Persistence;
@@ -7,10 +7,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Serilog;
 
-namespace backend.Infrastructure.Extensions; // Ajuste o namespace conforme seu padrão
+namespace backend.Infrastructure.Extensions; // Ajuste o namespace conforme seu padrÃ£o
 
 public static class DatabaseServiceCollectionExtensions
 {
@@ -18,7 +19,7 @@ public static class DatabaseServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration,
         IHostEnvironment environment
-    ) // Injetado para checar se é ambiente de Dev
+    ) // Injetado para checar se Ã© ambiente de Dev
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
@@ -28,7 +29,7 @@ public static class DatabaseServiceCollectionExtensions
         var connectionString =
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' não encontrada."
+                "Connection string 'DefaultConnection' nÃ£o encontrada."
             );
         var resolvedConnectionString = ResolveDevelopmentConnectionString(
             connectionString,
@@ -53,7 +54,7 @@ public static class DatabaseServiceCollectionExtensions
                 resolvedConnectionString,
                 npgsql =>
                 {
-                    // Parâmetros explícitos são melhores para cloud (Render/Supabase)
+                    // ParÃ¢metros explÃ­citos sÃ£o melhores para cloud (Render/Supabase)
                     npgsql.EnableRetryOnFailure(
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(15),
@@ -89,13 +90,13 @@ public static class DatabaseServiceCollectionExtensions
             .ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("DatabaseBootstrap");
 
-        // 1. Busca a ConnectionString exclusiva para Migrations. Se não achar, faz fallback para a Default.
+        // 1. Busca a ConnectionString exclusiva para Migrations. Se nÃ£o achar, faz fallback para a Default.
         var migrationsConnectionString =
             configuration.GetConnectionString("MigrationsConnection")
             ?? configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada.");
 
-        // 2. Criamos um construtor de opções manual apontando para a porta 5432 (MigrationsConnection)
+        // 2. Criamos um construtor de opÃ§Ãµes manual apontando para a porta 5432 (MigrationsConnection)
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(migrationsConnectionString);
 
@@ -110,7 +111,7 @@ public static class DatabaseServiceCollectionExtensions
             try
             {
                 logger.LogInformation(
-                    "Tentativa {Attempt}/{MaxAttempts}: Verificando conexão (Modo Migration)...",
+                    "Tentativa {Attempt}/{MaxAttempts}: Verificando conexÃ£o (Modo Migration)...",
                     attempt,
                     maxAttempts
                 );
@@ -118,12 +119,12 @@ public static class DatabaseServiceCollectionExtensions
                 if (!await migrationContext.Database.CanConnectAsync(ct).ConfigureAwait(false))
                 {
                     throw new NpgsqlException(
-                        "CanConnectAsync retornou falso. Banco de dados indisponível."
+                        "CanConnectAsync retornou falso. Banco de dados indisponÃ­vel."
                     );
                 }
 
                 logger.LogInformation(
-                    "Conexão para Migração estabelecida na porta correta. Aplicando migrações pendentes..."
+                    "ConexÃ£o para MigraÃ§Ã£o estabelecida na porta correta. Aplicando migraÃ§Ãµes pendentes..."
                 );
                 await migrationContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
@@ -147,7 +148,7 @@ public static class DatabaseServiceCollectionExtensions
             {
                 logger.LogCritical(
                     exception,
-                    "Falha crítica e irrecuperável ao inicializar o banco de dados."
+                    "Falha crÃ­tica e irrecuperÃ¡vel ao inicializar o banco de dados."
                 );
                 throw;
             }
@@ -216,7 +217,7 @@ public static class DatabaseServiceCollectionExtensions
         {
             if (string.IsNullOrWhiteSpace(databaseUrl))
             {
-                throw new InvalidOperationException("Connection string inválida ou ausente.");
+                throw new InvalidOperationException("Connection string invÃ¡lida ou ausente.");
             }
 
             if (!databaseUrl.Contains("://", StringComparison.Ordinal))

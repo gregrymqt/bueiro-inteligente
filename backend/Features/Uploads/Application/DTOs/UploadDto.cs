@@ -5,6 +5,6 @@ public sealed record UploadDto(
     string FileName,
     string ContentType,
     long Size,
-    string AbsoluteUrl,
+    string Url,
     DateTime CreatedAt
 );

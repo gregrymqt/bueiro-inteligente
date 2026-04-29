@@ -83,6 +83,9 @@ As variaveis abaixo sao mapeadas para `GeneralSettings`, `JwtSettings`, `GoogleS
 | `ROWS_BASE_URL` | Base URL da API do Rows |
 | `ROWS_SPREADSHEET_ID` | ID da planilha |
 | `ROWS_TABLE_ID` | ID da tabela |
+| `SUPABASE__URL` | URL do projeto Supabase (ex: https://seu-projeto.supabase.co) |
+| `SUPABASE__KEY` | Chave de acesso público (anon key) do Supabase |
+| `USE__SUPABASE__STORAGE` | Ativa uso de Supabase Storage como destino principal (true/false) |
 | `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth |
 | `ALLOWED_HOSTS` | Hosts permitidos pelo backend |
@@ -107,6 +110,9 @@ ROWS_API_KEY=
 ROWS_BASE_URL=https://api.rows.com/v1
 ROWS_SPREADSHEET_ID=
 ROWS_TABLE_ID=
+SUPABASE__URL=
+SUPABASE__KEY=
+USE__SUPABASE__STORAGE=false
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ALLOWED_HOSTS=localhost;127.0.0.1

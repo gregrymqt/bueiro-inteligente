@@ -21,7 +21,7 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
         }
 
         var result = await _uploadService.ProcessUploadAsync(file).ConfigureAwait(false);
-        var absoluteUrl = BuildAbsoluteUploadUrl(HttpContext.Request, result.StoragePath);
+        var absoluteUrl = BuildAbsoluteUploadUrl(HttpContext.Request, result.Url, result.StoragePath);
 
         var response = new UploadDto(
             result.Id,
@@ -35,10 +35,16 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
         return Created(absoluteUrl, response);
     }
 
-    private static string BuildAbsoluteUploadUrl(HttpRequest request, string storagePath)
+    private static string BuildAbsoluteUploadUrl(HttpRequest request, string url, string storagePath)
     {
-        var fileName = Path.GetFileName(storagePath);
-        var relativePath = $"/uploads/{fileName}";
+        if (!string.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.Absolute, out var absoluteUrl))
+        {
+            return absoluteUrl.ToString();
+        }
+
+        var relativePath = !string.IsNullOrWhiteSpace(url)
+            ? url
+            : $"/uploads/{Path.GetFileName(storagePath)}";
 
         return $"{request.Scheme}://{request.Host}{request.PathBase}{relativePath}";
     }

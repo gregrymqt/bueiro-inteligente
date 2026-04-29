@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Globalization;
 using backend.Core.Settings;
 using Microsoft.Extensions.Configuration;
@@ -9,8 +9,8 @@ namespace backend.Infrastructure.Extensions;
 public static class ConfigurationServiceExtensions
 {
     /// <summary>
-    /// Mapeia as variáveis do .env e do sistema para o IConfiguration,
-    /// normalizando as chaves para o formato de Seções do .NET.
+    /// Mapeia as variÃ¡veis do .env e do sistema para o IConfiguration,
+    /// normalizando as chaves para o formato de SeÃ§Ãµes do .NET.
     /// </summary>
     public static IConfigurationBuilder AddBueiroInteligenteDotEnvMappings(
         this IConfigurationBuilder configuration,
@@ -22,7 +22,7 @@ public static class ConfigurationServiceExtensions
         var rawEnv = LoadAllEnvironmentValues(startPath);
         var mappedValues = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        // Mapeamento Centralizado: Adicione novas seções aqui
+        // Mapeamento Centralizado: Adicione novas seÃ§Ãµes aqui
         MapSection(
             mappedValues,
             rawEnv,
@@ -33,6 +33,8 @@ public static class ConfigurationServiceExtensions
                 "API_STR",
                 "APP_ID_SECRET",
                 "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
+                "DATABASE__RESET_NUCLEAR",
+                "DATABASE__AUTO_REPAIR_HISTORY",
             ]
         );
         MapArray(
@@ -75,6 +77,20 @@ public static class ConfigurationServiceExtensions
             RowsSettings.SectionName,
             ["ROWS_API_KEY", "ROWS_BASE_URL", "ROWS_SPREADSHEET_ID", "ROWS_TABLE_ID"]
         );
+        MapSection(
+            mappedValues,
+            rawEnv,
+            SupabaseSettings.SectionName,
+            ["SUPABASE__URL", "SUPABASE__KEY"]
+        );
+
+        // Mapeia USE__SUPABASE__STORAGE para UseStorage (normaliza underscores)
+        var useSupabaseStorage = Resolve(rawEnv, "USE__SUPABASE__STORAGE");
+        if (!string.IsNullOrWhiteSpace(useSupabaseStorage))
+        {
+            mappedValues[$"{SupabaseSettings.SectionName}:{nameof(SupabaseSettings.UseStorage)}"] =
+                useSupabaseStorage;
+        }
 
         MapConnectionString(
             mappedValues,
@@ -90,7 +106,7 @@ public static class ConfigurationServiceExtensions
         );
         MapConnectionString(mappedValues, rawEnv, "Redis", "CONNECTIONSTRINGS__REDIS");
 
-        // Fallbacks para compatibilidade com Middlewares que lêem a raiz
+        // Fallbacks para compatibilidade com Middlewares que lÃªem a raiz
         mappedValues["AllowedHosts"] = Resolve(rawEnv, "ALLOWED_HOSTS");
         mappedValues["AppIdSecret"] = Resolve(rawEnv, "APP_ID_SECRET");
 
@@ -110,6 +126,7 @@ public static class ConfigurationServiceExtensions
         services.Configure<GoogleSettings>(config.GetSection(GoogleSettings.SectionName));
         services.Configure<IotSettings>(config.GetSection(IotSettings.SectionName));
         services.Configure<RowsSettings>(config.GetSection(RowsSettings.SectionName));
+        services.Configure<SupabaseSettings>(config.GetSection(SupabaseSettings.SectionName));
 
         return services;
     }
@@ -226,7 +243,7 @@ public static class ConfigurationServiceExtensions
             }
         }
 
-        // 2. Sobrescreve com Variáveis de Sistema (Docker/Render tem prioridade)
+        // 2. Sobrescreve com VariÃ¡veis de Sistema (Docker/Render tem prioridade)
         foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
         {
             var key = NormalizeKey(env.Key.ToString()!);

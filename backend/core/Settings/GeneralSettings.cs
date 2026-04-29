@@ -1,4 +1,4 @@
-namespace backend.Core.Settings;
+﻿namespace backend.Core.Settings;
 
 public sealed class GeneralSettings
 {
@@ -19,4 +19,17 @@ public sealed class GeneralSettings
     public string AppIdSecret { get; set; } = string.Empty;
 
     public bool DotNetSystemGlobalizationInvariant { get; set; } = true;
+
+    /// <summary>
+    /// Se true, executa EnsureDeletedAsync() antes de criar migrações.
+    /// Útil para "resetar tudo" em ambientes de desenvolvimento.
+    /// CUIDADO: Isso DELETA o banco de dados inteiro!
+    /// </summary>
+    public bool DatabaseResetNuclear { get; set; }
+
+    /// <summary>
+    /// Se true, tenta reparar problemas de migração automaticamente (ex: erro 42P07).
+    /// Executará comandos SQL de 'stamp' na tabela __EFMigrationsHistory quando necessário.
+    /// </summary>
+    public bool DatabaseAutoRepairHistory { get; set; }
 }

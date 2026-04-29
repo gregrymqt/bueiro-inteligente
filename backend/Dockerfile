@@ -1,10 +1,10 @@
-# Estágio de Runtime (Produção)
+﻿# EstÃ¡gio de Runtime (ProduÃ§Ã£o)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Estágio de Build e Ferramentas
+# EstÃ¡gio de Build e Ferramentas
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
@@ -32,18 +32,18 @@ WORKDIR /tmp/backend-work
 RUN dotnet restore "backend.csproj"
 RUN dotnet build "backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Publicação da aplicação
+# PublicaÃ§Ã£o da aplicaÃ§Ã£o
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /tmp/backend-work
 RUN dotnet publish "backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Estágio Final (Copia apenas o necessário para rodar)
+# EstÃ¡gio Final (Copia apenas o necessÃ¡rio para rodar)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Variável para o .NET 8 e Render
+# VariÃ¡vel para o .NET 8 e Render
 ENV ASPNETCORE_HTTP_PORTS=8080
 
 ENTRYPOINT ["dotnet", "backend.dll"]
