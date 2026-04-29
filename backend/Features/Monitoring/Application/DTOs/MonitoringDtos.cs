@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 namespace backend.Features.Monitoring.Application.DTOs;
 
 public sealed record SensorPayloadDTO(
-    [property: JsonPropertyName("id_bueiro"), Required, StringLength(100)] string IdBueiro,
-    [property: JsonPropertyName("distancia_cm"), Required] double DistanciaCm,
-    [property: JsonPropertyName("latitude"), Range(-90, 90)] double? Latitude = null,
-    [property: JsonPropertyName("longitude"), Range(-180, 180)] double? Longitude = null,
+    [property: JsonPropertyName("id_bueiro")] [Required] [StringLength(100)] string IdBueiro,
+    [property: JsonPropertyName("distancia_cm")] [Required] double DistanciaCm,
+    [property: JsonPropertyName("latitude")] [Range(-90, 90)] double? Latitude = null,
+    [property: JsonPropertyName("longitude")] [Range(-180, 180)] double? Longitude = null,
     [property: JsonPropertyName("ultima_atualizacao")] DateTimeOffset? UltimaAtualizacao = null
 );
 

@@ -115,10 +115,18 @@ public sealed class AuthExtension(
 
     public string VerifyHardwareToken(string? auth = null, string? query = null)
     {
-        var token = NormalizeBearerToken(auth) ?? NormalizeBearerToken(query);
+        // Normalizamos ambos primeiro
+        var headerToken = NormalizeBearerToken(auth);
+        var queryToken = NormalizeBearerToken(query);
 
-        if (string.IsNullOrEmpty(token) || token != iotSettings.Value.HardwareToken)
+        // Se o header for nulo ou apenas espaços, usamos o da query
+        var token = !string.IsNullOrWhiteSpace(headerToken) ? headerToken : queryToken;
+
+        if (string.IsNullOrWhiteSpace(token) || token != iotSettings.Value.HardwareToken)
+        {
+            logger.LogWarning("Tentativa de acesso com hardware token inválido ou ausente.");
             throw new UnauthorizedAccessException("Hardware não autorizado.");
+        }
 
         return token;
     }

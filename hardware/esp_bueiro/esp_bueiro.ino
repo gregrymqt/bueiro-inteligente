@@ -3,6 +3,14 @@
 #include <ArduinoJson.h>
 #include "secrets.h"
 
+// DICA PARA ERRO HTTP -1 (Connection Refused):
+// Verifique o IP configurado em API_URL no arquivo secrets.h.
+// O erro -1 geralmente ocorre quando o ESP32 não alcança o servidor.
+// Evite usar IPs de adaptadores virtuais (como WSL/Hyper-V, ex: 172.x.x.x).
+// Rode 'ipconfig' no terminal do Windows, procure pelo endereço IPv4 do seu
+// adaptador de rede principal (Wi-Fi) (ex: 192.168.x.x) e coloque-o na sua API_URL.
+// Garanta que o PC e o ESP32 estejam conectados rigorosamente na mesma rede.
+
 const char* ssid = WIFI_SSID;
 const char* senha = WIFI_PASS;
 const char* hardwareToken = HARDWARE_TOKEN;
@@ -76,9 +84,12 @@ bool bueiroJson(float distancia, float nivel) {
     HTTPClient http;
     String urlFinal = String(urlApi) + "?token=" + String(hardwareToken);
     http.begin(urlFinal);
+    http.setTimeout(5000); // 5s timeout evita congelamento se a rede oscilar
     http.addHeader("Content-Type", "application/json");
 
-    StaticJsonDocument<200> jsonDoc;
+    // Capacidade de 200 bytes é suficiente para o payload de ~82 bytes,
+    // mas elevamos a 256 por precaução extra caso adicionem mais campos no futuro.
+    StaticJsonDocument<256> jsonDoc;
 
     jsonDoc["id_bueiro"] = ID_BUEIRO;
     jsonDoc["distancia_cm"] = distancia;
@@ -94,7 +105,8 @@ bool bueiroJson(float distancia, float nivel) {
     int httpResponseCode = http.POST(payload);
     bool sucesso = false;
 
-    if (httpResponseCode == 200) {
+    // A API enfileira o processamento no Hangfire, retornando 202 Accepted
+    if (httpResponseCode == 202) {
       Serial.print("Código HTTP: ");
       Serial.println(httpResponseCode);
 
