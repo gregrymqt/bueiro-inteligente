@@ -1,3 +1,4 @@
+@use '@/styles/default' as *;
 
 .homeContainer {
   display: grid;
@@ -6,6 +7,13 @@
   max-width: 100%;
   overflow-x: hidden;
   padding-bottom: $spacing-lg;
+}
+
+.sectionHero {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  background-color: transparent;
 }
 
 .section {
