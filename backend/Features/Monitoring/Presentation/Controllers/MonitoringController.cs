@@ -44,7 +44,10 @@ public sealed class MonitoringController(
                 "Falha ao enfileirar processamento (Redis Down) para o bueiro {IdBueiro}",
                 payload.IdBueiro
             );
-            return Problem(detail: "Falha ao enfileirar processamento (Redis Down)", statusCode: 500);
+            return Problem(
+                detail: "Falha ao enfileirar processamento (Redis Down)",
+                statusCode: 500
+            );
         }
 
         return Accepted();

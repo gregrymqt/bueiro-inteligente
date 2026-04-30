@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertService } from '@/core/alert/AlertService';
-import { MonitoringService } from '../services/MonitoringService';
-import type { DrainLookup } from '../types';
+import type { Drain } from '@/feature/drain/types';
+import { DrainService } from '@/feature/drain/services/DrainService';
 
 export const useDrainsList = () => {
-  const [data, setData] = useState<DrainLookup[]>([]);
+  // Alterado de DrainLookup[] para Drain[]
+  const [data, setData] = useState<Drain[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
@@ -14,13 +15,19 @@ export const useDrainsList = () => {
       setLoading(true);
       setError(null);
 
-      const response = await MonitoringService.getAvailableDrains();
+      // Passamos 'false' para não usar mock (ou controle conforme sua env)
+      const response = await DrainService.getDrains(false);
 
       if (!isMountedRef.current) {
         return;
       }
 
-      setData(response);
+      // Ordena alfabeticamente para o seletor (Dashboard) ficar organizado
+      const sortedDrains = [...response].sort((left, right) => 
+        left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' })
+      );
+
+      setData(sortedDrains);
       setError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao carregar lista de bueiros';

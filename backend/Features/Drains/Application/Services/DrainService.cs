@@ -1,7 +1,7 @@
 using backend.Core;
 using backend.Features.Drains.Application.DTOs;
+using backend.Features.Drains.Domain;
 using backend.Features.Drains.Domain.Interfaces;
-using DrainEntity = global::backend.Features.Drain.Domain.Drain;
 
 namespace backend.Features.Drains.Application.Services;
 
@@ -73,7 +73,7 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
             if (await _repository.GetByHardwareIdAsync(request.HardwareId, ct).ConfigureAwait(false) is not null)
                 throw new LogicException($"O hardware_id '{request.HardwareId}' já está em uso.");
 
-            DrainEntity drain = new()
+            Drain drain = new()
             {
                 Name = request.Name,
                 Address = request.Address,
@@ -180,7 +180,7 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
         }
     }
 
-    public async Task<IReadOnlyList<DrainLookupDTO>> GetDrainsListAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Drain>> GetDrainsListAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Listando bueiros para lookup.");
         try
@@ -194,7 +194,7 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
         }
     }
 
-    private static DrainResponse MapToResponse(DrainEntity d) =>
+    private static DrainResponse MapToResponse(Drain d) =>
         new(
             d.Id,
             d.Name,

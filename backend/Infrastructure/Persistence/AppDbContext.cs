@@ -1,9 +1,9 @@
 using backend.Features.Auth.Domain;
+using backend.Features.Drains.Domain;
 using backend.Features.Home.Domain;
 using backend.Features.Monitoring.Domain;
 using backend.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
-using DrainEntity = backend.Features.Drain.Domain.Drain;
 
 namespace backend.Infrastructure.Persistence;
 
@@ -11,7 +11,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
-    public DbSet<DrainEntity> Drains => Set<DrainEntity>();
+    public DbSet<Drain> Drains => Set<Drain>();
     public DbSet<CarouselModel> HomeCarousels => Set<CarouselModel>();
     public DbSet<StatCardModel> HomeStats => Set<StatCardModel>();
     public DbSet<DrainStatus> DrainStatuses => Set<DrainStatus>();

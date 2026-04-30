@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
 import { resolveRowsDashboardUrl, resolveRowsTableUrl } from '@/core/http/environment';
 import { useSearchParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
@@ -93,19 +93,18 @@ const findFirstRenderableNavigationItem = (items: NavigationItem[]): NavigationI
 export const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: drains, loading: drainsLoading } = useDrainsList();
-  const [selectedDrainId, setSelectedDrainId] = useState<string>('');
+  const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (drains.length > 0 && !selectedDrainId) {
-      setSelectedDrainId(drains[0].id);
-    }
-  }, [drains, selectedDrainId]);
+  // Derive the effective ID: use the state if set, otherwise fallback to the first drain
+  const effectiveDrainId = useMemo(() => {
+    return selectedDrainId ?? (drains.length > 0 ? drains[0].id : '');
+  }, [selectedDrainId, drains]);
 
   const selectedDrainName = useMemo(() => {
-    if (!selectedDrainId || drains.length === 0) return 'Carregando...';
-    const drain = drains.find(d => d.id === selectedDrainId);
-    return drain ? drain.nome : 'Bueiro Desconhecido';
-  }, [drains, selectedDrainId]);
+    if (!effectiveDrainId || drains.length === 0) return 'Carregando...';
+    const drain = drains.find(d => d.id === effectiveDrainId);
+    return drain ? drain.name : 'Bueiro Desconhecido'; // <- Alterado aqui de nome para name
+  }, [drains, effectiveDrainId]);
 
   const handleDrainChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedDrainId(event.target.value);
@@ -139,8 +138,8 @@ export const Dashboard: React.FC = () => {
             id: 'tempo-real',
             label: 'Visão Geral (Ao Vivo)',
             icon: <ActivityIcon />,
-            component: selectedDrainId ? (
-              <RealTimeMonitor bueiroId={selectedDrainId} locationName={selectedDrainName} />
+            component: effectiveDrainId ? (
+              <RealTimeMonitor bueiroId={effectiveDrainId} locationName={selectedDrainName} />
             ) : (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
                 <p>Carregando monitoramento...</p>
@@ -162,7 +161,7 @@ export const Dashboard: React.FC = () => {
         ],
       }
     ]
-  }, [rowsDashboardUrl, rowsTableUrl, selectedDrainId, selectedDrainName]);
+  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
   const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
@@ -201,7 +200,7 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-content__controls">
             <select
               className="drain-selector"
-              value={selectedDrainId}
+              value={effectiveDrainId}
               onChange={handleDrainChange}
               disabled={drainsLoading || drains.length === 0}
               aria-label="Selecione um bueiro"
@@ -213,7 +212,7 @@ export const Dashboard: React.FC = () => {
               ) : (
                 drains.map(drain => (
                   <option key={drain.id} value={drain.id}>
-                    {drain.nome}
+                    {drain.name}
                   </option>
                 ))
               )}

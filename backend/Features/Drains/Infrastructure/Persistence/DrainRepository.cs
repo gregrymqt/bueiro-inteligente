@@ -1,16 +1,16 @@
 using backend.Core;
+using backend.Features.Drains.Domain;
 using backend.Features.Drains.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using DrainEntity = global::backend.Features.Drain.Domain.Drain;
 
 namespace backend.Features.Drains.Infrastructure.Persistence;
 
 // C# 12: Injeção direta via Primary Constructor
 public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainRepository> logger) : IDrainRepository
 {
-    public async Task<DrainEntity?> GetByIdAsync(Guid drainId, CancellationToken ct = default)
+    public async Task<Drain?> GetByIdAsync(Guid drainId, CancellationToken ct = default)
     {
         try
         {
@@ -26,7 +26,7 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         }
     }
 
-    public async Task<DrainEntity?> GetByHardwareIdAsync(string hardwareId, CancellationToken ct = default)
+    public async Task<Drain?> GetByHardwareIdAsync(string hardwareId, CancellationToken ct = default)
     {
         try
         {
@@ -38,11 +38,12 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving drain by hardwareId {HardwareId}", hardwareId);
-            throw new ConnectionException("DrainRepository.GetByHardwareIdAsync", $"Failed to query drain with hardwareId '{hardwareId}'.", ex);
+            throw new ConnectionException("DrainRepository.GetByHardwareIdAsync",
+                $"Failed to query drain with hardwareId '{hardwareId}'.", ex);
         }
     }
 
-    public async Task<IReadOnlyList<DrainEntity>> GetAllAsync(int skip = 0, int limit = 100, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Drain>> GetAllAsync(int skip = 0, int limit = 100, CancellationToken ct = default)
     {
         try
         {
@@ -61,7 +62,7 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         }
     }
 
-    public async Task<DrainEntity> CreateAsync(DrainEntity drain, CancellationToken ct = default)
+    public async Task<Drain> CreateAsync(Drain drain, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(drain);
         try
@@ -73,11 +74,12 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating drain {HardwareId}", drain.HardwareId);
-            throw new ConnectionException("DrainRepository.CreateAsync", $"Failed to create drain '{drain.HardwareId}'.", ex);
+            throw new ConnectionException("DrainRepository.CreateAsync",
+                $"Failed to create drain '{drain.HardwareId}'.", ex);
         }
     }
 
-    public async Task<DrainEntity> UpdateAsync(DrainEntity drain, CancellationToken ct = default)
+    public async Task<Drain> UpdateAsync(Drain drain, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(drain);
         try
@@ -93,7 +95,7 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         }
     }
 
-    public async Task DeleteAsync(DrainEntity drain, CancellationToken ct = default)
+    public async Task DeleteAsync(Drain drain, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(drain);
         try
@@ -108,20 +110,35 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         }
     }
 
-    public async Task<IReadOnlyList<backend.Features.Drains.Application.DTOs.DrainLookupDTO>> GetAvailableDrainsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Drain>> GetAvailableDrainsAsync(CancellationToken ct = default)
     {
         try
         {
             return await dbContext.Drains
                 .AsNoTracking()
-                .Select(d => new backend.Features.Drains.Application.DTOs.DrainLookupDTO(d.HardwareId, d.Name))
+                .Select(d => new Drain
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    Address = d.Address,
+                    Latitude = d.Latitude,
+                    Longitude = d.Longitude,
+                    HardwareId = d.HardwareId,
+                    IsActive = d.IsActive,
+                    CreatedAt = d.CreatedAt,
+                    MaxHeight = d.MaxHeight,
+                    CriticalThreshold = d.CriticalThreshold,
+                    AlertThreshold = d.AlertThreshold,
+                    UserId = d.UserId
+                })
                 .ToListAsync(ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving available drains lookup list");
-            throw new ConnectionException("DrainRepository.GetAvailableDrainsAsync", "Failed to query available drains list.", ex);
+            throw new ConnectionException("DrainRepository.GetAvailableDrainsAsync",
+                "Failed to query available drains list.", ex);
         }
     }
 }

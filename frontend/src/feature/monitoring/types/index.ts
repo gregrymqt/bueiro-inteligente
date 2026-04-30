@@ -1,8 +1,3 @@
-export interface DrainLookup {
-  id: string;
-  nome: string;
-}
-
 export interface DrainStatus {
   id_bueiro: string;
   distancia_cm: number;
@@ -10,5 +5,5 @@ export interface DrainStatus {
   status: string;
   latitude?: number;
   longitude?: number;
-  ultima_atualizacao: string; // ISO Date do Pydantic
+  ultima_atualizacao: string; 
 }

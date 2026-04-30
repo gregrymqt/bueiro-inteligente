@@ -52,7 +52,3 @@ public sealed record DrainResponse(
     [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt
 );
 
-public sealed record DrainLookupDTO(
-    [property: JsonPropertyName("id_bueiro")] string IdBueiro,
-    [property: JsonPropertyName("nome")] string Nome
-);

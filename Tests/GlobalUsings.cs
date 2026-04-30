@@ -28,4 +28,4 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.Extensions.Logging;
 global using Moq;
 global using Xunit;
-global using DrainEntity = backend.Features.Drain.Domain.Drain;
+global using DrainEntity = backend.Features.Drains.Domain.Drain;
