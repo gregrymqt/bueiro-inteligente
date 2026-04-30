@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
-import { useDrainAdmin } from './useDrainAdmin';
+import { useDrains } from './useDrains';
 
 const drainServiceMocks = vi.hoisted(() => {
   const getDrains = vi.fn<(useMock: boolean) => Promise<Drain[]>>();
@@ -62,14 +62,14 @@ const createDeferred = <T,>() => {
   };
 };
 
-describe('useDrainAdmin', () => {
+describe('useDrains', () => {
   it('carrega a lista no mount e alterna loading', async () => {
     const deferred = createDeferred<Drain[]>();
     const drains = [buildDrain({ id: '1', name: 'Bueiro Centro' })];
 
     drainServiceMocks.getDrains.mockReturnValueOnce(deferred.promise);
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(true);
@@ -85,7 +85,7 @@ describe('useDrainAdmin', () => {
       expect(result.current.drains).toEqual(drains);
     });
 
-    expect(drainServiceMocks.getDrains).toHaveBeenCalledWith(true);
+    expect(drainServiceMocks.getDrains).toHaveBeenCalledWith(false);
     expect(alertServiceMocks.error).not.toHaveBeenCalled();
   });
 
@@ -112,7 +112,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce(initialDrains);
     drainServiceMocks.createDrain.mockResolvedValueOnce(createdDrain);
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -125,7 +125,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload, true);
+    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload, false);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro criado com sucesso!');
     expect(result.current.drains).toEqual([createdDrain]);
   });
@@ -139,7 +139,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce([existingDrain]);
     drainServiceMocks.updateDrain.mockRejectedValueOnce(new Error('Falha ao atualizar bueiro'));
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -152,7 +152,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(false);
-    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload, true);
+    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload, false);
     expect(alertServiceMocks.error).toHaveBeenCalledWith('Erro', 'Falha ao atualizar bueiro');
     expect(result.current.drains).toEqual([existingDrain]);
   });
@@ -163,7 +163,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce([existingDrain]);
     drainServiceMocks.deleteDrain.mockResolvedValueOnce();
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -176,7 +176,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id, true);
+    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id, false);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro excluído com sucesso!');
     expect(result.current.drains).toEqual([]);
   });

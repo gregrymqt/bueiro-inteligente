@@ -13,7 +13,7 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   return error instanceof Error ? error.message : fallbackMessage;
 };
 
-export function useDrainAdmin() {
+export function useDrains() {
   const [drains, setDrains] = useState<Drain[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

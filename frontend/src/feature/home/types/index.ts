@@ -40,3 +40,8 @@ export interface HomeDataResponse {
   carousels: CarouselContent[];
   stats: StatCardContent[];
 }
+export interface HomeConfiguration {
+  id?: string;
+  theme: string;
+  contact_email: string;
+}
