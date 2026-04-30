@@ -1,3 +1,4 @@
+using backend.Features.Drains.Domain;
 using backend.Features.Monitoring.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -52,5 +53,14 @@ public sealed class DrainStatusConfiguration : IEntityTypeConfiguration<DrainSta
             .IsRequired();
 
         builder.HasIndex(x => x.DataHash).HasDatabaseName("IX_drain_status_data_hash").IsUnique();
+
+        // ⚠️ NOVA MUDANÇA AQUI: Criando o Relacionamento (JOIN)
+        builder.HasOne<Drain>()
+            .WithMany() // Um bueiro tem muitos status
+            .HasPrincipalKey(d => d.HardwareId) // A chave do pai é o HardwareId
+            .HasForeignKey(s => s.DrainIdentifier) // A chave do filho é o DrainIdentifier (id_bueiro)
+            .OnDelete(DeleteBehavior.Cascade) // Se deletar o bueiro, deleta todo o histórico dele junto
+            .HasConstraintName("fk_drain_status_drains_hardware_id");
+
     }
 }
