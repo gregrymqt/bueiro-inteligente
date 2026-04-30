@@ -20,6 +20,12 @@ public sealed class DrainsController(IDrainService drainService) : ApiController
         CancellationToken ct = default
     ) => Ok(await _drainService.GetAllDrainsAsync(skip, limit, ct).ConfigureAwait(false));
 
+    [HttpGet("lista-bueiros")]
+    public async Task<ActionResult<IReadOnlyList<DrainLookupDTO>>> GetDrainsList(CancellationToken ct = default)
+    {
+        return Ok(await _drainService.GetDrainsListAsync(ct).ConfigureAwait(false));
+    }
+
     [HttpGet("{drainId:guid}")]
     public async Task<ActionResult<DrainResponse>> GetById(
         Guid drainId,

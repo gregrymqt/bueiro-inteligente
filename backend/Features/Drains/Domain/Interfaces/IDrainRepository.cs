@@ -10,4 +10,5 @@ public interface IDrainRepository
     Task<DrainEntity> CreateAsync(DrainEntity drain, CancellationToken ct = default);
     Task<DrainEntity> UpdateAsync(DrainEntity drain, CancellationToken ct = default);
     Task DeleteAsync(DrainEntity drain, CancellationToken ct = default);
+    Task<IReadOnlyList<backend.Features.Drains.Application.DTOs.DrainLookupDTO>> GetAvailableDrainsAsync(CancellationToken ct = default);
 }

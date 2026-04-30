@@ -107,4 +107,21 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
             throw new ConnectionException("DrainRepository.DeleteAsync", $"Failed to delete drain '{drain.Id}'.", ex);
         }
     }
+
+    public async Task<IReadOnlyList<backend.Features.Drains.Application.DTOs.DrainLookupDTO>> GetAvailableDrainsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            return await dbContext.Drains
+                .AsNoTracking()
+                .Select(d => new backend.Features.Drains.Application.DTOs.DrainLookupDTO(d.HardwareId, d.Name))
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving available drains lookup list");
+            throw new ConnectionException("DrainRepository.GetAvailableDrainsAsync", "Failed to query available drains list.", ex);
+        }
+    }
 }
