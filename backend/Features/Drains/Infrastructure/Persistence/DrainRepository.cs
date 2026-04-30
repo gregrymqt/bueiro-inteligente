@@ -109,36 +109,4 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
             throw new ConnectionException("DrainRepository.DeleteAsync", $"Failed to delete drain '{drain.Id}'.", ex);
         }
     }
-
-    public async Task<IReadOnlyList<Drain>> GetAvailableDrainsAsync(CancellationToken ct = default)
-    {
-        try
-        {
-            return await dbContext.Drains
-                .AsNoTracking()
-                .Select(d => new Drain
-                {
-                    Id = d.Id,
-                    Name = d.Name,
-                    Address = d.Address,
-                    Latitude = d.Latitude,
-                    Longitude = d.Longitude,
-                    HardwareId = d.HardwareId,
-                    IsActive = d.IsActive,
-                    CreatedAt = d.CreatedAt,
-                    MaxHeight = d.MaxHeight,
-                    CriticalThreshold = d.CriticalThreshold,
-                    AlertThreshold = d.AlertThreshold,
-                    UserId = d.UserId
-                })
-                .ToListAsync(ct)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error retrieving available drains lookup list");
-            throw new ConnectionException("DrainRepository.GetAvailableDrainsAsync",
-                "Failed to query available drains list.", ex);
-        }
-    }
 }

@@ -9,5 +9,4 @@ public interface IDrainRepository
     Task<Drain> CreateAsync(Drain drain, CancellationToken ct = default);
     Task<Drain> UpdateAsync(Drain drain, CancellationToken ct = default);
     Task DeleteAsync(Drain drain, CancellationToken ct = default);
-    Task<IReadOnlyList<Drain>> GetAvailableDrainsAsync(CancellationToken ct = default);
 }

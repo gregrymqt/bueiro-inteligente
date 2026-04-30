@@ -9,5 +9,4 @@ public interface IDrainService
     Task<DrainResponse> CreateDrainAsync(DrainCreateRequest request, Guid userId, CancellationToken ct = default);
     Task<DrainResponse> UpdateDrainAsync(Guid drainId, DrainUpdateRequest request, CancellationToken ct = default);
     Task DeleteDrainAsync(Guid drainId, CancellationToken ct = default);
-    Task<IReadOnlyList<Drain>> GetDrainsListAsync(CancellationToken ct = default);
 }
