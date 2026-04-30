@@ -1,0 +1,113 @@
+@use '@/styles/default' as *;
+
+.grid {
+  display: grid;
+  gap: $spacing-md;
+  width: 100%;
+  grid-template-columns: 1fr;
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.planCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-lg;
+  border: 1px solid $color-border;
+  background-color: $color-background;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 4px 12px rgba($color-text, 0.05);
+  transition: transform $transition-speed ease;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  &.popular {
+    border-color: $color-primary;
+    box-shadow: 0 8px 24px rgba($color-primary, 0.15);
+  }
+}
+
+.popularBadge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $color-primary;
+  color: $color-background;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-border;
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-text-main;
+  margin-bottom: $spacing-sm;
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: $color-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.description {
+  font-size: 1rem;
+  color: $color-text-light;
+}
+
+.features {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  color: $color-text-main;
+  font-size: 1rem;
+}
+
+.featureIcon {
+  color: $color-success;
+  flex-shrink: 0;
+}
+
+.actionButton {
+  width: 100%;
+  padding: 12px;
+  border-radius: $border-radius-md;
+  background-color: $color-primary;
+  color: $color-background;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color $transition-speed ease;
+
+  &:hover {
+    background-color: $color-secondary;
+  }
+}
