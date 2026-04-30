@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
-import { resolveRowsEmbedUrl } from '@/core/http/environment';
+import { resolveRowsDashboardUrl, resolveRowsTableUrl } from '@/core/http/environment';
 import { useSearchParams } from 'react-router-dom';
 
 // Importando as nossas Features
@@ -30,6 +30,16 @@ const ActivityIcon = () => (
 const ChartIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M18 20V10m-6 10V4m-6 16v-4" />
+  </svg>
+);
+
+const TableIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <line x1="3" y1="9" x2="21" y2="9" />
+    <line x1="3" y1="15" x2="21" y2="15" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+    <line x1="15" y1="3" x2="15" y2="21" />
   </svg>
 );
 
@@ -82,12 +92,20 @@ export const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // useMemo garante que o array não seja recriado a cada renderização da página
-  const rowsEmbedUrl = useMemo(() => {
+  const rowsDashboardUrl = useMemo(() => {
     if (USE_DASHBOARD_MOCK) {
       return 'mock:rows-dashboard';
     }
 
-    return resolveRowsEmbedUrl() ?? '';
+    return resolveRowsDashboardUrl() ?? '';
+  }, []);
+
+  const rowsTableUrl = useMemo(() => {
+    if (USE_DASHBOARD_MOCK) {
+      return 'mock:rows-table';
+    }
+
+    return resolveRowsTableUrl() ?? '';
   }, []);
 
   const navItems: NavigationItem[] = useMemo(() => [
@@ -105,15 +123,20 @@ export const Dashboard: React.FC = () => {
           ),
         },
         {
-          id: 'historico-rows',
-          label: 'Análise de Histórico',
+          id: 'dashboard-rows',
+          label: 'Dashboard Analítico',
           icon: <ChartIcon />,
-          // Aqui você colocará o embedUrl gerado pela sua conta do Rows
-          component: <RowsEmbed embedUrl={rowsEmbedUrl} title="Histórico de Obstrução" />,
+          component: <RowsEmbed embedUrl={rowsDashboardUrl} title="Painel de KPIs" />,
+        },
+        {
+          id: 'tabela-rows',
+          label: 'Tabela de Dados',
+          icon: <TableIcon />,
+          component: <RowsEmbed embedUrl={rowsTableUrl} title="Histórico Completo" />,
         },
       ],
     }
-  ], [rowsEmbedUrl]);
+  ], [rowsDashboardUrl, rowsTableUrl]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
   const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
