@@ -1,3 +1,8 @@
+export interface DrainLookup {
+  id: string;
+  nome: string;
+}
+
 export interface DrainStatus {
   id_bueiro: string;
   distancia_cm: number;
