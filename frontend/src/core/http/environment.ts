@@ -111,10 +111,18 @@ export function resolveSignalRHubUrl(
   return cloudWsUrl ?? `${resolveBackendBaseUrl(env)}/realtime/ws`;
 }
 
-export function resolveRowsEmbedUrl(
-  env: Pick<ImportMetaEnv, "VITE_ROWS_EMBED_URL"> = import.meta.env,
+export function resolveRowsDashboardUrl(
+  env: Pick<ImportMetaEnv, "VITE_ROWS_EMBED_DASHBOARD_URL"> = import.meta.env,
 ): string | null {
-  const normalizedUrl = normalizeUrl(env.VITE_ROWS_EMBED_URL);
+  const normalizedUrl = normalizeUrl(env.VITE_ROWS_EMBED_DASHBOARD_URL);
+
+  return normalizedUrl ?? null;
+}
+
+export function resolveRowsTableUrl(
+  env: Pick<ImportMetaEnv, "VITE_ROWS_EMBED_TABLE_URL"> = import.meta.env,
+): string | null {
+  const normalizedUrl = normalizeUrl(env.VITE_ROWS_EMBED_TABLE_URL);
 
   return normalizedUrl ?? null;
 }
