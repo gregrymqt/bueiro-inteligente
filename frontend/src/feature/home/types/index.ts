@@ -55,10 +55,13 @@ export interface UserReview {
   order: number;
 }
 
-// Resposta unificada que o seu GET /home deve retornar
+// Resposta unificada do GET /home.
+// O backend atual retorna `carousels` e `stats`; `plans` e `reviews`
+// podem ser acrescentados em releases futuras ou normalizados na camada
+// de service/hook quando ausentes.
 export interface HomeDataResponse {
   carousels: CarouselContent[];
   stats: StatCardContent[];
-  plans: PricingPlan[];
-  reviews: UserReview[];
+  plans?: PricingPlan[];
+  reviews?: UserReview[];
 }
