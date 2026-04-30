@@ -26,7 +26,7 @@ public sealed class RowsService(IHttpClientFactory httpClientFactory, ILogger<Ro
             Validate(spreadsheetId, tableId, payload);
 
             var client = httpClientFactory.CreateClient(RowsHttpClientDefaults.ClientName);
-            var url = $"spreadsheets/{spreadsheetId}/tables/{tableId}/values:append";
+            var url = $"v1/spreadsheets/{spreadsheetId}/tables/{tableId}/values/A:G:append";
 
             using var response = await client
                 .PostAsJsonAsync(url, payload, JsonOptions, ct)

@@ -71,12 +71,13 @@ public static class ConfigurationServiceExtensions
             ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_FRONTEND_REDIRECT_URL"]
         );
         MapSection(mappedValues, rawEnv, IotSettings.SectionName, ["HARDWARE_TOKEN"]);
-        MapSection(
-            mappedValues,
+        mappedValues[$"{RowsSettings.SectionName}:ApiKey"] = Resolve(rawEnv, "ROWS__API__KEY");
+        mappedValues[$"{RowsSettings.SectionName}:BaseUrl"] = Resolve(rawEnv, "ROWS__BASE__URL");
+        mappedValues[$"{RowsSettings.SectionName}:SpreadsheetId"] = Resolve(
             rawEnv,
-            RowsSettings.SectionName,
-            ["ROWS_API_KEY", "ROWS_BASE_URL", "ROWS_SPREADSHEET_ID", "ROWS_TABLE_ID"]
+            "ROWS__SPREADSHEET__ID"
         );
+        mappedValues[$"{RowsSettings.SectionName}:TableId"] = Resolve(rawEnv, "ROWS__TABLE__ID");
         MapSection(
             mappedValues,
             rawEnv,
