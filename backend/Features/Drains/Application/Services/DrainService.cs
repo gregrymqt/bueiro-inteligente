@@ -180,6 +180,20 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
         }
     }
 
+    public async Task<IReadOnlyList<DrainLookupDTO>> GetDrainsListAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Listando bueiros para lookup.");
+        try
+        {
+            return await _repository.GetAvailableDrainsAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao listar bueiros para lookup.");
+            throw;
+        }
+    }
+
     private static DrainResponse MapToResponse(DrainEntity d) =>
         new(
             d.Id,
