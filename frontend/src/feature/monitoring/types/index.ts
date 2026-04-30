@@ -7,3 +7,7 @@ export interface DrainStatus {
   longitude?: number;
   ultima_atualizacao: string; 
 }
+export interface DrainLookup {
+  id: string;
+  nome: string;
+}

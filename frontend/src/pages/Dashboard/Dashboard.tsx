@@ -96,14 +96,13 @@ export const Dashboard: React.FC = () => {
   const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null);
 
   const effectiveDrainId = useMemo(() => {
-    return selectedDrainId ?? (drains.length > 0 ? drains[0].hardware_id : ''); // ALERTA: Usar hardware_id no fallback
+    return selectedDrainId ?? (drains.length > 0 ? drains[0].id : '');
   }, [selectedDrainId, drains]);
 
   const selectedDrainName = useMemo(() => {
     if (!effectiveDrainId || drains.length === 0) return 'Carregando...';
-    // ALERTA: Comparar com d.hardware_id em vez de d.id
-    const drain = drains.find(d => d.hardware_id === effectiveDrainId); 
-    return drain ? drain.name : 'Bueiro Desconhecido';
+    const drain = drains.find(d => d.id === effectiveDrainId);
+    return drain ? drain.nome : 'Bueiro Desconhecido';
   }, [drains, effectiveDrainId]);
 
   const handleDrainChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -211,8 +210,8 @@ export const Dashboard: React.FC = () => {
                 <option value="">Nenhum bueiro disponível</option>
               ) : (
                 drains.map(drain => (
-                  <option key={drain.id} value={drain.hardware_id}> {/* ALERTA: Usar hardware_id aqui */}
-                    {drain.name}
+                  <option key={drain.id} value={drain.id}>
+                    {drain.nome}
                   </option>
                 ))
               )}

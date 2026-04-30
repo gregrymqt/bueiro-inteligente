@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertService } from '@/core/alert/AlertService';
-import type { Drain } from '@/feature/drain/types';
-import { DrainService } from '@/feature/drain/services/DrainService';
+import type { DrainLookup } from '../types';
+import { MonitoringService } from '../services/MonitoringService';
 
 export const useDrainsList = () => {
-  // Alterado de DrainLookup[] para Drain[]
-  const [data, setData] = useState<Drain[]>([]);
+  const [data, setData] = useState<DrainLookup[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
@@ -15,8 +14,7 @@ export const useDrainsList = () => {
       setLoading(true);
       setError(null);
 
-      // Passamos 'false' para não usar mock (ou controle conforme sua env)
-      const response = await DrainService.getDrains(false);
+      const response = await MonitoringService.getAvailableDrains();
 
       if (!isMountedRef.current) {
         return;
@@ -24,7 +22,7 @@ export const useDrainsList = () => {
 
       // Ordena alfabeticamente para o seletor (Dashboard) ficar organizado
       const sortedDrains = [...response].sort((left, right) => 
-        left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' })
+        left.nome.localeCompare(right.nome, 'pt-BR', { sensitivity: 'base' })
       );
 
       setData(sortedDrains);
