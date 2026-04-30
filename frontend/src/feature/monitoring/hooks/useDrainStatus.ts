@@ -94,15 +94,17 @@ export const useDrainStatus = (bueiroId: string) => {
     }
   }, [bueiroId, clearRealtimeConnections, startBackendUpdates, startRealtimeUpdates]);
 
+  // Reage a mudanças no bueiroId limpando estado e conexões anteriores
   useEffect(() => {
     isMountedRef.current = true;
+    setData(null);
     void fetchInitial();
 
     return () => {
       isMountedRef.current = false;
       clearRealtimeConnections();
     };
-  }, [clearRealtimeConnections, fetchInitial]);
+  }, [bueiroId, clearRealtimeConnections, fetchInitial]);
 
   return { data, loading, error, refetch: fetchInitial };
 };

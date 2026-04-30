@@ -2,9 +2,11 @@ import React, { useMemo } from 'react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
 import { resolveRowsDashboardUrl, resolveRowsTableUrl } from '@/core/http/environment';
 import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
+import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
@@ -90,6 +92,24 @@ const findFirstRenderableNavigationItem = (items: NavigationItem[]): NavigationI
 
 export const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { data: drains, loading: drainsLoading } = useDrainsList();
+  const [selectedDrainId, setSelectedDrainId] = useState<string>('');
+
+  useEffect(() => {
+    if (drains.length > 0 && !selectedDrainId) {
+      setSelectedDrainId(drains[0].id);
+    }
+  }, [drains, selectedDrainId]);
+
+  const selectedDrainName = useMemo(() => {
+    if (!selectedDrainId || drains.length === 0) return 'Carregando...';
+    const drain = drains.find(d => d.id === selectedDrainId);
+    return drain ? drain.nome : 'Bueiro Desconhecido';
+  }, [drains, selectedDrainId]);
+
+  const handleDrainChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedDrainId(event.target.value);
+  };
 
   // useMemo garante que o array não seja recriado a cada renderização da página
   const rowsDashboardUrl = useMemo(() => {
@@ -108,35 +128,41 @@ export const Dashboard: React.FC = () => {
     return resolveRowsTableUrl() ?? '';
   }, []);
 
-  const navItems: NavigationItem[] = useMemo(() => [
-    {
-      id: 'monitoramento',
-      label: 'Monitoramento',
-      icon: <MonitorIcon />,
-      children: [
-        {
-          id: 'tempo-real',
-          label: 'Visão Geral (Ao Vivo)',
-          icon: <ActivityIcon />,
-          component: (
-            <RealTimeMonitor bueiroId="bueiro-01" locationName="Bueiro - Terminal Piracicabana" />
-          ),
-        },
-        {
-          id: 'dashboard-rows',
-          label: 'Dashboard Analítico',
-          icon: <ChartIcon />,
-          component: <RowsEmbed embedUrl={rowsDashboardUrl} title="Painel de KPIs" />,
-        },
-        {
-          id: 'tabela-rows',
-          label: 'Tabela de Dados',
-          icon: <TableIcon />,
-          component: <RowsEmbed embedUrl={rowsTableUrl} title="Histórico Completo" />,
-        },
-      ],
-    }
-  ], [rowsDashboardUrl, rowsTableUrl]);
+  const navItems: NavigationItem[] = useMemo(() => {
+    return [
+      {
+        id: 'monitoramento',
+        label: 'Monitoramento',
+        icon: <MonitorIcon />,
+        children: [
+          {
+            id: 'tempo-real',
+            label: 'Visão Geral (Ao Vivo)',
+            icon: <ActivityIcon />,
+            component: selectedDrainId ? (
+              <RealTimeMonitor bueiroId={selectedDrainId} locationName={selectedDrainName} />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                <p>Carregando monitoramento...</p>
+              </div>
+            ),
+          },
+          {
+            id: 'dashboard-rows',
+            label: 'Dashboard Analítico',
+            icon: <ChartIcon />,
+            component: <RowsEmbed embedUrl={rowsDashboardUrl} title="Painel de KPIs" />,
+          },
+          {
+            id: 'tabela-rows',
+            label: 'Tabela de Dados',
+            icon: <TableIcon />,
+            component: <RowsEmbed embedUrl={rowsTableUrl} title="Histórico Completo" />,
+          },
+        ],
+      }
+    ]
+  }, [rowsDashboardUrl, rowsTableUrl, selectedDrainId, selectedDrainName]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
   const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
@@ -170,6 +196,28 @@ export const Dashboard: React.FC = () => {
         <main className="dashboard-content">
           <div className="dashboard-content__header">
             <h1 className="desktop-title">{activeRenderableItem.label}</h1>
+          </div>
+
+          <div className="dashboard-content__controls">
+            <select
+              className="drain-selector"
+              value={selectedDrainId}
+              onChange={handleDrainChange}
+              disabled={drainsLoading || drains.length === 0}
+              aria-label="Selecione um bueiro"
+            >
+              {drainsLoading ? (
+                <option value="">Carregando bueiros...</option>
+              ) : drains.length === 0 ? (
+                <option value="">Nenhum bueiro disponível</option>
+              ) : (
+                drains.map(drain => (
+                  <option key={drain.id} value={drain.id}>
+                    {drain.nome}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
 
           <nav className="mobileTabs" aria-label="Abas do dashboard">
