@@ -30,7 +30,7 @@ export const Pricing: React.FC<PricingProps> = ({ plans }) => {
               </div>
             ))}
           </div>
-          <button className={styles.actionButton}>Assinar Agora</button>
+          <button type="button" className={styles.actionButton}>Assinar Agora</button>
         </Card>
       ))}
     </div>
