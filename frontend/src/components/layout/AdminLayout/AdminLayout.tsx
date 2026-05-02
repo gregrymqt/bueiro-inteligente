@@ -17,17 +17,17 @@ export const AdminLayout = () => {
 
   const navItems: AdminNavigationItem[] = [
     {
-      id: 'home',
-      label: 'Gestão da Home',
-      path: '/admin/home',
-      icon: <LayoutDashboard size={20} />,
-      component: <></>,
-    },
-    {
       id: 'messages',
       label: 'Mensagens',
       path: '/admin/messages',
       icon: <Mail size={20} />,
+      component: <></>,
+    },
+    {
+      id: 'home',
+      label: 'Home',
+      path: '/admin/home',
+      icon: <LayoutDashboard size={20} />,
       component: <></>,
     },
   ];

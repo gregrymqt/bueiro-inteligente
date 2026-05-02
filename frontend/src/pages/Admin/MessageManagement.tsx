@@ -10,6 +10,7 @@ export const MessageManagement: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Use mock for now since backend might not have this endpoint yet
   const useMock = true;
 
   const fetchMessages = async () => {
@@ -31,6 +32,7 @@ export const MessageManagement: React.FC = () => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await MessageService.markAsRead(id, useMock);
+      // Using functional state updates to prevent stale closures
       setMessages((prev) =>
         prev.map(msg => msg.id === id ? { ...msg, isRead: true } : msg)
       );
@@ -47,6 +49,7 @@ export const MessageManagement: React.FC = () => {
       onConfirm: async () => {
         try {
           await MessageService.deleteMessage(id, useMock);
+          // Using functional state updates
           setMessages((prev) => prev.filter(msg => msg.id !== id));
           AlertService.success('Mensagem excluída com sucesso.');
         } catch (error) {

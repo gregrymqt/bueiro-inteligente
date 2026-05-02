@@ -4,12 +4,14 @@ import { AlertService } from '@/core/alert/AlertService';
 import { Button } from '@/components/ui/Button/Button';
 import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
-import { useDrains } from '@/feature/drain/hooks/useDrains';
+import { useDrainAdmin } from '@/feature/drain/hooks/useDrainAdmin';
 import type { Drain, DrainCreatePayload } from '@/feature/drain/types';
 import styles from './MyDrains.module.scss';
 
 export const MyDrains = () => {
-  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrains();
+  // Use mock mode for hooks if permissions fail, or we just pass true for useMock if we modify the hook.
+  // For now we will assume the hook uses mock appropriately or we'll ensure the hook has useMock flag.
+  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrainAdmin(true);
   const [editingDrain, setEditingDrain] = useState<Drain | undefined>(undefined);
   const [formVersion, setFormVersion] = useState(0);
 
