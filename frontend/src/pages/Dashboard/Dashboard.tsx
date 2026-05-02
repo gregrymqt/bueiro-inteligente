@@ -9,6 +9,8 @@ import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
+import { SettingsIcon } from 'lucide-react';
+import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
 const USE_DASHBOARD_MOCK = false;
 
@@ -205,6 +207,14 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-content__header">
             <h1 className="desktop-title">{activeRenderableItem.label}</h1>
           </div>
+
+          {/* CORRIGIDO: Utilizando o componente ResumoDrains que estava inutilizado */}
+          {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
+             <ResumoDrains 
+               drainsCount={drains.length} 
+               activeDrainsCount={drains.length} 
+             />
+          )}
 
           {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
             <div className="dashboard-content__controls">

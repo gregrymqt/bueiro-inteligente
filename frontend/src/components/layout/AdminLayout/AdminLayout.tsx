@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Mail, LayoutDashboard, Menu } from 'lucide-react';
+import { Droplets, LayoutDashboard, Menu } from 'lucide-react'; // <-- CORRIGIDO: Removido Mail, adicionado Droplets
 import { Button } from '@/components/ui/Button/Button';
 import { Sidebar } from '../Sidebar/Sidebar';
 import type { NavigationItem } from '../Sidebar/types';

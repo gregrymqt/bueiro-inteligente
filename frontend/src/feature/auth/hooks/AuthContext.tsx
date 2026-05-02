@@ -17,15 +17,15 @@ interface AuthContextData {
   logout: () => Promise<void>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextData | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserDTO | null>(null);
-  const [loading, setLoading] = useState<boolean>(true); // Começa como true para evitar piscar telas deslogadas
+  const [loading, setLoading] = useState<boolean>(true); 
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Roda apenas UMA VEZ na raiz da aplicação
   useEffect(() => {
     let isActive = true;
 

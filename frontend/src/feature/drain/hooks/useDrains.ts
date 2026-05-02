@@ -13,7 +13,8 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   return error instanceof Error ? error.message : fallbackMessage;
 };
 
-export function useDrainAdmin() {
+// CORRIGIDO: Hook renomeado para "useDrains" acompanhando a Dashboard do Usuário
+export function useDrains() { 
   const [drains, setDrains] = useState<Drain[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -22,7 +23,8 @@ export function useDrainAdmin() {
     setLoading(true);
 
     try {
-      const items = await DrainService.getDrains(useMock);
+      // CORRIGIDO: Variável useMock alterada para a constante USE_DRAIN_ADMIN_MOCK
+      const items = await DrainService.getDrains(USE_DRAIN_ADMIN_MOCK);
       setDrains(sortDrains(items));
     } catch (error: unknown) {
       AlertService.error('Erro', getErrorMessage(error, 'Falha ao carregar os bueiros.'));
@@ -39,7 +41,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      const createdDrain = await DrainService.createDrain(payload, useMock);
+      const createdDrain = await DrainService.createDrain(payload, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) => sortDrains([...previousDrains, createdDrain]));
       AlertService.success('Bueiro criado com sucesso!');
       return true;
@@ -55,7 +57,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      const updatedDrain = await DrainService.updateDrain(id, payload, useMock);
+      const updatedDrain = await DrainService.updateDrain(id, payload, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) =>
         sortDrains(previousDrains.map((item) => (item.id === id ? updatedDrain : item)))
       );
@@ -73,7 +75,7 @@ export function useDrainAdmin() {
     setIsSaving(true);
 
     try {
-      await DrainService.deleteDrain(id, useMock);
+      await DrainService.deleteDrain(id, USE_DRAIN_ADMIN_MOCK);
       setDrains((previousDrains) => previousDrains.filter((item) => item.id !== id));
       AlertService.success('Bueiro excluído com sucesso!');
       return true;
