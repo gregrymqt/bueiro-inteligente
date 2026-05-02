@@ -17,7 +17,7 @@ export const RowsEmbed: React.FC<RowsEmbedProps> = ({
 
   const shouldRenderMockPanel = useMemo(() => {
     return normalizedUrl.includes('sua-planilha-aqui') || normalizedUrl.startsWith('mock:');
-  }, [embedUrl]);
+  }, [normalizedUrl]); // <-- CORRIGIDO: A dependência agora é normalizedUrl
 
   const shouldRenderEmptyState = normalizedUrl.length === 0;
 

@@ -13,7 +13,8 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   return error instanceof Error ? error.message : fallbackMessage;
 };
 
-export function useDrains() {
+// CORRIGIDO: Hook renomeado para "useDrains" acompanhando a Dashboard do Usuário
+export function useDrains() { 
   const [drains, setDrains] = useState<Drain[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -22,6 +23,7 @@ export function useDrains() {
     setLoading(true);
 
     try {
+      // CORRIGIDO: Variável useMock alterada para a constante USE_DRAIN_ADMIN_MOCK
       const items = await DrainService.getDrains(USE_DRAIN_ADMIN_MOCK);
       setDrains(sortDrains(items));
     } catch (error: unknown) {

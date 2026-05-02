@@ -57,6 +57,7 @@ export const HomeManagement: React.FC = () => {
               <h2>Banners do Carrossel</h2>
               {!activeCarouselForm && (
                 <button 
+                  type="button"
                   className="btn-add" 
                   onClick={() => setActiveCarouselForm({ isEditing: false })}
                 >
@@ -87,12 +88,14 @@ export const HomeManagement: React.FC = () => {
                       <p className="card-info">Ordem: <span>{banner.order}</span></p>
                       <div className="card-actions">
                         <button 
+                          type="button"
                           className="btn-edit" 
                           onClick={() => setActiveCarouselForm({ isEditing: true, data: banner })}
                         >
                           Editar
                         </button>
                         <button 
+                          type="button"
                           className="btn-delete" 
                           onClick={() => handleDeleteCarousel(banner.id)}
                         >
@@ -112,6 +115,7 @@ export const HomeManagement: React.FC = () => {
               <h2>Cards de Estatística</h2>
               {!activeStatCardForm && (
                 <button 
+                  type="button"
                   className="btn-add" 
                   onClick={() => setActiveStatCardForm({ isEditing: false })}
                 >
@@ -144,12 +148,14 @@ export const HomeManagement: React.FC = () => {
                       <p className="card-info">Ordem: <span>{stat.order}</span></p>
                       <div className="card-actions">
                         <button 
+                          type="button"
                           className="btn-edit" 
                           onClick={() => setActiveStatCardForm({ isEditing: true, data: stat })}
                         >
                           Editar
                         </button>
                         <button 
+                          type="button"
                           className="btn-delete" 
                           onClick={() => handleDeleteStatCard(stat.id)}
                         >

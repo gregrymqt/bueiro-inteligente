@@ -6,7 +6,6 @@ import './AdminForms.scss';
 import { AlertService } from '@/core/alert/AlertService';
 import { validateFileSize } from '@/core/utils/FileUploadWrapper';
 
-
 interface CarouselFormProps {
   initialData?: CarouselContent;
   onSuccess?: () => void;
@@ -14,12 +13,15 @@ interface CarouselFormProps {
   useMock: boolean;
 }
 
+// CORRIGIDO: Removido o 'any' e criado um tipo genérico seguro para o formulário
+type CarouselFormData = Record<string, string | number | File[] | unknown>;
+
 export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSuccess, onCancel, useMock }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const isEditing = !!initialData?.id;
 
-  const fields: FormField<any>[] = [
+  const fields: FormField<CarouselFormData>[] = [
     {
       name: 'title',
       label: 'Título',
@@ -71,25 +73,25 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
     }
   ];
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: CarouselFormData) => {
     setIsLoading(true);
 
     let file: File | undefined;
-    if (data.image && data.image.length > 0) {
-      file = data.image[0];
-      if (!validateFileSize(file!, 10)) {
+    if (data.image && Array.isArray(data.image) && data.image.length > 0) {
+      file = data.image[0] as File;
+      if (!validateFileSize(file, 10)) {
         setIsLoading(false);
         return;
       }
     }
 
     const dataPayload: CarouselCreatePayload = {
-      title: data.title,
+      title: data.title as string,
       order: Number(data.order),
-      section: data.section
+      section: data.section as 'hero' | 'alerts' | 'stats'
     };
-    if (data.subtitle) dataPayload.subtitle = data.subtitle;
-    if (data.action_url) dataPayload.action_url = data.action_url;
+    if (data.subtitle) dataPayload.subtitle = data.subtitle as string;
+    if (data.action_url) dataPayload.action_url = data.action_url as string;
 
     try {
       if (isEditing && initialData?.id) {
@@ -108,7 +110,7 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
     }
   };
 
-  const defaultValues = initialData ? {
+  const defaultValues: CarouselFormData = initialData ? {
     title: initialData.title,
     subtitle: initialData.subtitle || '',
     action_url: initialData.action_url || '',
@@ -119,7 +121,7 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
     subtitle: '',
     action_url: '',
     order: 0,
-    section: 'hero' as const
+    section: 'hero'
   };
 
   return (
@@ -127,7 +129,7 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSucce
       <div className="form-header">
         <h3>{isEditing ? 'Editar Banner' : 'Novo Banner'}</h3>
       </div>
-      <GenericForm<any>
+      <GenericForm<CarouselFormData>
         fields={fields}
         onSubmit={handleSubmit}
         defaultValues={defaultValues}

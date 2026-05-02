@@ -4,9 +4,9 @@ import { AlertService } from '@/core/alert/AlertService';
 import { Button } from '@/components/ui/Button/Button';
 import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
+import { useDrainAdmin } from '@/feature/drain/hooks/useDrains';
 import type { Drain, DrainCreatePayload } from '@/feature/drain/types';
 import styles from './MyDrains.module.scss';
-import { useDrainAdmin } from '@/feature/drain/hooks/useDrains';
 
 export const MyDrains = () => {
   // Use mock mode for hooks if permissions fail, or we just pass true for useMock if we modify the hook.

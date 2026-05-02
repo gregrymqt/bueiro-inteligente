@@ -88,7 +88,11 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <Navigate to="home" replace />,
+                    element: <Navigate to="messages" replace />,
+                  },
+                  {
+                    path: 'messages',
+                    element: <MessageManagement />,
                   },
                   {
                     path: 'home',

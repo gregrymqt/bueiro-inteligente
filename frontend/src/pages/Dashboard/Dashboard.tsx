@@ -6,13 +6,11 @@ import { useSearchParams } from 'react-router-dom';
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
 import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
-import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
-
-// Importando os componentes de resumo e a nova aba de Meus Bueiros
-import { DrainManagement } from './DrainManagement';
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
+import { SettingsIcon } from 'lucide-react';
+import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
 const USE_DASHBOARD_MOCK = false;
 
@@ -44,20 +42,6 @@ const TableIcon = () => (
     <line x1="3" y1="15" x2="21" y2="15" />
     <line x1="9" y1="3" x2="9" y2="21" />
     <line x1="15" y1="3" x2="15" y2="21" />
-  </svg>
-);
-
-const SettingsIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.22a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-  </svg>
-);
-
-const HomeIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-    <polyline strokeLinecap="round" strokeLinejoin="round" points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
@@ -148,31 +132,8 @@ export const Dashboard: React.FC = () => {
     return resolveRowsTableUrl() ?? '';
   }, []);
 
-  const activeDrainsCount = useMemo(() => drains.filter(d => d.is_active).length, [drains]);
-
   const navItems: NavigationItem[] = useMemo(() => {
     return [
-      {
-        id: 'overview',
-        label: 'Resumo Geral',
-        icon: <HomeIcon />,
-        component: (
-          <div>
-            <ResumoDrains drainsCount={drains.length} activeDrainsCount={activeDrainsCount} />
-            {effectiveDrainId ? (
-              <>
-                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>Monitoramento Rápido</h2>
-                 <RealTimeMonitor bueiroId={effectiveDrainId} locationName={selectedDrainName} />
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', backgroundColor: '#fff', borderRadius: '8px', border: '1px dashed #d1d5db' }}>
-                <p>Nenhum bueiro disponível para monitoramento no momento.</p>
-                <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Cadastre um novo bueiro na aba "Meus Bueiros".</p>
-              </div>
-            )}
-          </div>
-        )
-      },
       {
         id: 'monitoramento',
         label: 'Monitoramento Detalhado',
@@ -185,7 +146,7 @@ export const Dashboard: React.FC = () => {
             component: effectiveDrainId ? (
               <RealTimeMonitor bueiroId={effectiveDrainId} locationName={selectedDrainName} />
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+              <div className="dashboard-content__empty">
                 <p>Carregando monitoramento...</p>
               </div>
             ),
@@ -211,13 +172,13 @@ export const Dashboard: React.FC = () => {
         component: <DrainManagement />
       }
     ]
-  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName, drains.length, activeDrainsCount]);
+  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
-  const requestedTabId = searchParams.get('tab') ?? 'overview';
+  const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
   const activeTabId = mobileNavItems.some((item) => item.id === requestedTabId)
     ? requestedTabId
-    : 'overview';
+    : 'tempo-real';
 
   const activeItem = findNavigationItem(navItems, activeTabId);
   const activeRenderableItem =
@@ -230,10 +191,10 @@ export const Dashboard: React.FC = () => {
 
   if (!navItems || navItems.length === 0 || !activeRenderableItem?.component) {
     return (
-      <div className="dashboard-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+      <div className="dashboard-layout dashboard-layout--centered">
+        <div className="dashboard-content__empty">
           <ActivityIcon />
-          <p style={{ margin: 0, fontSize: '1.1rem' }}>Nenhum módulo disponível no momento.</p>
+          <p>Nenhum módulo disponível no momento.</p>
         </div>
       </div>
     );
@@ -246,6 +207,14 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-content__header">
             <h1 className="desktop-title">{activeRenderableItem.label}</h1>
           </div>
+
+          {/* CORRIGIDO: Utilizando o componente ResumoDrains que estava inutilizado */}
+          {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
+             <ResumoDrains 
+               drainsCount={drains.length} 
+               activeDrainsCount={drains.length} 
+             />
+          )}
 
           {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
             <div className="dashboard-content__controls">
