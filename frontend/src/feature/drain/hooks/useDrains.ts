@@ -13,8 +13,7 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   return error instanceof Error ? error.message : fallbackMessage;
 };
 
-export function useDrainAdmin(useMockParam?: boolean) {
-  const useMock = useMockParam ?? USE_DRAIN_ADMIN_MOCK;
+export function useDrainAdmin() {
   const [drains, setDrains] = useState<Drain[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

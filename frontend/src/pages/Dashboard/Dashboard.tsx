@@ -1,23 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
 import { resolveRowsDashboardUrl, resolveRowsTableUrl } from '@/core/http/environment';
 import { useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
 
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
 import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
-import { MyDrains } from './MyDrains';
-import { StatCardCarousel } from '@/feature/home/components/StatCardCarousel';
-import { useHomeCarousel } from '@/feature/home/hooks/useHomeCarousel';
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
-import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
 const USE_DASHBOARD_MOCK = false;
 
-// SVGs simples para os ícones (Em produção, você pode usar Lucide ou Phosphor Icons)
+// SVGs simples para os ícones
 const MonitorIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
     <rect x="3" y="4" width="18" height="12" rx="2" />
@@ -48,13 +43,6 @@ const TableIcon = () => (
   </svg>
 );
 
-const SettingsIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-  </svg>
-);
-
 const findNavigationItem = (
   items: NavigationItem[],
   targetId: string,
@@ -63,14 +51,11 @@ const findNavigationItem = (
     if (item.id === targetId) {
       return item;
     }
-
     const nestedItem = item.children ? findNavigationItem(item.children, targetId) : undefined;
-
     if (nestedItem) {
       return nestedItem;
     }
   }
-
   return undefined;
 };
 
@@ -79,7 +64,6 @@ const flattenNavigationItems = (items: NavigationItem[]): NavigationItem[] => {
     if (item.children?.length) {
       return flattenNavigationItems(item.children);
     }
-
     return [item];
   });
 };
@@ -89,16 +73,29 @@ const findFirstRenderableNavigationItem = (items: NavigationItem[]): NavigationI
     if (item.component) {
       return item;
     }
-
     const nestedItem = item.children ? findFirstRenderableNavigationItem(item.children) : undefined;
-
     if (nestedItem) {
       return nestedItem;
     }
   }
-
   return undefined;
 };
+
+const ResumoDrains: React.FC<{ drainsCount: number, activeDrainsCount: number }> = ({ drainsCount, activeDrainsCount }) => {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', margin: '0 0 0.5rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Bueiros</h3>
+        <p style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', margin: 0 }}>{drainsCount}</p>
+      </div>
+      <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', margin: '0 0 0.5rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bueiros Ativos</h3>
+        <p style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981', margin: 0 }}>{activeDrainsCount}</p>
+      </div>
+    </div>
+  );
+};
+
 
 export const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -106,12 +103,11 @@ export const Dashboard: React.FC = () => {
   const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null);
 
   const effectiveDrainId = useMemo(() => {
-    return selectedDrainId ?? (drains.length > 0 ? drains[0].hardware_id : ''); // ALERTA: Usar hardware_id no fallback
+    return selectedDrainId ?? (drains.length > 0 ? drains[0].hardware_id : '');
   }, [selectedDrainId, drains]);
 
   const selectedDrainName = useMemo(() => {
     if (!effectiveDrainId || drains.length === 0) return 'Carregando...';
-    // ALERTA: Comparar com d.hardware_id em vez de d.id
     const drain = drains.find(d => d.hardware_id === effectiveDrainId); 
     return drain ? drain.name : 'Bueiro Desconhecido';
   }, [drains, effectiveDrainId]);
@@ -120,12 +116,10 @@ export const Dashboard: React.FC = () => {
     setSelectedDrainId(event.target.value);
   };
 
-  // useMemo garante que o array não seja recriado a cada renderização da página
   const rowsDashboardUrl = useMemo(() => {
     if (USE_DASHBOARD_MOCK) {
       return 'mock:rows-dashboard';
     }
-
     return resolveRowsDashboardUrl() ?? '';
   }, []);
 
@@ -133,37 +127,14 @@ export const Dashboard: React.FC = () => {
     if (USE_DASHBOARD_MOCK) {
       return 'mock:rows-table';
     }
-
     return resolveRowsTableUrl() ?? '';
   }, []);
-
-  const { statItems, loading: statItemsLoading } = useHomeCarousel();
 
   const navItems: NavigationItem[] = useMemo(() => {
     return [
       {
-        id: 'resumo',
-        label: 'Resumo Geral',
-        icon: <ActivityIcon />,
-        component: statItemsLoading ? (
-          <div className="dashboard-content__empty">
-            <p>Carregando panorama...</p>
-          </div>
-        ) : (
-          <div className="dashboard-content__statcard-wrapper">
-            <StatCardCarousel items={statItems} />
-          </div>
-        ),
-      },
-      {
-        id: 'meus-bueiros',
-        label: 'Meus Bueiros',
-        icon: <SettingsIcon />,
-        component: <MyDrains />,
-      },
-      {
         id: 'monitoramento',
-        label: 'Monitoramento',
+        label: 'Monitoramento Detalhado',
         icon: <MonitorIcon />,
         children: [
           {
@@ -191,15 +162,21 @@ export const Dashboard: React.FC = () => {
             component: <RowsEmbed embedUrl={rowsTableUrl} title="Histórico Completo" />,
           },
         ],
+      },
+      {
+        id: 'gerenciamento',
+        label: 'Meus Bueiros',
+        icon: <SettingsIcon />,
+        component: <DrainManagement />
       }
     ]
-  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName, statItems, statItemsLoading]);
+  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
-  const requestedTabId = searchParams.get('tab') ?? 'resumo';
+  const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
   const activeTabId = mobileNavItems.some((item) => item.id === requestedTabId)
     ? requestedTabId
-    : 'resumo';
+    : 'tempo-real';
 
   const activeItem = findNavigationItem(navItems, activeTabId);
   const activeRenderableItem =
@@ -229,27 +206,29 @@ export const Dashboard: React.FC = () => {
             <h1 className="desktop-title">{activeRenderableItem.label}</h1>
           </div>
 
-          <div className="dashboard-content__controls">
-            <select
-              className="drain-selector"
-              value={effectiveDrainId}
-              onChange={handleDrainChange}
-              disabled={drainsLoading || drains.length === 0}
-              aria-label="Selecione um bueiro"
-            >
-              {drainsLoading ? (
-                <option value="">Carregando bueiros...</option>
-              ) : drains.length === 0 ? (
-                <option value="">Nenhum bueiro disponível</option>
-              ) : (
-                drains.map(drain => (
-                  <option key={drain.id} value={drain.hardware_id}> {/* ALERTA: Usar hardware_id aqui */}
-                    {drain.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+          {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
+            <div className="dashboard-content__controls">
+              <select
+                className="drain-selector"
+                value={effectiveDrainId}
+                onChange={handleDrainChange}
+                disabled={drainsLoading || drains.length === 0}
+                aria-label="Selecione um bueiro"
+              >
+                {drainsLoading ? (
+                  <option value="">Carregando bueiros...</option>
+                ) : drains.length === 0 ? (
+                  <option value="">Nenhum bueiro disponível</option>
+                ) : (
+                  drains.map(drain => (
+                    <option key={drain.id} value={drain.hardware_id}>
+                      {drain.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
 
           <nav className="mobileTabs" aria-label="Abas do dashboard">
             {mobileNavItems.map((item) => (

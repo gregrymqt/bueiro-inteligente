@@ -17,17 +17,24 @@ export const AdminLayout = () => {
 
   const navItems: AdminNavigationItem[] = [
     {
-      id: 'messages',
-      label: 'Mensagens',
-      path: '/admin/messages',
-      icon: <Mail size={20} />,
+      id: 'drains',
+      label: 'Bueiros',
+      path: '/admin/drains',
+      icon: <Droplets size={20} />,
       component: <></>,
     },
     {
       id: 'home',
-      label: 'Home',
+      label: 'Gestão da Home',
       path: '/admin/home',
       icon: <LayoutDashboard size={20} />,
+      component: <></>,
+    },
+    {
+      id: 'messages',
+      label: 'Mensagens',
+      path: '/admin/messages',
+      icon: <Droplets size={20} />,
       component: <></>,
     },
   ];

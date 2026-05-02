@@ -35,33 +35,13 @@ export interface StatCardContent {
 export type StatCardCreatePayload = Omit<StatCardContent, 'id'>;
 export type StatCardUpdatePayload = Partial<StatCardCreatePayload>;
 
-export interface PricingPlan {
-  id: string;
-  name: string;
-  price: string;
-  description: string;
-  features: string[];
-  isPopular: boolean;
-  order: number;
-}
-
-export interface UserReview {
-  id: string;
-  authorName: string;
-  authorRole: string;
-  content: string;
-  rating: number;
-  avatarUrl?: string;
-  order: number;
-}
-
-// Resposta unificada do GET /home.
-// O backend atual retorna `carousels` e `stats`; `plans` e `reviews`
-// podem ser acrescentados em releases futuras ou normalizados na camada
-// de service/hook quando ausentes.
+// Resposta unificada que o seu GET /home deve retornar
 export interface HomeDataResponse {
   carousels: CarouselContent[];
   stats: StatCardContent[];
-  plans?: PricingPlan[];
-  reviews?: UserReview[];
+}
+export interface HomeConfiguration {
+  id?: string;
+  theme: string;
+  contact_email: string;
 }

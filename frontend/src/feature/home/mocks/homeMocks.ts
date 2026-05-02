@@ -7,8 +7,6 @@ import type {
   StatCardContent,
   StatCardCreatePayload,
   StatCardUpdatePayload,
-  PricingPlan,
-  UserReview,
 } from '../types';
 
 const createHeroArtwork = (title: string, subtitle: string, startColor: string, endColor: string, glowColor: string): string => {
@@ -51,9 +49,9 @@ const sortByOrder = <T extends { order: number }>(items: T[]): T[] =>
 const initialCarousels: CarouselContent[] = [
   {
     id: 'carousel-hero-01',
-    title: 'Solução Integrada: ESP32 + Bueiro',
-    subtitle: 'Sensores IoT de alta precisão (ESP32) instalados diretamente nos bueiros para monitoramento urbano contínuo.',
-    image_url: createHeroArtwork('Solução Integrada: ESP32 + Bueiro', 'Sensores IoT de alta precisão (ESP32) instalados diretamente nos bueiros para monitoramento urbano contínuo.', '#0f172a', '#1d4ed8', '#22d3ee'),
+    title: 'Monitoramento em tempo real',
+    subtitle: 'Painéis vivos para operação urbana contínua e visual de alta leitura.',
+    image_url: createHeroArtwork('Monitoramento em tempo real', 'Painéis vivos para operação urbana contínua e visual de alta leitura.', '#0f172a', '#1d4ed8', '#22d3ee'),
     action_url: '/dashboard',
     order: 1,
     section: 'hero',
@@ -123,64 +121,6 @@ const initialCarousels: CarouselContent[] = [
   },
 ];
 
-
-const initialPlans: PricingPlan[] = [
-  {
-    id: 'plan-01',
-    name: 'Básico',
-    price: 'R$ 499/mês',
-    description: 'Monitoramento de até 10 bueiros.',
-    features: ['Dashboard em tempo real', 'Alertas por e-mail', 'Suporte comercial'],
-    isPopular: false,
-    order: 1,
-  },
-  {
-    id: 'plan-02',
-    name: 'Avançado',
-    price: 'R$ 1299/mês',
-    description: 'Monitoramento de até 50 bueiros.',
-    features: ['Dashboard completo', 'Alertas SMS e App', 'Suporte 24/7 prioritário', 'Integração via API'],
-    isPopular: true,
-    order: 2,
-  },
-  {
-    id: 'plan-03',
-    name: 'Enterprise',
-    price: 'Sob Consulta',
-    description: 'Solução dedicada para cidades inteiras.',
-    features: ['Bueiros ilimitados', 'Instalação in loco', 'Gerente de conta', 'SLA garantido'],
-    isPopular: false,
-    order: 3,
-  },
-];
-
-const initialReviews: UserReview[] = [
-  {
-    id: 'review-01',
-    authorName: 'Prefeitura de São Paulo',
-    authorRole: 'Secretaria de Infraestrutura',
-    content: 'O sistema revolucionou a forma como lidamos com alagamentos nas marginais.',
-    rating: 5,
-    order: 1,
-  },
-  {
-    id: 'review-02',
-    authorName: 'Carlos Mendes',
-    authorRole: 'Engenheiro Civil',
-    content: 'Instalação dos ESP32 foi simples e a telemetria é muito confiável.',
-    rating: 4,
-    order: 2,
-  },
-  {
-    id: 'review-03',
-    authorName: 'Defesa Civil',
-    authorRole: 'Operações',
-    content: 'Conseguimos antecipar as equipes de limpeza antes das fortes chuvas.',
-    rating: 5,
-    order: 3,
-  },
-];
-
 const initialStats: StatCardContent[] = [
   {
     id: 'stat-01',
@@ -226,8 +166,6 @@ let statSequence = initialStats.length + 1;
 let homeState: HomeDataResponse = {
   carousels: initialCarousels.map(cloneCarousel),
   stats: initialStats.map(cloneStat),
-  plans: initialPlans,
-  reviews: initialReviews,
 };
 
 const createCarouselId = (): string => `carousel-${String(carouselSequence++).padStart(2, '0')}`;
@@ -236,8 +174,8 @@ const createStatId = (): string => `stat-${String(statSequence++).padStart(2, '0
 const snapshotHomeData = (): HomeDataResponse => ({
   carousels: sortByOrder(homeState.carousels).map(cloneCarousel),
   stats: sortByOrder(homeState.stats).map(cloneStat),
-  plans: homeState.plans ? sortByOrder(homeState.plans) : undefined,
-  reviews: homeState.reviews ? sortByOrder(homeState.reviews) : undefined,
+  plans: sortByOrder(homeState.plans),
+  reviews: sortByOrder(homeState.reviews),
 });
 
 const replaceHomeCarousels = (carousels: CarouselContent[]): void => {
@@ -260,8 +198,6 @@ export const resetMockHomeData = (): void => {
   homeState = {
     carousels: initialCarousels.map(cloneCarousel),
     stats: initialStats.map(cloneStat),
-    plans: initialPlans,
-    reviews: initialReviews,
   };
 };
 
