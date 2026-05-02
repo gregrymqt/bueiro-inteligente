@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
-import { useDrainAdmin } from './useDrainAdmin';
+import { useDrains } from './useDrains';
 
 const drainServiceMocks = vi.hoisted(() => {
   const getDrains = vi.fn<(useMock: boolean) => Promise<Drain[]>>();
@@ -62,14 +62,14 @@ const createDeferred = <T,>() => {
   };
 };
 
-describe('useDrainAdmin', () => {
+describe('useDrains', () => {
   it('carrega a lista no mount e alterna loading', async () => {
     const deferred = createDeferred<Drain[]>();
     const drains = [buildDrain({ id: '1', name: 'Bueiro Centro' })];
 
     drainServiceMocks.getDrains.mockReturnValueOnce(deferred.promise);
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(true);
@@ -112,7 +112,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce(initialDrains);
     drainServiceMocks.createDrain.mockResolvedValueOnce(createdDrain);
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -139,7 +139,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce([existingDrain]);
     drainServiceMocks.updateDrain.mockRejectedValueOnce(new Error('Falha ao atualizar bueiro'));
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -163,7 +163,7 @@ describe('useDrainAdmin', () => {
     drainServiceMocks.getDrains.mockResolvedValueOnce([existingDrain]);
     drainServiceMocks.deleteDrain.mockResolvedValueOnce();
 
-    const { result } = renderHook(() => useDrainAdmin());
+    const { result } = renderHook(() => useDrains());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
