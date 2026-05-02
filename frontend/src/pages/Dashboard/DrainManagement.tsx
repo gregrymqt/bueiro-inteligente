@@ -4,12 +4,12 @@ import { AlertService } from '@/core/alert/AlertService';
 import { Button } from '@/components/ui/Button/Button';
 import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
-import { useDrainAdmin } from '@/feature/drain/hooks/useDrainAdmin';
+import { useDrains } from '@/feature/drain/hooks/useDrains';
 import type { Drain, DrainCreatePayload } from '@/feature/drain/types';
 import styles from './DrainManagement.module.scss';
 
 export const DrainManagement = () => {
-  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrainAdmin();
+  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrains();
   const [editingDrain, setEditingDrain] = useState<Drain | undefined>(undefined);
   const [formVersion, setFormVersion] = useState(0);
 
@@ -46,10 +46,10 @@ export const DrainManagement = () => {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>Painel administrativo</p>
-          <h1 className={styles.title}>Gerenciamento de Bueiros</h1>
+          <p className={styles.eyebrow}>Área do Usuário</p>
+          <h1 className={styles.title}>Meus Bueiros</h1>
           <p className={styles.subtitle}>
-            Cadastre, atualize e remova drains conectados ao hardware de campo.
+            Cadastre, atualize e remova seus próprios drains conectados ao hardware de campo.
           </p>
         </div>
 
