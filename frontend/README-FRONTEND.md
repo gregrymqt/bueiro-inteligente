@@ -23,11 +23,14 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
   - http/: Configuração de clientes HTTP (ApiClient.ts), manipulação de tokens da sessão (TokenService.ts) e interceptadores (AuthInterceptor.tsx).
    - socket/: Cliente global de SignalR compartilhado entre features.
    - alert/: Feedback visual centralizado com SweetAlert2 (`AlertService.ts`).
-- **/feature:** O coração das regras de negócio do frontend. Cada domínio contém suas subdivisões: components, hooks, services e types.
-  - auth: Autenticação, formulário de login e serviços de validação de acesso.
-  - home: Componentes principais da página inicial, incluindo carrosséis (useHomeCarousel.ts) e cards de estatísticas.
-  - monitoring: Interface de visualização em tempo real do dispositivo, incluindo incorporações (RowsEmbed) e gerenciamento de estado das métricas (useDrainStatus.ts).
-- **/components:** Peças de UI reaproveitáveis.
+- **/feature:** O coração das regras de negócio.
+  - **auth:** Gestão de acesso e proteção de rotas.
+  - **home:** Seções da Landing Page (Hero, HowItWorks, Skeletons).
+  - **plan:** Domínio de planos de serviço e precificação.
+  - **feedback:** Sistema de avaliações (CRUD completo para usuários).
+  - **drain:** Gestão de inventário e cadastro de bueiros (CRUD).
+  - **monitoring:** Telemetria em tempo real e análise de dados (Rows).
+  - **/components:** Peças de UI reaproveitáveis.
   - layout/: Elementos estruturais da página (Navbar, Sidebar, Footer, MainLayout).
   - ui/: Blocos de construção genéricos (Cards, Carousel, StatusBadge).
 - **/pages:** Componentes de alto nível encarregados de unir componentes menores e features às rotas definitivas (ex: Home, Dashboard, Auth).
@@ -40,7 +43,7 @@ O projeto adota uma arquitetura modular voltada ao domínio do negócio (**Featu
 ## ✨ Principais Funcionalidades
 
 - 🔒 **Roteamento Protegido:** Middlewares validam o token JWT de forma reativa e proíbem visitantes não autenticados de entrarem nas rotas de sistema.
-- 📊 **Dashboards e Embeds:** Integração limpa com plataformas externas e geração de fluxos de gráficos de alto nível como o Rows.com.
+- 📊 **Dashboard Dinâmica:** Navegação por abas via Sidebar expansível, permitindo alternar entre monitoramento e gestão.
 - 🧩 **UI Responsiva e Modular:** Todo o grid e a estilização confiam amplamente em SCSS padronizado, onde cada componente porta sua própria classe de estilização em paridade (Component.tsx + Component.scss).
 - ⚡ **Abstração com Hooks:** Regras de manipulação assíncrona ficam segregadas em Hooks Customizados. As Views apenas montam os visuais e interagem declarativamente a partir dos retornos dos services.
 

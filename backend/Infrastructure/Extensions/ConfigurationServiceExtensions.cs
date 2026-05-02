@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Globalization;
 using backend.Core.Settings;
+using BueiroInteligente.Core.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -128,6 +129,7 @@ public static class ConfigurationServiceExtensions
         services.Configure<IotSettings>(config.GetSection(IotSettings.SectionName));
         services.Configure<RowsSettings>(config.GetSection(RowsSettings.SectionName));
         services.Configure<SupabaseSettings>(config.GetSection(SupabaseSettings.SectionName));
+        services.Configure<MercadoPagoSettings>(config.GetSection(MercadoPagoSettings.SectionName));
 
         return services;
     }
