@@ -1,0 +1,38 @@
+
+.stepsContainer {
+  display: grid;
+  gap: $spacing-xl;
+  grid-template-columns: 1fr;
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.stepItem {
+  text-align: center;
+  padding: $spacing-md;
+
+  .iconWrapper {
+    width: 80px;
+    height: 80px;
+    background-color: rgba($color-primary, 0.1);
+    color: $color-primary;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto $spacing-lg;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    color: $color-text-main;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    color: $color-text-light;
+    line-height: 1.6;
+  }
+}

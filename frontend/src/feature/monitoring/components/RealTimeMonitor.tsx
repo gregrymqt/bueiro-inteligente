@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDrainStatus } from '../hooks/useDrainStatus'; // O Hook que usa o Service/WS
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { StatusBadge } from '@/components/ui/Status/StatusBadge';
 import './RealTimeMonitor.scss';
 
 interface RealTimeMonitorProps {

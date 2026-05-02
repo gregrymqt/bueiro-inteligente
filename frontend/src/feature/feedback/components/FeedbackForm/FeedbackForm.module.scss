@@ -1,0 +1,34 @@
+
+.feedbackContainer {
+  background-color: $color-background;
+  border-radius: $border-radius-lg;
+  border: 1px solid $color-border;
+  padding: $spacing-lg;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  color: $color-text-main;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: $spacing-lg;
+  text-align: center;
+  
+  @include respond-to('md') {
+    text-align: left;
+  }
+}
+
+.form {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.submitBtn {
+  width: 100%; // Mobile-first: botão ocupa toda a largura
+
+  @include respond-to('md') {
+    width: auto; // Desktop: botão assume largura do conteúdo
+    min-width: 200px;
+  }
+}

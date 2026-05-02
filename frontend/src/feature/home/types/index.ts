@@ -1,47 +1,29 @@
+// Importamos o tipo da feature de planos respeitando a separação de domínios
 
-export type CarouselSection = 'hero' | 'alerts' | 'stats';
+import type { PricingPlan } from "@/feature/plan/types";
 
-export interface CarouselContent {
+// Tipagem para a Seção: Como Funciona
+export interface HowItWorksStep {
   id: string;
   title: string;
-  subtitle?: string;
-  image_url: string;
-  action_url?: string; 
-  order: number;
-  section: CarouselSection; 
-}
-
-export interface CarouselCreatePayload {
-  title: string;
-  subtitle?: string;
-  upload_id?: string;
-  action_url?: string;
-  order: number;
-  section: CarouselSection;
-}
-
-export type CarouselUpdatePayload = Partial<CarouselCreatePayload>;
-
-export interface StatCardContent {
-  id: string;
-  title: string;
-  value: string; 
   description: string;
-  icon_name: string; 
-  color: 'success' | 'warning' | 'danger'; 
+  icon_name: string;
   order: number;
 }
 
-export type StatCardCreatePayload = Omit<StatCardContent, 'id'>;
-export type StatCardUpdatePayload = Partial<StatCardCreatePayload>;
-
-// Resposta unificada que o seu GET /home deve retornar
-export interface HomeDataResponse {
-  carousels: CarouselContent[];
-  stats: StatCardContent[];
+// Tipagem para a Seção: Avaliações (Reviews)
+export interface UserReview {
+  id: string;
+  userName: string;
+  role: string;
+  comment: string;
+  rating: number; // Ex: 1 a 5
+  avatarUrl?: string;
 }
-export interface HomeConfiguration {
-  id?: string;
-  theme: string;
-  contact_email: string;
+
+// Resposta unificada que a Home precisará consumir
+export interface LandingPageData {
+  steps: HowItWorksStep[];
+  plans: PricingPlan[];
+  reviews: UserReview[];
 }

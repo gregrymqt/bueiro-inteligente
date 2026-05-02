@@ -1,0 +1,36 @@
+
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh;
+  background-color: $color-bg-light;
+}
+
+.dashboardMain {
+  flex: 1;
+  padding: $spacing-md;
+  overflow-y: auto;
+
+  @include respond-to('md') {
+    padding: $spacing-xl;
+  }
+}
+
+.contentHeader {
+  margin-bottom: $spacing-xl;
+  
+  h1 {
+    color: $color-text-main;
+    font-size: 1.75rem;
+    font-weight: 800;
+  }
+  
+  p {
+    color: $color-text-light;
+  }
+}
+
+.contentBody {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}

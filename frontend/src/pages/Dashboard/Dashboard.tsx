@@ -1,265 +1,210 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
+import {
+  Activity,
+  Database,
+  MessageSquare,
+  History,
+  PlusCircle,
+  List,
+  LineChart,
+  RefreshCw
+} from 'lucide-react';
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
-import { resolveRowsDashboardUrl, resolveRowsTableUrl } from '@/core/http/environment';
-import { useSearchParams } from 'react-router-dom';
 
-// Importando as nossas Features
+// Feature: Monitoramento
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
-import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
-
-// Importando o estilo do layout da página
-import './DashboardLayout.scss';
-import { SettingsIcon } from 'lucide-react';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
-const USE_DASHBOARD_MOCK = false;
+// Feature: Gestão de Bueiros (Drains)
+import { DrainForm } from '@/feature/drain/components/DrainForm';
+import { DrainList } from '@/feature/drain/components/DrainList';
+import { useDrains } from '@/feature/drain/hooks/useDrains'; //
+import type { Drain } from '@/feature/drain/types'; //[cite: 62]
 
-// SVGs simples para os ícones
-const MonitorIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <rect x="3" y="4" width="18" height="12" rx="2" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 20h8" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v4" />
-  </svg>
-);
+// Feature: Feedback
+import { FeedbackForm } from '@/feature/feedback/components/FeedbackForm/FeedbackForm';
+import { FeedbackList } from '@/feature/feedback/components/FeedbackList/FeedbackList';
+import type { Feedback } from '@/feature/feedback/types'; //[cite: 39]
 
-const ActivityIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-);
-
-const ChartIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18 20V10m-6 10V4m-6 16v-4" />
-  </svg>
-);
-
-const TableIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-    <line x1="3" y1="9" x2="21" y2="9" />
-    <line x1="3" y1="15" x2="21" y2="15" />
-    <line x1="9" y1="3" x2="9" y2="21" />
-    <line x1="15" y1="3" x2="15" y2="21" />
-  </svg>
-);
-
-const findNavigationItem = (
-  items: NavigationItem[],
-  targetId: string,
-): NavigationItem | undefined => {
-  for (const item of items) {
-    if (item.id === targetId) {
-      return item;
-    }
-    const nestedItem = item.children ? findNavigationItem(item.children, targetId) : undefined;
-    if (nestedItem) {
-      return nestedItem;
-    }
-  }
-  return undefined;
-};
-
-const flattenNavigationItems = (items: NavigationItem[]): NavigationItem[] => {
-  return items.flatMap((item) => {
-    if (item.children?.length) {
-      return flattenNavigationItems(item.children);
-    }
-    return [item];
-  });
-};
-
-const findFirstRenderableNavigationItem = (items: NavigationItem[]): NavigationItem | undefined => {
-  for (const item of items) {
-    if (item.component) {
-      return item;
-    }
-    const nestedItem = item.children ? findFirstRenderableNavigationItem(item.children) : undefined;
-    if (nestedItem) {
-      return nestedItem;
-    }
-  }
-  return undefined;
-};
-
-const ResumoDrains: React.FC<{ drainsCount: number, activeDrainsCount: number }> = ({ drainsCount, activeDrainsCount }) => {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-      <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
-        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', margin: '0 0 0.5rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Bueiros</h3>
-        <p style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', margin: 0 }}>{drainsCount}</p>
-      </div>
-      <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
-        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', margin: '0 0 0.5rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bueiros Ativos</h3>
-        <p style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981', margin: 0 }}>{activeDrainsCount}</p>
-      </div>
-    </div>
-  );
-};
-
+import styles from './Dashboard.module.scss';
 
 export const Dashboard: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { data: drains, loading: drainsLoading } = useDrainsList();
-  const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null);
+  // --- ESTADOS DE NAVEGAÇÃO E UI ---
+  const [activeTabId, setActiveTabId] = useState('live-monitor');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const effectiveDrainId = useMemo(() => {
-    return selectedDrainId ?? (drains.length > 0 ? drains[0].hardware_id : '');
-  }, [selectedDrainId, drains]);
+  // --- ESTADOS DE GESTÃO (CRUD) ---
+  const [editingFeedback, setEditingFeedback] = useState<Feedback | null>(null);
+  const [editingDrain, setEditingDrain] = useState<Drain | null>(null);
 
-  const selectedDrainName = useMemo(() => {
-    if (!effectiveDrainId || drains.length === 0) return 'Carregando...';
-    const drain = drains.find(d => d.hardware_id === effectiveDrainId); 
-    return drain ? drain.name : 'Bueiro Desconhecido';
-  }, [drains, effectiveDrainId]);
+  // --- HOOKS DE DADOS ---
+  const {
+    drains,
+    loading: drainsLoading,
+    isSaving: drainsSaving,
+    refreshDrains,
+    createDrain,
+    updateDrain,
+    deleteDrain
+  } = useDrains(); //[cite: 60]
 
-  const handleDrainChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedDrainId(event.target.value);
+  // Estado para refresh manual do feedback (via key re-mount)
+  const [feedbackListKey, setFeedbackListKey] = useState(0);
+
+  const handleRefreshFeedback = () => {
+    setFeedbackListKey(prev => prev + 1); //[cite: 63]
   };
 
-  const rowsDashboardUrl = useMemo(() => {
-    if (USE_DASHBOARD_MOCK) {
-      return 'mock:rows-dashboard';
-    }
-    return resolveRowsDashboardUrl() ?? '';
-  }, []);
+  const dashboardItems: NavigationItem[] = [
+    {
+      id: 'monitoring',
+      label: 'Tempo Real',
+      icon: <Activity size={20} />,
+      children: [
+        { id: 'live-monitor', label: 'Monitor ao Vivo', icon: <Activity size={16} /> },
+        { id: 'analysis', label: 'Análise de Histórico', icon: <LineChart size={16} /> },
+      ],
+    },
+    {
+      id: 'drains-management',
+      label: 'Gestão de Bueiros',
+      icon: <Database size={20} />,
+      children: [
+        { id: 'drain-list', label: 'Lista de Bueiros', icon: <List size={16} /> },
+        { id: 'drain-create', label: 'Cadastrar Novo', icon: <PlusCircle size={16} /> },
+      ],
+    },
+    {
+      id: 'feedback-management',
+      label: 'Meu Feedback',
+      icon: <MessageSquare size={20} />,
+      children: [
+        { id: 'feedback-send', label: 'Enviar Avaliação', icon: <PlusCircle size={16} /> },
+        { id: 'feedback-history', label: 'Histórico de Reviews', icon: <History size={16} /> },
+      ],
+    },
+  ];
 
-  const rowsTableUrl = useMemo(() => {
-    if (USE_DASHBOARD_MOCK) {
-      return 'mock:rows-table';
-    }
-    return resolveRowsTableUrl() ?? '';
-  }, []);
+  const renderContent = () => {
+    switch (activeTabId) {
+      // --- MONITORAMENTO ---
+      case 'live-monitor':
+        return <RealTimeMonitor bueiroId="ESP32-FIXO-01" />;
+      case 'analysis':
+        return <RowsEmbed embedUrl="mock:demo" title="Tendência de Enchentes" />;
 
-  const navItems: NavigationItem[] = useMemo(() => {
-    return [
-      {
-        id: 'monitoramento',
-        label: 'Monitoramento Detalhado',
-        icon: <MonitorIcon />,
-        children: [
-          {
-            id: 'tempo-real',
-            label: 'Visão Geral (Ao Vivo)',
-            icon: <ActivityIcon />,
-            component: effectiveDrainId ? (
-              <RealTimeMonitor bueiroId={effectiveDrainId} locationName={selectedDrainName} />
-            ) : (
-              <div className="dashboard-content__empty">
-                <p>Carregando monitoramento...</p>
+      // --- GESTÃO DE BUEIROS ---
+      case 'drain-list':
+        if (editingDrain) {
+          return (
+            <DrainForm
+              initialData={editingDrain}
+              isLoading={drainsSaving}
+              onCancel={() => setEditingDrain(null)}
+              onSubmit={async (data) => {
+                const success = await updateDrain(editingDrain.id, data);
+                if (success) setEditingDrain(null);
+              }}
+            />
+          ); //[cite: 58]
+        }
+        return (
+          <div className={styles.sectionContainer}>
+            <header className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>Bueiros Cadastrados</h2>
+                <p className={styles.sectionSubtitle}>Gerencie os dispositivos instalados em campo.</p>
               </div>
-            ),
-          },
-          {
-            id: 'dashboard-rows',
-            label: 'Dashboard Analítico',
-            icon: <ChartIcon />,
-            component: <RowsEmbed embedUrl={rowsDashboardUrl} title="Painel de KPIs" />,
-          },
-          {
-            id: 'tabela-rows',
-            label: 'Tabela de Dados',
-            icon: <TableIcon />,
-            component: <RowsEmbed embedUrl={rowsTableUrl} title="Histórico Completo" />,
-          },
-        ],
-      },
-      {
-        id: 'gerenciamento',
-        label: 'Meus Bueiros',
-        icon: <SettingsIcon />,
-        component: <DrainManagement />
-      }
-    ]
-  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName]);
+              <button onClick={refreshDrains} className={styles.refreshBtn} title="Sincronizar">
+                <RefreshCw size={18} className={drainsLoading ? styles.spinning : ''} />
+              </button>
+            </header>
+            <DrainList
+              drains={drains}
+              loading={drainsLoading}
+              isSaving={drainsSaving}
+              onEdit={setEditingDrain}
+              onDelete={(drain) => deleteDrain(drain.id)}
+            />
+          </div>
+        ); //[cite: 59, 60]
 
-  const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
-  const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
-  const activeTabId = mobileNavItems.some((item) => item.id === requestedTabId)
-    ? requestedTabId
-    : 'tempo-real';
+      case 'drain-create':
+        return (
+          <DrainForm
+            isLoading={drainsSaving}
+            onSubmit={async (data) => {
+              const success = await createDrain(data);
+              if (success) setActiveTabId('drain-list');
+            }}
+          />
+        ); //[cite: 58]
 
-  const activeItem = findNavigationItem(navItems, activeTabId);
-  const activeRenderableItem =
-    (activeItem?.component ? activeItem : findFirstRenderableNavigationItem(navItems)) ??
-    navItems[0];
+      // --- FEEDBACK ---
+      case 'feedback-send':
+        return <FeedbackForm onSuccess={() => setActiveTabId('feedback-history')} />;
 
-  const handleMobileTabChange = (tabId: string) => {
-    setSearchParams({ tab: tabId });
+      case 'feedback-history':
+        if (editingFeedback) {
+          return (
+            <FeedbackForm
+              initialData={editingFeedback}
+              onCancel={() => setEditingFeedback(null)}
+              onSuccess={() => {
+                setEditingFeedback(null);
+                handleRefreshFeedback();
+              }}
+            />
+          ); //[cite: 53]
+        }
+        return (
+          <div className={styles.sectionContainer}>
+            <header className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>Seu Histórico</h2>
+                <p className={styles.sectionSubtitle}>Visualize e gerencie suas avaliações enviadas.</p>
+              </div>
+              <button onClick={handleRefreshFeedback} className={styles.refreshBtn}>
+                <RefreshCw size={18} />
+              </button>
+            </header>
+            <FeedbackList key={feedbackListKey} onEditFeedback={setEditingFeedback} />
+          </div>
+        ); //[cite: 63]
+
+      default:
+        return <div className={styles.emptyState}>Selecione uma opção no menu lateral.</div>;
+    }
   };
-
-  if (!navItems || navItems.length === 0 || !activeRenderableItem?.component) {
-    return (
-      <div className="dashboard-layout dashboard-layout--centered">
-        <div className="dashboard-content__empty">
-          <ActivityIcon />
-          <p>Nenhum módulo disponível no momento.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="dashboard-layout">
-      <div className="dashboard-main">
-        <main className="dashboard-content">
-          <div className="dashboard-content__header">
-            <h1 className="desktop-title">{activeRenderableItem.label}</h1>
-          </div>
+    <div className={styles.dashboardLayout}>
+      <Sidebar
+        id="dashboard-sidebar"
+        items={dashboardItems}
+        activeId={activeTabId}
+        onNavigate={(id) => {
+          setActiveTabId(id);
+          setEditingDrain(null);
+          setEditingFeedback(null);
+        }}
+        isOpenMobile={isSidebarOpen}
+        onCloseMobile={() => setIsSidebarOpen(false)}
+        showMobileSubheader={true}
+        onToggleMobile={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
 
-          {/* CORRIGIDO: Utilizando o componente ResumoDrains que estava inutilizado */}
-          {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
-             <ResumoDrains 
-               drainsCount={drains.length} 
-               activeDrainsCount={drains.length} 
-             />
-          )}
+      <main className={styles.dashboardMain}>
+        <header className={styles.contentHeader}>
+          <h1>Portal do Usuário</h1>
+          <p>Gerencie seus dispositivos e acompanhe a telemetria em tempo real.</p>
+        </header>
 
-          {(activeTabId === 'tempo-real' || activeTabId === 'overview') && (
-            <div className="dashboard-content__controls">
-              <select
-                className="drain-selector"
-                value={effectiveDrainId}
-                onChange={handleDrainChange}
-                disabled={drainsLoading || drains.length === 0}
-                aria-label="Selecione um bueiro"
-              >
-                {drainsLoading ? (
-                  <option value="">Carregando bueiros...</option>
-                ) : drains.length === 0 ? (
-                  <option value="">Nenhum bueiro disponível</option>
-                ) : (
-                  drains.map(drain => (
-                    <option key={drain.id} value={drain.hardware_id}>
-                      {drain.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-          )}
-
-          <nav className="mobileTabs" aria-label="Abas do dashboard">
-            {mobileNavItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleMobileTabChange(item.id)}
-                className={activeTabId === item.id ? 'tabActive' : 'tab'}
-                aria-current={activeTabId === item.id ? 'page' : undefined}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-          
-          <div className="dashboard-content__body">
-            {activeRenderableItem.component}
-          </div>
-        </main>
-
-      </div>
+        <div className={styles.contentBody}>
+          {renderContent()}
+        </div>
+      </main>
     </div>
   );
 };

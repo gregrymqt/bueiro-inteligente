@@ -7,10 +7,6 @@
  *   <Form.Input name="email" label="Email" />
  *   <Form.Submit>Enviar</Form.Submit>
  * </Form>
- * 
- * Config-based (Legacy support):
- * import { GenericForm } from '@/components/Form';
- * <GenericForm fields={[...]} onSubmit={...} />
  */
 
 // Composition Pattern (New - Recommended)
@@ -23,7 +19,3 @@ export {
   FormActions,
   FormSubmit
 } from './Form';
-
-// Config-based Pattern (Legacy)
-export { GenericForm } from './GenericForm';
-export type { FormField, InputType } from './GenericForm';
