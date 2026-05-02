@@ -110,7 +110,7 @@ describe('SignalRClient', () => {
     );
 
     expect(resolveSignalRHubUrl({ VITE_BACKEND_LOCAL: 'TRUE' })).toBe(
-      'http://localhost:8000/realtime/ws',
+      '/realtime/ws',
     );
 
     expect(
@@ -127,7 +127,7 @@ describe('SignalRClient', () => {
         VITE_BACKEND_URL: 'https://abc.ngrok-free.app/',
         VITE_WS_URL: 'https://another.example.com/realtime/ws',
       }),
-    ).toBe('https://abc.ngrok-free.app/realtime/ws');
+    ).toBe('https://another.example.com/realtime/ws');
   });
 
   it('cria uma única conexão compartilhada e inicia apenas uma vez', async () => {
@@ -140,7 +140,7 @@ describe('SignalRClient', () => {
 
     expect(signalRMocks.builder.withUrl).toHaveBeenCalledTimes(1);
     expect(signalRMocks.builder.withUrl).toHaveBeenCalledWith(
-      'http://localhost:8000/realtime/ws',
+      '/realtime/ws',
       expect.objectContaining({
         headers: expect.objectContaining({
           'X-App-Id': expect.any(String),

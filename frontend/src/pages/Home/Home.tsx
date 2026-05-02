@@ -3,11 +3,10 @@ import { Carousel } from '@/components/ui/Carousel/Carousel';
 import { HeroSlide } from '@/feature/home/components/HeroSlide/HeroSlide';
 import {
   HeroSkeleton,
-  StatsSkeleton,
+  HowItWorksSkeleton,
   PricingSkeleton,
   ReviewsSkeleton
 } from '@/feature/home/components/HomeSkeletons/HomeSkeletons';
-import { StatCardCarousel } from '@/feature/home/components/StatCardCarousel';
 import { HowItWorks } from '@/feature/home/components/HowItWorks/HowItWorks';
 import { Pricing } from '@/feature/home/components/Pricing/Pricing';
 import { Reviews } from '@/feature/home/components/Reviews/Reviews';
@@ -15,7 +14,7 @@ import styles from './Home.module.scss';
 import { useHomeCarousel } from '@/feature/home/hooks/useHomeCarousel';
 
 const Home: React.FC = () => {
-  const { heroSlides, statItems, plans, reviews, loading } = useHomeCarousel();
+  const { heroSlides, plans, reviews, loading } = useHomeCarousel();
 
   return (
     <div className={styles.homeContainer}>
@@ -37,16 +36,10 @@ const Home: React.FC = () => {
       {/* Seção 2: Como Funciona */}
       <section className={styles.section} aria-label="Como Funciona">
         <h2 className={styles.sectionTitle}>Como Funciona</h2>
-        <HowItWorks />
-      </section>
-
-      {/* Seção Estatísticas Extras (opcional, mantida para contexto e coerência com a refatoração, mas renomeada para mostrar o Panorama) */}
-      <section className={styles.section} aria-label="Panorama Geral do Ecossistema">
-        <h2 className={styles.sectionTitle}>Panorama Geral do Ecossistema</h2>
         {loading ? (
-          <StatsSkeleton />
+          <HowItWorksSkeleton />
         ) : (
-          <StatCardCarousel items={statItems} />
+          <HowItWorks />
         )}
       </section>
 

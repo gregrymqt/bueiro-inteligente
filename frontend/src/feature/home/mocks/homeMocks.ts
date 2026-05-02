@@ -41,13 +41,9 @@ const createHeroArtwork = (title: string, subtitle: string, startColor: string, 
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
-const cloneCarousel = (item: CarouselContent): CarouselContent => ({
-  ...item,
-});
+const cloneCarousel = (item: CarouselContent): CarouselContent => JSON.parse(JSON.stringify(item));
 
-const cloneStat = (item: StatCardContent): StatCardContent => ({
-  ...item,
-});
+const cloneStat = (item: StatCardContent): StatCardContent => JSON.parse(JSON.stringify(item));
 
 const sortByOrder = <T extends { order: number }>(items: T[]): T[] =>
   [...items].sort((left, right) => left.order - right.order);
@@ -240,8 +236,8 @@ const createStatId = (): string => `stat-${String(statSequence++).padStart(2, '0
 const snapshotHomeData = (): HomeDataResponse => ({
   carousels: sortByOrder(homeState.carousels).map(cloneCarousel),
   stats: sortByOrder(homeState.stats).map(cloneStat),
-  plans: sortByOrder(homeState.plans),
-  reviews: sortByOrder(homeState.reviews),
+  plans: homeState.plans ? sortByOrder(homeState.plans) : undefined,
+  reviews: homeState.reviews ? sortByOrder(homeState.reviews) : undefined,
 });
 
 const replaceHomeCarousels = (carousels: CarouselContent[]): void => {

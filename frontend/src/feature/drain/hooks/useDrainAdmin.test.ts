@@ -85,7 +85,7 @@ describe('useDrainAdmin', () => {
       expect(result.current.drains).toEqual(drains);
     });
 
-    expect(drainServiceMocks.getDrains).toHaveBeenCalledWith(true);
+    expect(drainServiceMocks.getDrains).toHaveBeenCalledWith(false);
     expect(alertServiceMocks.error).not.toHaveBeenCalled();
   });
 
@@ -125,7 +125,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload, true);
+    expect(drainServiceMocks.createDrain).toHaveBeenCalledWith(payload, false);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro criado com sucesso!');
     expect(result.current.drains).toEqual([createdDrain]);
   });
@@ -152,7 +152,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(false);
-    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload, true);
+    expect(drainServiceMocks.updateDrain).toHaveBeenCalledWith(existingDrain.id, payload, false);
     expect(alertServiceMocks.error).toHaveBeenCalledWith('Erro', 'Falha ao atualizar bueiro');
     expect(result.current.drains).toEqual([existingDrain]);
   });
@@ -176,7 +176,7 @@ describe('useDrainAdmin', () => {
     });
 
     expect(operationResult).toBe(true);
-    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id, true);
+    expect(drainServiceMocks.deleteDrain).toHaveBeenCalledWith(existingDrain.id, false);
     expect(alertServiceMocks.success).toHaveBeenCalledWith('Bueiro excluído com sucesso!');
     expect(result.current.drains).toEqual([]);
   });

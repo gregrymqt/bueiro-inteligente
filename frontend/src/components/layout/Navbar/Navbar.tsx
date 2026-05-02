@@ -37,25 +37,25 @@ export const Navbar: React.FC = () => {
                   <div className={styles.dropdownMenu} role="menu" aria-label="Menu do utilizador">
                     {canAccessAdminPanel && (
                       <button
+                        type="button"
                         className={styles.logoutBtn}
                         onClick={() => {
                           navigate('/admin');
                           setIsDropdownOpen(false);
                         }}
-                        type="button"
                         role="menuitem"
                       >
                         Painel Admin
                       </button>
                     )}
                     <button
+                      type="button"
                       className={styles.logoutBtn}
                       onClick={async () => {
                         setIsDropdownOpen(false);
                         await logout();
                       }}
-                      type="button"
-                      role="menuitem"
+                        role="menuitem"
                     >
                       Sair da Conta
                     </button>

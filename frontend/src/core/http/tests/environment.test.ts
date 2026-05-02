@@ -18,10 +18,9 @@ describe('resolveBackendBaseUrl', () => {
     ).toBe(LOCAL_BACKEND_URL);
   });
 
-  it('usa a URL de produção quando a URL está configurada', () => {
+  it('usa a URL de produção quando a URL está configurada e VITE_BACKEND_LOCAL é false/undefined', () => {
     expect(
       resolveBackendBaseUrl({
-        VITE_BACKEND_LOCAL: 'TRUE',
         VITE_BACKEND_URL: 'https://production.example.com/',
       }),
     ).toBe('https://production.example.com');

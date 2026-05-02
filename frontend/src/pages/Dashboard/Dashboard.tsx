@@ -7,6 +7,9 @@ import { useState } from 'react';
 // Importando as nossas Features
 import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
 import { useDrainsList } from '@/feature/monitoring/hooks/useDrainsList';
+import { MyDrains } from './MyDrains';
+import { StatCardCarousel } from '@/feature/home/components/StatCardCarousel';
+import { useHomeCarousel } from '@/feature/home/hooks/useHomeCarousel';
 
 // Importando o estilo do layout da página
 import './DashboardLayout.scss';
@@ -42,6 +45,13 @@ const TableIcon = () => (
     <line x1="3" y1="15" x2="21" y2="15" />
     <line x1="9" y1="3" x2="9" y2="21" />
     <line x1="15" y1="3" x2="15" y2="21" />
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
   </svg>
 );
 
@@ -127,8 +137,30 @@ export const Dashboard: React.FC = () => {
     return resolveRowsTableUrl() ?? '';
   }, []);
 
+  const { statItems, loading: statItemsLoading } = useHomeCarousel();
+
   const navItems: NavigationItem[] = useMemo(() => {
     return [
+      {
+        id: 'resumo',
+        label: 'Resumo Geral',
+        icon: <ActivityIcon />,
+        component: statItemsLoading ? (
+          <div className="dashboard-content__empty">
+            <p>Carregando panorama...</p>
+          </div>
+        ) : (
+          <div className="dashboard-content__statcard-wrapper">
+            <StatCardCarousel items={statItems} />
+          </div>
+        ),
+      },
+      {
+        id: 'meus-bueiros',
+        label: 'Meus Bueiros',
+        icon: <SettingsIcon />,
+        component: <MyDrains />,
+      },
       {
         id: 'monitoramento',
         label: 'Monitoramento',
@@ -141,7 +173,7 @@ export const Dashboard: React.FC = () => {
             component: effectiveDrainId ? (
               <RealTimeMonitor bueiroId={effectiveDrainId} locationName={selectedDrainName} />
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+              <div className="dashboard-content__empty">
                 <p>Carregando monitoramento...</p>
               </div>
             ),
@@ -161,13 +193,13 @@ export const Dashboard: React.FC = () => {
         ],
       }
     ]
-  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName]);
+  }, [rowsDashboardUrl, rowsTableUrl, effectiveDrainId, selectedDrainName, statItems, statItemsLoading]);
 
   const mobileNavItems = useMemo(() => flattenNavigationItems(navItems), [navItems]);
-  const requestedTabId = searchParams.get('tab') ?? 'tempo-real';
+  const requestedTabId = searchParams.get('tab') ?? 'resumo';
   const activeTabId = mobileNavItems.some((item) => item.id === requestedTabId)
     ? requestedTabId
-    : 'tempo-real';
+    : 'resumo';
 
   const activeItem = findNavigationItem(navItems, activeTabId);
   const activeRenderableItem =
@@ -180,10 +212,10 @@ export const Dashboard: React.FC = () => {
 
   if (!navItems || navItems.length === 0 || !activeRenderableItem?.component) {
     return (
-      <div className="dashboard-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+      <div className="dashboard-layout dashboard-layout--centered">
+        <div className="dashboard-content__empty">
           <ActivityIcon />
-          <p style={{ margin: 0, fontSize: '1.1rem' }}>Nenhum módulo disponível no momento.</p>
+          <p>Nenhum módulo disponível no momento.</p>
         </div>
       </div>
     );

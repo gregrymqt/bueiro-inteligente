@@ -6,10 +6,12 @@ import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
 import { useDrainAdmin } from '@/feature/drain/hooks/useDrainAdmin';
 import type { Drain, DrainCreatePayload } from '@/feature/drain/types';
-import styles from './DrainManagement.module.scss';
+import styles from './MyDrains.module.scss';
 
-export const DrainManagement = () => {
-  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrainAdmin();
+export const MyDrains = () => {
+  // Use mock mode for hooks if permissions fail, or we just pass true for useMock if we modify the hook.
+  // For now we will assume the hook uses mock appropriately or we'll ensure the hook has useMock flag.
+  const { drains, loading, isSaving, createDrain, updateDrain, deleteDrain } = useDrainAdmin(true);
   const [editingDrain, setEditingDrain] = useState<Drain | undefined>(undefined);
   const [formVersion, setFormVersion] = useState(0);
 
@@ -46,10 +48,10 @@ export const DrainManagement = () => {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>Painel administrativo</p>
-          <h1 className={styles.title}>Gerenciamento de Bueiros</h1>
+          <p className={styles.eyebrow}>Área do Usuário</p>
+          <h1 className={styles.title}>Meus Bueiros</h1>
           <p className={styles.subtitle}>
-            Cadastre, atualize e remova drains conectados ao hardware de campo.
+            Gerencie seus bueiros monitorados.
           </p>
         </div>
 

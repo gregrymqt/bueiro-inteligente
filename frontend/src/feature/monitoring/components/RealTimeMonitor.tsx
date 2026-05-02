@@ -25,7 +25,7 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   if (error) return (
     <div className="monitor-card monitor-card--error">
       <p>Erro de conexão: {error}</p>
-      <button onClick={refetch} className="btn-retry">Tentar Novamente</button>
+      <button type="button" onClick={refetch} className="btn-retry">Tentar Novamente</button>
     </div>
   );
 
@@ -39,6 +39,7 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         {/* Passa o status vindo direto do Pydantic (NORMAL, ALERTA, CRITICO) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
+            type="button"
             onClick={refetch}
             className="btn-refresh"
             aria-label="Atualizar dados manualmente"

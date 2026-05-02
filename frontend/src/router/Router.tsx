@@ -8,7 +8,7 @@ import Home from '@/pages/Home/Home';
 import About from '@/pages/About/About';
 import { Login } from '@/pages/Auth/Login';
 import { HomeManagement } from '@/pages/Admin/HomeManagement';
-import { DrainManagement } from '@/pages/Admin/DrainManagement';
+import { MessageManagement } from '@/pages/Admin/MessageManagement';
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
@@ -88,11 +88,11 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <Navigate to="drains" replace />,
+                    element: <Navigate to="messages" replace />,
                   },
                   {
-                    path: 'drains',
-                    element: <DrainManagement />,
+                    path: 'messages',
+                    element: <MessageManagement />,
                   },
                   {
                     path: 'home',
