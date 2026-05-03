@@ -84,11 +84,18 @@ public static class MercadoPagoServiceCollectionExtensions
                 )
             );
 
+        // 3. Injeção de Dependências dos Serviços
         services.AddScoped<IWebhookService, WebhookService>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+        // Serviços de Criação de Pagamento
         services.AddScoped<IPixService, PixService>();
         services.AddScoped<ICreditCardService, CreditCardService>();
         services.AddScoped<IPreferenceService, PreferenceService>();
+
+        // Serviços de Consulta (Criados agora para o ciclo do Webhook/Jobs)
+        services.AddScoped<IMercadoPagoOrderService, MercadoPagoOrderService>();
+        services.AddScoped<IMercadoPagoPaymentService, MercadoPagoPaymentService>();
 
         return services;
     }

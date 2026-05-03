@@ -1,7 +1,6 @@
 // Local: backend/Features/Scheduler/Application/Jobs/MercadoPago/ProcessPaymentJob.cs
 
 using backend.Features.Payment.Application.Interfaces;
-using backend.Features.Payment.Application.Services;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Features.Plan.Application.DTOs.Webhooks;
 using backend.Features.Scheduler.Application.Interfaces;
@@ -13,7 +12,7 @@ namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
 
 public class ProcessPaymentJob(
     ILogger<ProcessPaymentJob> logger,
-    IMercadoPagoOrderService mpPaymentService, // Serviço que faz GET v1/payments/{id}
+    IMercadoPagoPaymentService mpPaymentService, // Serviço que faz GET v1/payments/{id}
     IPaymentRepository paymentRepository,
     AppDbContext dbContext,
     ICacheService cacheService // Para invalidar o cache do Redis
@@ -35,7 +34,7 @@ public class ProcessPaymentJob(
 
         // 1. Consulta o status ATUALIZADO diretamente na API do Mercado Pago
         // Precisaremos deste endpoint (v1/payments/{id}) para pegar o status e o external_reference
-        var mpPaymentInfo = await mpPaymentService.GetOrderAsync(resource.Id);
+        var mpPaymentInfo = await mpPaymentService.GetPaymentAsync(resource.Id);
 
         if (mpPaymentInfo == null)
         {

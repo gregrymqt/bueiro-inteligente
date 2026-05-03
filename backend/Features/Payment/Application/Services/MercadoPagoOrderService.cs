@@ -1,14 +1,10 @@
 using System.Text.Json;
 using backend.Features.Payment.Application.DTOs;
+using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Plan.Application.Base;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Payment.Application.Services;
-
-public interface IMercadoPagoOrderService
-{
-    Task<MpOrderResponse?> GetOrderAsync(string orderId);
-}
 
 public class MercadoPagoOrderService(
     IHttpClientFactory httpClientFactory,
