@@ -64,7 +64,7 @@ public sealed class MonitoringRepository(
                     Longitude = data.Longitude,
                     LastUpdate = data.UltimaAtualizacao,
                     SyncedToRows = false,
-                    DataHash = data.DataHash
+                    DataHash = data.DataHash,
                 };
 
                 await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
@@ -78,7 +78,8 @@ public sealed class MonitoringRepository(
                 );
             }
         }
-        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+        catch (DbUpdateException ex)
+            when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
         {
             if (pgEx.ConstraintName == "IX_drain_status_data_hash")
             {
@@ -171,28 +172,32 @@ public sealed class MonitoringRepository(
         }
     }
 
-    public async Task<BueiroConfiguration> GetConfigByIdAsync(string id, CancellationToken ct = default)
+    public async Task<BueiroConfiguration> GetConfigByIdAsync(
+        string id,
+        CancellationToken ct = default
+    )
     {
-        var drainConfig = await dbContext.Drains
-            .AsNoTracking()
+        var drainConfig = await dbContext
+            .Drains.AsNoTracking()
             .Where(d => d.HardwareId == id)
             .Select(d => new BueiroConfiguration
             {
                 IdBueiro = d.HardwareId,
                 MaxHeight = d.MaxHeight,
                 CriticalThreshold = d.CriticalThreshold,
-                AlertThreshold = d.AlertThreshold
+                AlertThreshold = d.AlertThreshold,
             })
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        return drainConfig ?? new BueiroConfiguration
-        {
-            IdBueiro = id,
-            MaxHeight = 120.0,
-            CriticalThreshold = 80.0,
-            AlertThreshold = 50.0
-        };
+        return drainConfig
+            ?? new BueiroConfiguration
+            {
+                IdBueiro = id,
+                MaxHeight = 120.0,
+                CriticalThreshold = 80.0,
+                AlertThreshold = 50.0,
+            };
     }
 
     public async Task MarkAsSyncedAsync(

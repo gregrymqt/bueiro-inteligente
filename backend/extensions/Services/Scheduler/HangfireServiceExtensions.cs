@@ -1,3 +1,5 @@
+using backend.Features.Scheduler.Application.Interfaces;
+using backend.Features.Scheduler.Application.Services;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +29,9 @@ public static class HangfireServiceExtensions
         );
 
         services.AddHangfireServer();
+
+        // 🚀 Registrando a nossa Queue globalmente para ser usada por qualquer Feature
+        services.AddScoped<IQueueService, BackgroundJobQueueService>();
 
         return services;
     }

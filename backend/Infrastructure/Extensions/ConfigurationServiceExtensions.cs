@@ -85,6 +85,22 @@ public static class ConfigurationServiceExtensions
             SupabaseSettings.SectionName,
             ["SUPABASE__URL", "SUPABASE__KEY"]
         );
+        mappedValues[$"{MercadoPagoSettings.SectionName}:AccessToken"] = Resolve(
+            rawEnv,
+            "MercadoPago__AccessToken"
+        );
+        mappedValues[$"{MercadoPagoSettings.SectionName}:WebhookUrl"] = Resolve(
+            rawEnv,
+            "MercadoPago__WebhookUrl"
+        );
+        mappedValues[$"{MercadoPagoSettings.SectionName}:PublicKey"] = Resolve(
+            rawEnv,
+            "MercadoPago__PublicKey"
+        );
+        mappedValues[$"{MercadoPagoSettings.SectionName}:WebhookKey"] = Resolve(
+            rawEnv,
+            "MercadoPago__WebhookKey"
+        );
 
         // Mapeia USE__SUPABASE__STORAGE para UseStorage (normaliza underscores)
         var useSupabaseStorage = Resolve(rawEnv, "USE__SUPABASE__STORAGE");

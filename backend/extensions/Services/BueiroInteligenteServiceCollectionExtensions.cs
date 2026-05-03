@@ -45,7 +45,7 @@ public static class BueiroInteligenteServiceCollectionExtensions
         services.AddBueiroInteligenteRows();
         services.AddBueiroInteligenteScheduler();
         services.AddBueiroInteligenteUploads();
-        services.AddBueiroInteligenteMercadoPago();
+        services.AddBueiroInteligenteMercadoPago(configuration);
 
         return services;
     }

@@ -1,12 +1,12 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using backend.Core;
 using backend.Extensions.Realtime.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Infrastructure.Cache;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using System.Text;
-using System.Globalization;
 
 namespace backend.Features.Monitoring.Application.Services;
 
@@ -36,17 +36,27 @@ public sealed class MonitoringService(
             if (string.IsNullOrWhiteSpace(payload.IdBueiro))
                 throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
 
-            var config = await monitoringRepository.GetConfigByIdAsync(payload.IdBueiro, ct).ConfigureAwait(false);
+            var config = await monitoringRepository
+                .GetConfigByIdAsync(payload.IdBueiro, ct)
+                .ConfigureAwait(false);
 
             ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm, config.MaxHeight);
 
             double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
-            double obstructionLevel = Math.Round(CalculateObstructionLevel(normalizedDistance, config.MaxHeight), 2);
-            string status = ResolveStatus(obstructionLevel, config.CriticalThreshold, config.AlertThreshold);
+            double obstructionLevel = Math.Round(
+                CalculateObstructionLevel(normalizedDistance, config.MaxHeight),
+                2
+            );
+            string status = ResolveStatus(
+                obstructionLevel,
+                config.CriticalThreshold,
+                config.AlertThreshold
+            );
 
             DateTimeOffset ultimaAtualizacao = payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow;
 
-            string rawHash = $"{payload.IdBueiro}|{normalizedDistance.ToString(CultureInfo.InvariantCulture)}|{ultimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)}";
+            string rawHash =
+                $"{payload.IdBueiro}|{normalizedDistance.ToString(CultureInfo.InvariantCulture)}|{ultimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)}";
             byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawHash));
             string dataHash = Convert.ToHexString(hashBytes);
 
@@ -143,7 +153,11 @@ public sealed class MonitoringService(
     private static double CalculateObstructionLevel(double dist, double maxHeight) =>
         ((maxHeight - dist) / maxHeight) * 100d;
 
-    private static string ResolveStatus(double level, double criticalThreshold, double alertThreshold) =>
+    private static string ResolveStatus(
+        double level,
+        double criticalThreshold,
+        double alertThreshold
+    ) =>
         level switch
         {
             var l when l >= criticalThreshold => "Crítico",
