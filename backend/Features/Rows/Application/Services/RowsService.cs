@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using backend.Core;
+using backend.extensions.Services.Rows;
 using backend.Features.Rows.Application.DTOs;
+using backend.Features.Rows.Application.Interfaces;
 using backend.Features.Rows.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Net.Sockets;
 using backend.Features.Auth.Domain;
+using backend.Features.Auth.Domain.Entities;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

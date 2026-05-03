@@ -1,7 +1,7 @@
 using System.Text.Json;
+using backend.Features.MercadoPago.Application.Base;
 using backend.Features.Payment.Application.DTOs;
 using backend.Features.Payment.Application.Interfaces; // Assumindo que você crie a interface aqui
-using backend.Features.Plan.Application.Base;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Payment.Application.Services;

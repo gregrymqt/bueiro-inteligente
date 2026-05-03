@@ -4,7 +4,8 @@ using backend.Features.Home.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.IO;
-using HomeDomain = backend.Features.Home.Domain;
+using backend.Features.Uploads.Domain.Entities;
+using HomeDomain = backend.Features.Home.Domain.Entities;
 using HomeDtos = backend.Features.Home.Application.DTOs;
 
 namespace backend.Features.Home.Application.Services;
@@ -366,7 +367,7 @@ public sealed class HomeService(
             ? value.Trim()
             : throw LogicException.InvalidValue(param, value);
 
-    private string BuildPublicUploadUrl(backend.Features.Uploads.Domain.UploadModel? upload)
+    private string BuildPublicUploadUrl(UploadModel? upload)
     {
         if (upload is null || string.IsNullOrWhiteSpace(upload.StoragePath))
         {

@@ -1,4 +1,4 @@
-namespace backend.Extensions.Security.Exceptions;
+namespace backend.extensions.Services.Security.Exceptions;
 
 public sealed class RateLimitExceededException : Exception
 {

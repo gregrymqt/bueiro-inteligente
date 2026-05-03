@@ -18,3 +18,11 @@ public record CreditCardPaymentResponseDto(
     string? ExternalResourceUrl, // URL para validações extras (3DS/Remedies)
     Guid ExternalReference
 );
+
+public record RetryCreditCardRequestDto(
+    string OrderId,
+    string TransactionId, // ID da transação que falhou (ex: PAY123...)
+    string Token,
+    string PaymentMethodId,
+    int Installments
+);

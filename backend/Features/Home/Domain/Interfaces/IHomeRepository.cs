@@ -1,4 +1,4 @@
-using backend.Features.Home.Domain;
+using backend.Features.Home.Domain.Entities;
 
 namespace backend.Features.Home.Domain.Interfaces;
 

@@ -1,6 +1,6 @@
 namespace backend.Features.Payment.Application.Interfaces;
 
-using backend.Features.Payment.Application.DTOs;
+using DTOs;
 
 public interface IMercadoPagoPaymentService
 {

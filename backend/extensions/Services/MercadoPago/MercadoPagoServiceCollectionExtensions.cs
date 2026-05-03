@@ -1,12 +1,12 @@
 using System;
 using System.Net.Http.Headers;
+using backend.core.Settings;
+using backend.Features.MercadoPago.Application.Interfaces;
+using backend.Features.MercadoPago.Application.Services;
 using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Payment.Application.Services;
 using backend.Features.Payment.Domain.Interfaces;
-using backend.Features.Payment.Infrastructure.Persistence;
-using backend.Features.Plan.Application.Interfaces;
-using backend.Features.Plan.Application.Services;
-using BueiroInteligente.Core.Settings;
+using backend.Features.Payment.infrastructure.Repositories;
 using MercadoPago.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

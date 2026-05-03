@@ -1,9 +1,9 @@
+using backend.Features.Drains.Application.Interfaces;
 using backend.Features.Drains.Application.Services;
 using backend.Features.Drains.Domain.Interfaces;
-using backend.Features.Drains.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
+using backend.Features.Drains.Infrastructure.Repositories;
 
-namespace backend.Extensions;
+namespace backend.extensions.Services.Drains;
 
 public static class DrainsServiceCollectionExtensions
 {

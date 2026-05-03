@@ -1,4 +1,4 @@
-namespace backend.Extensions.Auth;
+namespace backend.extensions.Services.Auth.Logic;
 
 public static class GoogleRedirectUrlResolver
 {

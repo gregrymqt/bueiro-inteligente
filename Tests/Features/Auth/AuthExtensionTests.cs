@@ -1,10 +1,11 @@
 using backend.Core.Settings;
 using backend.Extensions.Auth;
-using backend.Extensions.Auth.Abstractions;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;
-using SharedUserTokenData = backend.Extensions.Auth.Models.UserTokenData;
+using SharedUserTokenData = backend.extensions.Services.Auth.Models.UserTokenData;
 
 namespace backend.Tests.Features.Auth;
 

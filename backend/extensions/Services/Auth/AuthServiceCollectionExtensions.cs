@@ -1,18 +1,16 @@
 using System.Security.Claims;
 using backend.Core.Settings;
-using backend.Extensions.Auth.Abstractions;
-using backend.Extensions.Auth.Infrastructure;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Infrastructure;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Auth.Application.Services;
+using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
 using backend.Features.Auth.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Extensions.Auth;
+namespace backend.extensions.Services.Auth;
 
 public static class AuthServiceCollectionExtensions
 {

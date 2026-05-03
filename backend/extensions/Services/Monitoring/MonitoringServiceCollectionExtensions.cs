@@ -1,9 +1,9 @@
+using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Application.Services;
 using backend.Features.Monitoring.Domain.Interfaces;
-using backend.Features.Monitoring.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
+using backend.Features.Monitoring.Infrastructure.Repositories;
 
-namespace backend.Extensions;
+namespace backend.extensions.Services.Monitoring;
 
 /// <summary>
 /// Registers the Monitoring vertical slice services.

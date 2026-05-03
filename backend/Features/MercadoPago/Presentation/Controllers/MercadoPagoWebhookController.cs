@@ -1,13 +1,10 @@
-using backend.Features.Plan.Application.DTOs.Webhooks;
-using backend.Features.Plan.Application.Interfaces;
+using backend.Features.MercadoPago.Application.DTOs;
+using backend.Features.MercadoPago.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Supabase.Gotrue;
 
-namespace backend.Features.Plan.Presentation.Controllers;
+namespace backend.Features.MercadoPago.Presentation.Controllers;
 
-[ApiController]
 [Route("webhooks")]
 [AllowAnonymous] // Webhooks devem ser acessíveis externamente (sem token JWT)
 public class MercadoPagoWebhookController : ApiControllerBase

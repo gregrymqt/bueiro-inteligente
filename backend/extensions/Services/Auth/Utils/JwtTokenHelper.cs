@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace backend.Extensions.Auth.Utils;
+namespace backend.extensions.Services.Auth.Utils;
 
 internal static class JwtTokenHelper
 {
@@ -67,20 +67,11 @@ internal static class JwtTokenHelper
         string payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
         Dictionary<string, object?> claims = ParseClaims(payloadJson);
 
-        if (
-            claims.TryGetValue("exp", out object? expValue)
-            && TryToUnixTimeSeconds(expValue, out long exp)
-        )
-        {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (!claims.TryGetValue("exp", out object? expValue)
+            || !TryToUnixTimeSeconds(expValue, out long exp)) return claims;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            if (now >= exp)
-            {
-                throw new UnauthorizedAccessException("Token expirado.");
-            }
-        }
-
-        return claims;
+        return now >= exp ? throw new UnauthorizedAccessException("Token expirado.") : claims;
     }
 
     private static void EnsureSupportedAlgorithm(string algorithm)
@@ -145,16 +136,15 @@ internal static class JwtTokenHelper
             case double doubleValue:
                 unixTimeSeconds = (long)doubleValue;
                 return true;
-            case JsonElement jsonElement
-                when jsonElement.ValueKind == JsonValueKind.Number
-                    && jsonElement.TryGetInt64(out long parsedLong):
+            case JsonElement { ValueKind: JsonValueKind.Number } jsonElement
+                when jsonElement.TryGetInt64(out long parsedLong):
                 unixTimeSeconds = parsedLong;
                 return true;
             case string stringValue when long.TryParse(stringValue, out long parsedString):
                 unixTimeSeconds = parsedString;
                 return true;
             default:
-                unixTimeSeconds = default;
+                unixTimeSeconds = 0;
                 return false;
         }
     }

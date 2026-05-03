@@ -1,7 +1,16 @@
 using backend.Features.Auth.Domain;
+using backend.Features.Auth.Domain.Entities;
 using backend.Features.Drains.Domain;
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Home.Domain;
+using backend.Features.Home.Domain.Entities;
 using backend.Features.Monitoring.Domain;
+using backend.Features.Monitoring.Domain.Entities;
+using backend.Features.Payment.Domain;
+using backend.Features.Payment.Domain.Entities;
+using backend.Features.Subscription.Domain.Entities;
+using backend.Features.Uploads.Domain;
+using backend.Features.Uploads.Domain.Entities;
 using backend.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,10 +24,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<CarouselModel> HomeCarousels => Set<CarouselModel>();
     public DbSet<StatCardModel> HomeStats => Set<StatCardModel>();
     public DbSet<DrainStatus> DrainStatuses => Set<DrainStatus>();
-    public DbSet<backend.Features.Uploads.Domain.UploadModel> Uploads =>
-        Set<backend.Features.Uploads.Domain.UploadModel>();
-    public DbSet<Features.Payment.Domain.PaymentTransaction> PaymentTransactions =>
-        Set<Features.Payment.Domain.PaymentTransaction>();
+
+    public DbSet<UploadModel> Uploads =>
+        Set<UploadModel>();
+
+    public DbSet<PaymentTransaction> PaymentTransactions =>
+        Set<PaymentTransaction>();
+
+    public DbSet<UserSubscription> UserSubscriptions =>
+        Set<UserSubscription>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();

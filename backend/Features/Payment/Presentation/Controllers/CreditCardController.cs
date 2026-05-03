@@ -12,24 +12,30 @@ public class CreditCardController(ICreditCardService creditCardService) : ApiCon
         [FromBody] CreateCreditCardRequestDto request
     )
     {
-        // Recupera o ID do usuário logado via Claims do JWT
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
             return Unauthorized("Usuário não identificado.");
         }
 
-        try
-        {
-            // O serviço orquestrará a transação no banco e a chamada à API Orders
-            var response = await creditCardService.CreateCreditCardOrderAsync(request, userId);
+        var response = await creditCardService.CreateCreditCardOrderAsync(request, userId);
 
-            return Ok(response);
-        }
-        catch (Exception ex)
+        return Ok(response);
+    }
+
+    [HttpPut("retry")]
+    public async Task<ActionResult> RetryPayment([FromBody] RetryCreditCardRequestDto request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId)) return Unauthorized();
+
+        var success = await creditCardService.RetryCreditCardTransactionAsync(request, userId);
+
+        if (success)
         {
-            // O tratamento detalhado de erros e rollback ocorre dentro da Service
-            throw;
+            return Accepted(new { message = "Retentativa enviada com sucesso. O status será atualizado via Webhook." });
         }
+
+        return BadRequest(new { error = "Falha ao processar retentativa com o Mercado Pago." });
     }
 }

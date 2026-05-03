@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using backend.Extensions.Auth.Abstractions;
+using backend.extensions.Services.Auth.Abstractions;
 
-namespace backend.Extensions.Auth.Infrastructure;
+namespace backend.extensions.Services.Auth.Infrastructure;
 
 public sealed class InMemoryTokenBlacklistStore : ITokenBlacklistStore
 {

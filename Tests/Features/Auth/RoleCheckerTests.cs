@@ -1,5 +1,6 @@
-using backend.Extensions.Auth.Logic;
-using SharedUserTokenData = backend.Extensions.Auth.Models.UserTokenData;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Logic;
+using SharedUserTokenData = backend.extensions.Services.Auth.Models.UserTokenData;
 
 namespace backend.Tests.Features.Auth;
 

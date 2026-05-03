@@ -1,4 +1,4 @@
-namespace backend.Extensions.Realtime.Abstractions;
+namespace backend.extensions.Services.Realtime.Abstractions;
 
 public interface IRealtimeService
 {

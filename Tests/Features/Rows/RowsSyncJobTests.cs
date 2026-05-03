@@ -1,5 +1,6 @@
 using backend.Core.Settings;
 using backend.Features.Rows.Application.DTOs;
+using backend.Features.Rows.Application.Interfaces;
 using backend.Features.Rows.Application.Jobs;
 using backend.Features.Rows.Application.Services;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,6 @@
 using backend.Extensions.App.Filters;
 using backend.Features.Uploads.Application.DTOs;
+using backend.Features.Uploads.Application.Interfaces;
 using backend.Features.Uploads.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
 
     [HttpPost]
     [MaxFileSize]
-    public async Task<ActionResult<UploadDto>> UploadFile(IFormFile file)
+    public async Task<ActionResult<UploadDto>> UploadFile(IFormFile? file)
     {
         if (file == null || file.Length == 0)
         {

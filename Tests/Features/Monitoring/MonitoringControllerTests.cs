@@ -1,3 +1,5 @@
+using backend.extensions.Services.Auth.Abstractions;
+using backend.Features.Monitoring.Application.Interfaces;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;

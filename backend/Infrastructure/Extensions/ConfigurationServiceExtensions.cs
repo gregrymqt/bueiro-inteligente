@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Globalization;
+using backend.core.Settings;
 using backend.Core.Settings;
-using BueiroInteligente.Core.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

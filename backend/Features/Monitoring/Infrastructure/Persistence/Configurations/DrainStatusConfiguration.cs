@@ -1,5 +1,7 @@
 using backend.Features.Drains.Domain;
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Domain;
+using backend.Features.Monitoring.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

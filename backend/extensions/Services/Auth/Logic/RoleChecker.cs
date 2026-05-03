@@ -1,8 +1,9 @@
 using backend.Core;
-using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Models;
 
-namespace backend.Extensions.Auth.Logic;
+namespace backend.extensions.Services.Auth.Logic;
 
 public sealed class RoleChecker
 {

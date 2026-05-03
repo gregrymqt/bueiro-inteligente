@@ -1,4 +1,7 @@
 using backend.Core.Settings;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.Features.Auth.Domain.Entities;
+using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
 using Microsoft.Extensions.Options;
 using SharedTokenPayload = backend.Extensions.Auth.Models.TokenPayload;

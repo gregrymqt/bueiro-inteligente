@@ -1,5 +1,5 @@
-using backend.Extensions.Security.Abstractions;
-using backend.Extensions.Security.Exceptions;
+using backend.extensions.Services.Security.Abstractions;
+using backend.extensions.Services.Security.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;

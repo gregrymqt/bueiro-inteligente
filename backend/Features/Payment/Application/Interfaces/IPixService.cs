@@ -1,11 +1,10 @@
+// Local: backend/Features/Payment/Application/Interfaces/IPixService.cs
 using backend.Features.Payment.Application.DTOs;
 
 namespace backend.Features.Payment.Application.Interfaces;
 
 public interface IPixService
 {
-    /// <summary>
-    /// Cria uma ordem de pagamento via Pix e retorna os dados para renderização do QR Code.
-    /// </summary>
     Task<PixPaymentResponseDto> CreatePixOrderAsync(CreatePixRequestDto request, Guid userId);
+    Task<bool> RetryPixTransactionAsync(RetryPixRequestDto request, Guid userId);
 }

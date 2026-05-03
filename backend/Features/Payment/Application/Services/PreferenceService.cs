@@ -1,6 +1,7 @@
 using backend.Features.Payment.Application.DTOs;
 using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Payment.Domain;
+using backend.Features.Payment.Domain.Entities;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Infrastructure.Persistence; // Ajuste para o seu AppDbContext
 using MercadoPago.Client.Preference;

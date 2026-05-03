@@ -1,5 +1,6 @@
-using backend.Extensions.Auth.Abstractions;
+using backend.extensions.Services.Auth.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
+using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Application.Services;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;

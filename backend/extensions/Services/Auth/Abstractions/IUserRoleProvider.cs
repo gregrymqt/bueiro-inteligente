@@ -1,4 +1,4 @@
-namespace backend.Extensions.Auth.Abstractions;
+namespace backend.extensions.Services.Auth.Abstractions;
 
 public interface IUserRoleProvider
 {

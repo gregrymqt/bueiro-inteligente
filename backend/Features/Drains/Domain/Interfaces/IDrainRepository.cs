@@ -1,4 +1,6 @@
 
+using backend.Features.Drains.Domain.Entities;
+
 namespace backend.Features.Drains.Domain.Interfaces;
 
 public interface IDrainRepository

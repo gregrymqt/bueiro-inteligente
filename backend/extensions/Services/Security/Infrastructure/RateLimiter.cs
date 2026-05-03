@@ -1,9 +1,9 @@
 using backend.Core;
-using backend.Extensions.Security.Abstractions;
-using backend.Extensions.Security.Exceptions;
 using backend.Extensions.Security.Utils;
+using backend.extensions.Services.Security.Abstractions;
+using backend.extensions.Services.Security.Exceptions;
 
-namespace backend.Extensions.Security.Infrastructure;
+namespace backend.extensions.Services.Security.Infrastructure;
 
 public sealed class RateLimiter(
     IRateLimitStore rateLimitStore,

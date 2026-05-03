@@ -1,10 +1,13 @@
 using System.Security.Claims;
 using backend.Core;
 using backend.Core.Settings;
-using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
+using backend.extensions.Services.Auth.Abstractions;
 using backend.Features.Auth.Application.DTOs;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Auth.Domain;
+using backend.Features.Auth.Domain.Entities;
+using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
 using backend.Features.Auth.Infrastructure.Repositories;
 using backend.Infrastructure.Persistence;

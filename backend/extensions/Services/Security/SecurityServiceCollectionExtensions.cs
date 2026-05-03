@@ -1,13 +1,10 @@
 using System.Net.Sockets;
-using backend.Extensions.Security.Abstractions;
-using backend.Extensions.Security.Infrastructure;
-using backend.Infrastructure.Cache;
+using backend.extensions.Services.Security.Abstractions;
+using backend.extensions.Services.Security.Infrastructure;
 using backend.Infrastructure.Filters;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace backend.Extensions.Security;
+namespace backend.extensions.Services.Security;
 
 /// <summary>
 /// Registers rate-limit and websocket security services.

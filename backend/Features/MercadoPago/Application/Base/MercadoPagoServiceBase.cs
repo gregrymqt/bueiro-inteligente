@@ -1,16 +1,14 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 
 // using backend.Core.Exceptions; // Descomente e ajuste para o namespace correto das suas exceções personalizadas
 
-namespace backend.Features.Plan.Application.Base;
+namespace backend.Features.MercadoPago.Application.Base;
 
 public abstract class MercadoPagoServiceBase
 {
     protected readonly ILogger Logger;
-    protected readonly HttpClient HttpClient;
+    private readonly HttpClient _httpClient;
 
     // Adicionado JsonSerializerOptions para garantir que o envio siga o padrão camelCase do Mercado Pago
     private readonly JsonSerializerOptions _jsonOptions = new()
@@ -26,7 +24,7 @@ public abstract class MercadoPagoServiceBase
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
 
-        HttpClient =
+        _httpClient =
             httpClientFactory.CreateClient("MercadoPagoClient")
             ?? throw new InvalidOperationException(
                 "Falha ao criar o HttpClient 'MercadoPagoClient'. O serviço não está registrado."
@@ -46,12 +44,12 @@ public abstract class MercadoPagoServiceBase
         if (string.IsNullOrWhiteSpace(endpoint))
             throw new ArgumentException("O endpoint não pode ser vazio.", nameof(endpoint));
 
-        if (HttpClient.BaseAddress == null)
+        if (_httpClient.BaseAddress == null)
             throw new InvalidOperationException(
                 "O BaseAddress do HttpClient não está configurado."
             );
 
-        var requestUri = new Uri(HttpClient.BaseAddress, endpoint);
+        var requestUri = new Uri(_httpClient.BaseAddress, endpoint);
         using var request = new HttpRequestMessage(method, requestUri);
 
         // Header de Idempotência obrigatório para mutações financeiras
@@ -77,7 +75,7 @@ public abstract class MercadoPagoServiceBase
 
         try
         {
-            var response = await HttpClient.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)

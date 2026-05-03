@@ -1,12 +1,10 @@
-using backend.Extensions.Realtime.Abstractions;
-using backend.Extensions.Realtime.Infrastructure;
-using backend.Features.Realtime.Filters;
-using backend.Features.Realtime.Presentation;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
+using backend.extensions.Services.Realtime.Abstractions;
+using backend.extensions.Services.Realtime.Infrastructure;
+using backend.Features.Realtime.Filters;
+using Microsoft.AspNetCore.SignalR;
 
-namespace backend.Extensions.Realtime;
+namespace backend.extensions.Services.Realtime;
 
 public static class RealtimeServiceCollectionExtensions
 {

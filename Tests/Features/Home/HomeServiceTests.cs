@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
-using HomeDomain = backend.Features.Home.Domain;
+using HomeDomain = backend.Features.Home.Domain.Entities;
 using System.IO;
+using backend.Features.Uploads.Domain.Entities;
 
 namespace backend.Tests.Features.Home;
 
@@ -34,7 +35,7 @@ public sealed class HomeServiceTests
             Title = title,
             Subtitle = "Subtítulo",
             UploadId = Guid.NewGuid(),
-            Upload = new backend.Features.Uploads.Domain.UploadModel
+            Upload = new UploadModel
             {
                 StoragePath = Path.Combine("C:\\temp", "img.jpg"),
             },

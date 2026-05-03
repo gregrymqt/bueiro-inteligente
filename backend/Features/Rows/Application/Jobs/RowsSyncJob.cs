@@ -4,6 +4,7 @@ using backend.Core.Settings;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Features.Rows.Application.DTOs;
+using backend.Features.Rows.Application.Interfaces;
 using backend.Features.Rows.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

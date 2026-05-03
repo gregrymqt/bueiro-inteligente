@@ -1,7 +1,5 @@
 global using System.Security.Claims;
 global using backend.Core;
-global using backend.Extensions.Auth.Abstractions;
-global using backend.Extensions.Realtime.Abstractions;
 global using backend.Features.Auth.Application.DTOs;
 global using backend.Features.Auth.Application.Services;
 global using backend.Features.Auth.Domain;
@@ -28,4 +26,4 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.Extensions.Logging;
 global using Moq;
 global using Xunit;
-global using DrainEntity = backend.Features.Drains.Domain.Drain;
+global using DrainEntity = backend.Features.Drains.Domain.Entities.Drain;

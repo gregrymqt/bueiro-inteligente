@@ -1,7 +1,7 @@
-namespace backend.Extensions.Security.Infrastructure;
-
-using backend.Extensions.Security.Abstractions;
+using backend.extensions.Services.Security.Abstractions;
 using backend.Infrastructure.Cache;
+
+namespace backend.extensions.Services.Security.Infrastructure;
 
 public sealed class RedisRateLimitStore(ICacheService cacheService) : IRateLimitStore
 {

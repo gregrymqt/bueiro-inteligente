@@ -1,6 +1,7 @@
 using System.Runtime.ExceptionServices;
 using backend.Extensions;
 using backend.Extensions.App;
+using backend.extensions.Services;
 using backend.Infrastructure.Extensions;
 using Serilog;
 

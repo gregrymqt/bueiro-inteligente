@@ -1,9 +1,9 @@
+using backend.Features.Uploads.Application.Interfaces;
 using backend.Features.Uploads.Application.Services;
 using backend.Features.Uploads.Domain.Interfaces;
-using backend.Features.Uploads.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
+using backend.Features.Uploads.Infrastructure.Repositories;
 
-namespace backend.Extensions.Uploads;
+namespace backend.extensions.Services.Uploads;
 
 public static class UploadsServiceCollectionExtensions
 {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using backend.Features.Uploads.Domain.Entities;
 
 namespace backend.Features.Uploads.Domain.Interfaces;
 

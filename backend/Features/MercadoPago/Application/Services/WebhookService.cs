@@ -1,14 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
-using backend.Features.Plan.Application.DTOs.Webhooks;
-using backend.Features.Plan.Application.Interfaces;
+using backend.core.Settings;
+using backend.Features.MercadoPago.Application.DTOs;
+using backend.Features.MercadoPago.Application.Interfaces;
 using backend.Features.Scheduler.Application.Jobs.MercadoPago;
-using BueiroInteligente.Core.Settings;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace backend.Features.Plan.Application.Services;
+namespace backend.Features.MercadoPago.Application.Services;
 
 public class WebhookService : IWebhookService
 {

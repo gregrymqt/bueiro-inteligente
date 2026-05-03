@@ -1,11 +1,9 @@
 using backend.Core;
-using backend.Extensions.Security.Abstractions;
-using backend.Extensions.Security.Exceptions;
 using backend.Extensions.Security.Utils;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+using backend.extensions.Services.Security.Abstractions;
+using backend.extensions.Services.Security.Exceptions;
 
-namespace backend.Extensions.Security.Infrastructure;
+namespace backend.extensions.Services.Security.Infrastructure;
 
 public sealed class WebSocketRateLimiter
 {
@@ -49,7 +47,7 @@ public sealed class WebSocketRateLimiter
                 .GetCountAsync(key, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (currentCount.HasValue && currentCount.Value >= Times)
+            if (currentCount >= Times)
             {
                 throw new RateLimitExceededException(
                     "Conexão WebSocket bloqueada por limite de requisições.",

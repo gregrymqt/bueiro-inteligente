@@ -22,3 +22,8 @@ public record PixPaymentResponseDto(
     DateTimeOffset ExpirationDate,
     Guid ExternalReference // O ID da transação no nosso banco de dados
 );
+
+public record RetryPixRequestDto(
+    string OrderId,
+    string TransactionId // ID da transação que falhou (ex: PAY123...)
+);

@@ -1,4 +1,5 @@
 using backend.Core.Settings;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;

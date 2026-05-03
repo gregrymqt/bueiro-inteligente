@@ -1,9 +1,9 @@
 using backend.Core;
-using backend.Extensions.Realtime.Abstractions;
-using backend.Features.Realtime.Presentation;
+using backend.extensions.Services.Realtime.Abstractions;
+using backend.Features.Realtime.Presentation.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
-namespace backend.Extensions.Realtime.Infrastructure;
+namespace backend.extensions.Services.Realtime.Infrastructure;
 
 public sealed class RealtimeService(IHubContext<MonitoringHub> hubContext) : IRealtimeService
 {

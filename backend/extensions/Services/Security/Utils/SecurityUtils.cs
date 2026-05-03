@@ -21,12 +21,7 @@ internal static class SecurityUtils
                 ?? context.User.FindFirstValue("sub")
                 ?? context.User.FindFirstValue(ClaimTypes.Name);
 
-            if (!string.IsNullOrWhiteSpace(claimUserId))
-            {
-                return claimUserId;
-            }
-
-            return "auth-user";
+            return !string.IsNullOrWhiteSpace(claimUserId) ? claimUserId : "auth-user";
         }
 
         if (context.Items.TryGetValue("user_id", out object? userId) && userId is not null)
@@ -39,14 +34,13 @@ internal static class SecurityUtils
             }
         }
 
-        if (context.Items.TryGetValue("user", out object? user) && user is not null)
-        {
-            string? resolvedUser = user.ToString();
+        if (!context.Items.TryGetValue("user", out object? user) || user is null)
+            return context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        string? resolvedUser = user.ToString();
 
-            if (!string.IsNullOrWhiteSpace(resolvedUser))
-            {
-                return resolvedUser;
-            }
+        if (!string.IsNullOrWhiteSpace(resolvedUser))
+        {
+            return resolvedUser;
         }
 
         return context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";

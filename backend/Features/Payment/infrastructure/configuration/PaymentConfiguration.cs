@@ -1,4 +1,5 @@
-using backend.Features.Payment.Domain; // Importa a model correta
+using backend.Features.Payment.Domain;
+using backend.Features.Payment.Domain.Entities; // Importa a model correta
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

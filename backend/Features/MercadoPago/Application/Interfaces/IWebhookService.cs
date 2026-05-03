@@ -1,7 +1,6 @@
-using backend.Features.Plan.Application.DTOs.Webhooks;
-using Microsoft.AspNetCore.Http;
+using backend.Features.MercadoPago.Application.DTOs;
 
-namespace backend.Features.Plan.Application.Interfaces;
+namespace backend.Features.MercadoPago.Application.Interfaces;
 
 public interface IWebhookService
 {

@@ -1,4 +1,4 @@
-namespace BueiroInteligente.Core.Settings;
+namespace backend.core.Settings;
 
 public sealed class MercadoPagoSettings
 {

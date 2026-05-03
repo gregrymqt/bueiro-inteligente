@@ -1,13 +1,14 @@
 using System.Text.Json;
 using backend.Core;
 using backend.Core.Settings;
-using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
-using backend.Extensions.Auth.Utils;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Models;
+using backend.extensions.Services.Auth.Utils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-namespace backend.Extensions.Auth;
+namespace backend.extensions.Services.Auth.Infrastructure;
 
 public sealed class AuthExtension(
     IOptions<JwtSettings> jwtSettings,

@@ -1,3 +1,5 @@
+using backend.Features.Drains.Application.Interfaces;
+
 namespace backend.Tests.Features.Drains;
 
 public sealed class DrainsControllerTests

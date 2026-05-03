@@ -1,4 +1,4 @@
-namespace backend.Extensions.Auth.Models;
+namespace backend.extensions.Services.Auth.Models;
 
 public sealed class UserTokenData
 {
@@ -22,15 +22,8 @@ public sealed class UserTokenData
 
     private static IReadOnlyList<string> NormalizeRoles(IEnumerable<string> roles)
     {
-        List<string> normalizedRoles = new();
-
-        foreach (string role in roles)
-        {
-            if (!string.IsNullOrWhiteSpace(role))
-            {
-                normalizedRoles.Add(role.Trim());
-            }
-        }
+        List<string> normalizedRoles = [];
+        normalizedRoles.AddRange(from role in roles where !string.IsNullOrWhiteSpace(role) select role.Trim());
 
         return normalizedRoles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }

@@ -1,4 +1,5 @@
 using backend.Features.Monitoring.Application.DTOs;
+using backend.Features.Monitoring.Domain.Configuration;
 
 namespace backend.Features.Monitoring.Domain.Interfaces;
 

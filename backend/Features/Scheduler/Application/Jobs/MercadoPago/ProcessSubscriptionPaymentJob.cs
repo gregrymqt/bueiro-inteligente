@@ -1,4 +1,4 @@
-using backend.Features.Plan.Application.DTOs.Webhooks;
+using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.Scheduler.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 

@@ -1,8 +1,8 @@
 // Local: backend/Features/Scheduler/Application/Jobs/MercadoPago/ProcessPaymentJob.cs
 
+using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Payment.Domain.Interfaces;
-using backend.Features.Plan.Application.DTOs.Webhooks;
 using backend.Features.Scheduler.Application.Interfaces;
 using backend.Infrastructure.Cache; // Ajuste para o seu ICacheService
 using backend.Infrastructure.Persistence; // Ajuste para o seu DbContext

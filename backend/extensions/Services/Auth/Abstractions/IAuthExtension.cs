@@ -1,6 +1,7 @@
 using backend.Extensions.Auth.Models;
+using backend.extensions.Services.Auth.Models;
 
-namespace backend.Extensions.Auth.Abstractions;
+namespace backend.extensions.Services.Auth.Abstractions;
 
 public interface IAuthExtension
 {

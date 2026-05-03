@@ -1,10 +1,9 @@
 using backend.Features.Home.Application.Interfaces;
 using backend.Features.Home.Application.Services;
 using backend.Features.Home.Domain.Interfaces;
-using backend.Features.Home.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
+using backend.Features.Home.Infrastructure.Repositories;
 
-namespace backend.Extensions;
+namespace backend.extensions.Services.Home;
 
 /// <summary>
 /// Registers the Home vertical slice services.

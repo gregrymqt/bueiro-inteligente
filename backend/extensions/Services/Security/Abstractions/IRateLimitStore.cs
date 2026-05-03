@@ -1,4 +1,4 @@
-namespace backend.Extensions.Security.Abstractions;
+namespace backend.extensions.Services.Security.Abstractions;
 
 public interface IRateLimitStore
 {

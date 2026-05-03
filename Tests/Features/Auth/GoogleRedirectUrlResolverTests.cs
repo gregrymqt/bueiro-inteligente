@@ -1,4 +1,5 @@
 using backend.Extensions.Auth;
+using backend.extensions.Services.Auth.Logic;
 
 namespace backend.Tests.Features.Auth;
 

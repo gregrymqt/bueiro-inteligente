@@ -1,5 +1,7 @@
 using backend.Core;
 using backend.Features.Auth.Domain;
+using backend.Features.Auth.Domain.Entities;
+using backend.Features.Auth.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

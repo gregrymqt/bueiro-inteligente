@@ -1,3 +1,6 @@
+using backend.extensions.Services.Realtime.Abstractions;
+using backend.Features.Monitoring.Domain.Configuration;
+
 namespace backend.Tests.Features.Monitoring;
 
 public sealed class MonitoringServiceTests
@@ -11,7 +14,7 @@ public sealed class MonitoringServiceTests
     {
         _repositoryMock
             .Setup(r => r.GetConfigByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new backend.Features.Monitoring.Domain.BueiroConfiguration
+            .ReturnsAsync(new BueiroConfiguration
             {
                 IdBueiro = "DRN-01",
                 MaxHeight = 120.0,

@@ -1,19 +1,23 @@
+using backend.Extensions;
 using backend.Extensions.App;
 using backend.Extensions.Auth;
-using backend.Extensions.Realtime;
-using backend.Extensions.Scheduler;
 using backend.Extensions.Security;
+using backend.extensions.Services.App;
+using backend.extensions.Services.Auth;
+using backend.extensions.Services.Drains;
+using backend.extensions.Services.HangFire;
+using backend.extensions.Services.Home;
 using backend.Extensions.Services.MercadoPago;
-using backend.Extensions.Uploads;
-using backend.Features.Rows.Infrastructure.Extensions;
+using backend.extensions.Services.Monitoring;
+using backend.extensions.Services.Realtime;
+using backend.extensions.Services.Rows;
+using backend.extensions.Services.Security;
+using backend.extensions.Services.Uploads;
 using backend.Infrastructure;
 using backend.Infrastructure.Cache;
 using backend.Infrastructure.Extensions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
-namespace backend.Extensions;
+namespace backend.extensions.Services;
 
 public static class BueiroInteligenteServiceCollectionExtensions
 {

@@ -1,10 +1,8 @@
 using System.Text.Json;
 using backend.Core.Settings;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace backend.Extensions.App;
+namespace backend.extensions.Services.App;
 
 public static class AppServiceCollectionExtensions
 {

@@ -1,11 +1,10 @@
-using backend.Features.Payment.Domain;
+using backend.Features.Payment.Domain.Entities;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Infrastructure.Cache;
-using backend.Infrastructure.Persistence; // Namespace do seu AppDbContext
+using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace backend.Features.Payment.Infrastructure.Persistence;
+namespace backend.Features.Payment.infrastructure.Repositories;
 
 public sealed class PaymentRepository(
     AppDbContext context,

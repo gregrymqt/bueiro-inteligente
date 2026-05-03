@@ -5,7 +5,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using backend.Core.Settings;
+using backend.Features.Uploads.Application.Interfaces;
 using backend.Features.Uploads.Domain;
+using backend.Features.Uploads.Domain.Entities;
 using backend.Features.Uploads.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +22,6 @@ public class UploadService : IUploadService
     private const string SupabaseBucketName = "bueiro_bucket";
 
     private readonly IUploadRepository _repository;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<UploadService> _logger;
     private readonly string _storagePath;
     private readonly IOptions<SupabaseSettings> _supabaseOptions;
@@ -34,12 +35,11 @@ public class UploadService : IUploadService
     )
     {
         _repository = repository;
-        _configuration = configuration;
         _logger = logger;
         _supabaseOptions = supabaseOptions;
 
         _storagePath =
-            _configuration["UploadSettings:StoragePath"]
+            configuration["UploadSettings:StoragePath"]
             ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
         // Inicializa o cliente Supabase se configurado

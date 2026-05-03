@@ -1,4 +1,5 @@
 using backend.Features.Auth.Domain;
+using backend.Features.Auth.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

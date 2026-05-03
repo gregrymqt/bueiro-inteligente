@@ -1,8 +1,9 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using backend.Extensions.Auth;
-using backend.Extensions.Auth.Abstractions;
 using backend.Extensions.Auth.Models;
+using backend.extensions.Services.Auth.Abstractions;
+using backend.extensions.Services.Auth.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -72,10 +73,7 @@ public sealed class BueiroInteligenteAuthenticationHandler(
             // Lógica de roles enxuta
             var roles = currentUser.Roles.Count > 0 ? currentUser.Roles : [currentUser.Role];
 
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var identity = new ClaimsIdentity(
                 claims,
