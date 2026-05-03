@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using backend.Features.Plan.Application.DTOs.Webhooks;
 using backend.Features.Plan.Application.Interfaces;
+using backend.Features.Scheduler.Application.Jobs.MercadoPago;
 using BueiroInteligente.Core.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -113,7 +114,9 @@ public class WebhookService : IWebhookService
                         "Enfileirando Job de Pagamento ID: {Id}",
                         paymentData.Id
                     );
-                    // await _queueService.EnqueueJobAsync<ProcessPaymentNotificationJob, PaymentNotificationData>(paymentData);
+                    await _queueService.EnqueueJobAsync<ProcessPaymentJob, PaymentNotificationData>(
+                        paymentData
+                    );
                     break;
 
                 case "subscription_authorized_payment":

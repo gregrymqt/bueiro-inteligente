@@ -14,6 +14,8 @@
   - Injeção de dependências via `backend/extensions/` e `backend/Infrastructure/Extensions/`.
   - Padrão `Controller -> Service -> Repository` para isolar regras de negócio e acesso a dados.
   - `Program.cs` atua como composition root, registrando serviços, middlewares, hubs SignalR e rotas.
+- **Pagamentos:** Integração com Mercado Pago (SDK Oficial e API v1/orders).
+- **Resiliência:** Polly para políticas de Retry e Circuit Breaker.
 
 ### Testes do Backend (`/Tests`)
 - **Projeto de Testes:** `Tests/backend.Tests.csproj`.

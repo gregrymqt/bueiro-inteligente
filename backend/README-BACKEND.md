@@ -25,6 +25,7 @@ O projeto usa uma arquitetura por Features para manter controllers, services, re
 - Quartz
 - SignalR
 - Razor Pages
+- Mercado Pago SDK & REST API (v1/orders).
 
 ## Estrutura do projeto
 
@@ -43,7 +44,10 @@ backend/
 │   ├── Realtime/
 │   ├── Rows/
 │   ├── Drain/
-│   └── Drains/
+│   |── Drains/
+|   |──MercadoPago/
+|   └──Payment
+|
 ├── Infrastructure/
 │   ├── Cache/
 │   ├── Extensions/
@@ -92,6 +96,10 @@ As variaveis abaixo sao mapeadas para `GeneralSettings`, `JwtSettings`, `GoogleS
 | `EMAIL_USERS_ADMIN` | E-mail do administrador para notificações críticas |
 | `ALLOWED_ORIGINS` | Origens permitidas no CORS |
 | `APP_ID_SECRET` | Segredo do header `X-App-Id` usado pelo app oficial |
+| `MercadoPago__AccessToken` | Token de acesso privado (Bearer) do Mercado Pago. |
+| `MercadoPago__WebhookUrl` | URL de callback para notificações de pagamento. |
+| `MercadoPago__PublicKey` | Chave pública para integração no frontend. |
+| `MercadoPago__WebhookKey` | Segredo para validação de assinatura HMAC dos webhooks. |
 
 ### Exemplo de `.env`
 
@@ -119,6 +127,10 @@ ALLOWED_HOSTS=localhost;127.0.0.1
 ALLOWED_ORIGINS=https://localhost:5173,http://localhost:5173
 APP_ID_SECRET=
 EMAIL_USERS_ADMIN=
+MercadoPago__AccessToken=
+MercadoPago__WebhookUrl=
+MercadoPago__PublicKey=
+MercadoPago__WebhookKey=
 ```
 
 ## Como executar com Docker Compose
@@ -175,6 +187,10 @@ dotnet ef database update
 - `/api/v1/homeadmin` - endpoints administrativos da Home
 - `/api/v1/[controller]` - padrao base aplicado aos controllers da API
 - `/realtime/ws` - hub SignalR de tempo real
+- `POST /api/v1/pix/create-order` - Geração de Pix via API Orders.
+- `POST /api/v1/creditcard/process` - Processamento de cartão com tokenização.
+- `POST /api/v1/preference/create` - Criação de link para Checkout Pro.
+- `POST /api/v1/webhooks/mercadopago` - Recebimento de notificações assíncronas.
 
 ## Testes
 

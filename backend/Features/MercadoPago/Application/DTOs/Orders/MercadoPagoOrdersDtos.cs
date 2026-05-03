@@ -29,33 +29,58 @@ namespace backend.Features.Payment.Application.DTOs
         [property: JsonPropertyName("type")] string Type
     );
 
-    // Response simplificado de /v1/orders
     public class MpOrderResponse
     {
+        [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("status_detail")]
         public string StatusDetail { get; set; } = string.Empty;
+
+        // Propriedade vital para nossa idempotência no Webhook (ID do nosso banco)
+        [JsonPropertyName("external_reference")]
+        public string ExternalReference { get; set; } = string.Empty;
+
+        [JsonPropertyName("transactions")]
         public MpOrderResponseTransactions Transactions { get; set; } = new();
     }
 
     public class MpOrderResponseTransactions
     {
+        [JsonPropertyName("payments")]
         public List<MpOrderResponsePayment> Payments { get; set; } = new();
     }
 
     public class MpOrderResponsePayment
     {
+        [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("status_detail")]
         public string StatusDetail { get; set; } = string.Empty;
+
+        [JsonPropertyName("payment_method")]
         public MpOrderResponsePaymentMethod PaymentMethod { get; set; } = new();
+
+        [JsonPropertyName("date_of_expiration")]
         public DateTimeOffset? DateOfExpiration { get; set; }
     }
 
     public class MpOrderResponsePaymentMethod
     {
+        [JsonPropertyName("qr_code")]
         public string QrCode { get; set; } = string.Empty;
+
+        [JsonPropertyName("qr_code_base64")]
         public string QrCodeBase64 { get; set; } = string.Empty;
+
+        [JsonPropertyName("ticket_url")]
         public string TicketUrl { get; set; } = string.Empty;
     }
 }
