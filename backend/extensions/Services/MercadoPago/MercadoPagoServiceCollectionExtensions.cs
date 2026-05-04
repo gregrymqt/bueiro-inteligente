@@ -1,17 +1,8 @@
-using System;
 using System.Net.Http.Headers;
 using backend.core.Settings;
-using backend.Features.MercadoPago.Application.Interfaces;
-using backend.Features.MercadoPago.Application.Services;
-using backend.Features.Payment.Application.Interfaces;
-using backend.Features.Payment.Application.Services;
-using backend.Features.Payment.Domain.Interfaces;
-using backend.Features.Payment.infrastructure.Repositories;
 using MercadoPago.Config;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Polly;
-using Polly.Extensions.Http;
+
 
 namespace backend.Extensions.Services.MercadoPago;
 
@@ -83,20 +74,6 @@ public static class MercadoPagoServiceCollectionExtensions
                     }
                 )
             );
-
-        // 3. Injeção de Dependências dos Serviços
-        services.AddScoped<IWebhookService, WebhookService>();
-        services.AddScoped<IPaymentRepository, PaymentRepository>();
-
-        // Serviços de Criação de Pagamento
-        services.AddScoped<IPixService, PixService>();
-        services.AddScoped<ICreditCardService, CreditCardService>();
-        services.AddScoped<IPreferenceService, PreferenceService>();
-
-        // Serviços de Consulta (Criados agora para o ciclo do Webhook/Jobs)
-        services.AddScoped<IMercadoPagoOrderService, MercadoPagoOrderService>();
-        services.AddScoped<IMercadoPagoPaymentService, MercadoPagoPaymentService>();
-
         return services;
     }
 }

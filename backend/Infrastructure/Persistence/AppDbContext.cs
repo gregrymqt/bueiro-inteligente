@@ -34,6 +34,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<UserSubscription> UserSubscriptions =>
         Set<UserSubscription>();
 
+    public DbSet<SubscriptionPlan> SubscriptionPlans =>
+        Set<SubscriptionPlan>();    
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
 

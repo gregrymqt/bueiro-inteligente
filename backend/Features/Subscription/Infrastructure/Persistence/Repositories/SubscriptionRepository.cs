@@ -4,7 +4,7 @@ using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Features.Subscription.Infrastructure.Repositories;
+namespace backend.Features.Subscription.Infrastructure.Persistence.Repositories;
 
 public sealed class SubscriptionRepository(
     AppDbContext context,
@@ -19,7 +19,7 @@ public sealed class SubscriptionRepository(
     {
         try
         {
-            return await context.Set<UserSubscription>()
+            return await context.UserSubscriptions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
@@ -36,7 +36,7 @@ public sealed class SubscriptionRepository(
         try
         {
             // Muito acessado via Webhooks, portanto, a model deve ter Index em ExternalId
-            return await context.Set<UserSubscription>()
+            return await context.UserSubscriptions
                 .FirstOrDefaultAsync(x => x.ExternalId == externalId)
                 .ConfigureAwait(false);
         }
@@ -56,7 +56,7 @@ public sealed class SubscriptionRepository(
             // Utiliza a lógica de cache do projeto para evitar consultas excessivas ao PostgreSQL
             return await cacheService.GetOrSetAsync(
                 cacheKey,
-                async () => await context.Set<UserSubscription>()
+                async () => await context.UserSubscriptions
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.UserId == userId)
                     .ConfigureAwait(false),
@@ -77,7 +77,7 @@ public sealed class SubscriptionRepository(
             subscription.DateCreated = DateTime.UtcNow;
             subscription.LastModified = DateTime.UtcNow;
 
-            await context.Set<UserSubscription>().AddAsync(subscription).ConfigureAwait(false);
+            await context.UserSubscriptions.AddAsync(subscription).ConfigureAwait(false);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Assinatura {ExternalId} criada para o usuário {UserId}.",
@@ -101,7 +101,7 @@ public sealed class SubscriptionRepository(
         {
             subscription.LastModified = DateTime.UtcNow;
 
-            context.Set<UserSubscription>().Update(subscription);
+            context.UserSubscriptions.Update(subscription);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Assinatura {ExternalId} atualizada com sucesso.", subscription.ExternalId);

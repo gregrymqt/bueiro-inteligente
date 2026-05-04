@@ -4,7 +4,7 @@ using backend.Features.Drains.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Features.Drains.Infrastructure.Repositories;
+namespace backend.Features.Drains.Infrastructure.Persistence.Repositories;
 
 // C# 12: Injeção direta via Primary Constructor
 public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainRepository> logger) : IDrainRepository

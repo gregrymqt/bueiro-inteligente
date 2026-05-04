@@ -41,8 +41,6 @@ public static class RowsServiceCollectionExtensions
             )
             .AddHttpMessageHandler<RowsRetryHandler>();
 
-        services.AddScoped<IRowsService, RowsService>();
-
         return services;
     }
 

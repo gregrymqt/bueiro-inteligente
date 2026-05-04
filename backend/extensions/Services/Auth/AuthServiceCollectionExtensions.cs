@@ -6,7 +6,7 @@ using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Auth.Application.Services;
 using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
-using backend.Features.Auth.Infrastructure.Repositories;
+using backend.Features.Auth.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 
@@ -28,8 +28,6 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<AuthExtension>();
         services.AddSingleton<IAuthExtension>(sp => sp.GetRequiredService<AuthExtension>());
-        services.AddScoped<IAuthRepository, AuthRepository>();
-        services.AddScoped<IAuthService, AuthService>();
         services
             .AddAuthentication(options =>
             {

@@ -135,6 +135,14 @@ public class WebhookService : IWebhookService
                     await _queueService.EnqueueJobAsync<ProcessSubscriptionPreapprovalJob, PaymentNotificationData>(paymenteData);
                     break;
 
+                case "subscription_preapproval_plan":
+                    var planData = new PaymentNotificationData { Id = entityId };
+                    _logger.LogInformation("Enfileirando Job de Plano de Assinatura ID: {Id}", planData.Id);
+
+                    // Enfileira o processamento em segundo plano para não travar o Controller de Webhook[cite: 33, 35]
+                    await _queueService.EnqueueJobAsync<ProcessSubscriptionPlanJob, PaymentNotificationData>(planData);
+                    break;
+
                 default:
                     _logger.LogWarning("Tipo '{Type}' não tratado.", notification.Type);
                     break;

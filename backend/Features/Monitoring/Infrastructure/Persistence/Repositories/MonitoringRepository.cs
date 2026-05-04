@@ -7,7 +7,7 @@ using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Features.Monitoring.Infrastructure.Repositories;
+namespace backend.Features.Monitoring.Infrastructure.Persistence.Repositories;
 
 // C# 12: Injeção direta via Primary Constructor
 public sealed class MonitoringRepository(

@@ -6,7 +6,7 @@ using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace backend.Features.Auth.Infrastructure.Repositories;
+namespace backend.Features.Auth.Infrastructure.Persistence.Repositories;
 
 // C# 12: O construtor primário já define o escopo dos campos privados necessários.
 public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepository> logger)

@@ -6,7 +6,7 @@ using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Features.Home.Infrastructure.Repositories;
+namespace backend.Features.Home.Infrastructure.Persistence.Repositories;
 
 public sealed class HomeRepository(
     AppDbContext dbContext,
