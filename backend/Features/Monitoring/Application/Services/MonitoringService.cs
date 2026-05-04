@@ -75,19 +75,17 @@ public sealed class MonitoringService(
             await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
 
             // Disparo condicional de Realtime
-            if (result.Status is "Alerta" or "Crítico")
+            if (result.Status is not ("Alerta" or "Crítico")) return result;
+            try
             {
-                try
-                {
-                    await realtimeService.BroadcastMonitoringData(result).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    logger.LogWarning(
-                        "Falha no Realtime Broadcast para o bueiro {Id}. O socket pode estar instável.",
-                        result.IdBueiro
-                    );
-                }
+                await realtimeService.PublishAsync("Monitoring_Data", result).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                logger.LogWarning(
+                    "Falha no Realtime Broadcast para o bueiro {Id}. O socket pode estar instável.",
+                    result.IdBueiro
+                );
             }
 
             return result;

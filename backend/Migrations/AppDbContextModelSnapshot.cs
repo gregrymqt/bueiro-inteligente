@@ -22,7 +22,7 @@ namespace backend.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("backend.Features.Auth.Domain.Role", b =>
+            modelBuilder.Entity("backend.Features.Auth.Domain.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -47,7 +47,7 @@ namespace backend.Migrations
                     b.ToTable("roles", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Auth.Domain.User", b =>
+            modelBuilder.Entity("backend.Features.Auth.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -97,7 +97,7 @@ namespace backend.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Drains.Domain.Drain", b =>
+            modelBuilder.Entity("backend.Features.Drains.Domain.Entities.Drain", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -169,7 +169,7 @@ namespace backend.Migrations
                     b.ToTable("drains", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Home.Domain.CarouselModel", b =>
+            modelBuilder.Entity("backend.Features.Home.Domain.Entities.CarouselModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -214,7 +214,7 @@ namespace backend.Migrations
                     b.ToTable("home_carousels", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Home.Domain.StatCardModel", b =>
+            modelBuilder.Entity("backend.Features.Home.Domain.Entities.StatCardModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -261,7 +261,7 @@ namespace backend.Migrations
                     b.ToTable("home_stats", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Monitoring.Domain.DrainStatus", b =>
+            modelBuilder.Entity("backend.Features.Monitoring.Domain.Entities.DrainStatus", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -327,7 +327,7 @@ namespace backend.Migrations
                     b.ToTable("drain_status", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Payment.Domain.PaymentTransaction", b =>
+            modelBuilder.Entity("backend.Features.Payment.Domain.Entities.PaymentTransaction", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -399,7 +399,54 @@ namespace backend.Migrations
                     b.ToTable("PaymentTransactions", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Uploads.Domain.UploadModel", b =>
+            modelBuilder.Entity("backend.Features.Subscription.Domain.Entities.UserSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("ExternalPlanId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NextPaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayerEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("TransactionAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("UserSubscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Features.Uploads.Domain.Entities.UploadModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -479,9 +526,9 @@ namespace backend.Migrations
                     b.ToTable("user_roles", (string)null);
                 });
 
-            modelBuilder.Entity("backend.Features.Drains.Domain.Drain", b =>
+            modelBuilder.Entity("backend.Features.Drains.Domain.Entities.Drain", b =>
                 {
-                    b.HasOne("backend.Features.Auth.Domain.User", "User")
+                    b.HasOne("backend.Features.Auth.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -490,9 +537,9 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.Features.Home.Domain.CarouselModel", b =>
+            modelBuilder.Entity("backend.Features.Home.Domain.Entities.CarouselModel", b =>
                 {
-                    b.HasOne("backend.Features.Uploads.Domain.UploadModel", "Upload")
+                    b.HasOne("backend.Features.Uploads.Domain.Entities.UploadModel", "Upload")
                         .WithMany()
                         .HasForeignKey("UploadId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -501,9 +548,9 @@ namespace backend.Migrations
                     b.Navigation("Upload");
                 });
 
-            modelBuilder.Entity("backend.Features.Monitoring.Domain.DrainStatus", b =>
+            modelBuilder.Entity("backend.Features.Monitoring.Domain.Entities.DrainStatus", b =>
                 {
-                    b.HasOne("backend.Features.Drains.Domain.Drain", null)
+                    b.HasOne("backend.Features.Drains.Domain.Entities.Drain", null)
                         .WithMany()
                         .HasForeignKey("DrainIdentifier")
                         .HasPrincipalKey("HardwareId")
@@ -514,13 +561,13 @@ namespace backend.Migrations
 
             modelBuilder.Entity("user_roles", b =>
                 {
-                    b.HasOne("backend.Features.Auth.Domain.Role", null)
+                    b.HasOne("backend.Features.Auth.Domain.Entities.Role", null)
                         .WithMany()
                         .HasForeignKey("role_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.Features.Auth.Domain.User", null)
+                    b.HasOne("backend.Features.Auth.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("user_id")
                         .OnDelete(DeleteBehavior.Cascade)

@@ -5,27 +5,35 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace backend.extensions.Services.Realtime.Infrastructure;
 
-public sealed class RealtimeService(IHubContext<MonitoringHub> hubContext) : IRealtimeService
+public sealed class RealtimeService(IHubContext<ApplicationHub> hubContext, ILogger<RealtimeService> logger) : IRealtimeService
 {
-    private const string EventName = "BUEIRO_STATUS_MUDOU";
-
-    public async Task BroadcastMonitoringData(object data)
+    public async Task PublishAsync(string eventName, object data)
     {
-        // Validação rápida de nulidade
-        _ = data ?? throw LogicException.NullValue(nameof(data));
-
+        ArgumentNullException.ThrowIfNull(data);
+        
         try
         {
-            // O parâmetro 'hubContext' já está disponível no escopo da classe pelo Primary Constructor
-            await hubContext.Clients.All.SendAsync(EventName, data);
+            // Envia para todos: Dashboard global, mapas, etc.
+            await hubContext.Clients.All.SendAsync(eventName, data).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            throw new ConnectionException(
-                "SignalR",
-                "Falha ao transmitir dados de monitoramento em tempo real.",
-                ex
-            );
+            logger.LogError(ex, "Falha no Broadcast Global: {Event}", eventName);
+        }
+    }
+
+    public async Task PublishToUserAsync(string userId, string eventName, object data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+
+        try
+        {
+            // Envia apenas para o dono da assinatura ou do pagamento
+            await hubContext.Clients.User(userId).SendAsync(eventName, data).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Falha ao enviar evento {Event} para o usuário {User}", eventName, userId);
         }
     }
 }

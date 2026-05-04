@@ -18,40 +18,47 @@ public sealed class MonitoringController(
 {
     [HttpPost("medicoes")]
     [AllowAnonymous] // O hardware usa token próprio via Query ou Header
-    public async Task<IActionResult> ReceiveSensorData(
+    public Task<IActionResult> ReceiveSensorData(
         [FromBody] SensorPayloadDTO payload,
         CancellationToken ct
     )
     {
-        ArgumentNullException.ThrowIfNull(payload);
-
-        logger.LogInformation("Recebendo medição do bueiro {Id}", payload.IdBueiro);
-
-        authExtension.VerifyHardwareToken(
-            Request.Headers.Authorization.ToString(),
-            Request.Query["token"].ToString()
-        );
-
         try
         {
-            backgroundJobs.Enqueue<IMonitoringService>(service =>
-                service.ProcessSensorDataAsync(payload, CancellationToken.None)
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(
-                ex,
-                "Falha ao enfileirar processamento (Redis Down) para o bueiro {IdBueiro}",
-                payload.IdBueiro
-            );
-            return Problem(
-                detail: "Falha ao enfileirar processamento (Redis Down)",
-                statusCode: 500
-            );
-        }
+            ArgumentNullException.ThrowIfNull(payload);
 
-        return Accepted();
+            logger.LogInformation("Recebendo medição do bueiro {Id}", payload.IdBueiro);
+
+            authExtension.VerifyHardwareToken(
+                Request.Headers.Authorization.ToString(),
+                Request.Query["token"].ToString()
+            );
+
+            try
+            {
+                backgroundJobs.Enqueue<IMonitoringService>(service =>
+                    service.ProcessSensorDataAsync(payload, CancellationToken.None)
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogCritical(
+                    ex,
+                    "Falha ao enfileirar processamento (Redis Down) para o bueiro {IdBueiro}",
+                    payload.IdBueiro
+                );
+                return Task.FromResult<IActionResult>(Problem(
+                    detail: "Falha ao enfileirar processamento (Redis Down)",
+                    statusCode: 500
+                ));
+            }
+
+            return Task.FromResult<IActionResult>(Accepted());
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<IActionResult>(exception);
+        }
     }
 
     [HttpGet("{id}/status")]

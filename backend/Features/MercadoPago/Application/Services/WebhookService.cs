@@ -123,7 +123,7 @@ public class WebhookService : IWebhookService
                         "Enfileirando Job de Pagamento de Assinatura ID: {Id}",
                         subPaymentData.Id
                     );
-                    // await _queueService.EnqueueJobAsync<ProcessRenewalSubscriptionJob, PaymentNotificationData>(subPaymentData);
+                    await _queueService.EnqueueJobAsync<ProcessSubscriptionPaymentJob, PaymentNotificationData>(subPaymentData);
                     break;
 
                 case "subscription_preapproval":
@@ -132,7 +132,7 @@ public class WebhookService : IWebhookService
                         "Enfileirando Job de Pré-aprovação de Assinatura ID: {Id}",
                         paymenteData.Id
                     );
-                    // await _queueService.EnqueueJobAsync<ProcessPreapprovalSubscriptionJob, PaymentNotificationData>(paymenteData);
+                    await _queueService.EnqueueJobAsync<ProcessSubscriptionPreapprovalJob, PaymentNotificationData>(paymenteData);
                     break;
 
                 default:

@@ -1,125 +1,97 @@
-// Local: backend/Features/Scheduler/Application/Jobs/MercadoPago/ProcessPaymentJob.cs
-
+using backend.extensions.Services.Realtime.Abstractions;
 using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Features.Scheduler.Application.Interfaces;
-using backend.Infrastructure.Cache; // Ajuste para o seu ICacheService
-using backend.Infrastructure.Persistence; // Ajuste para o seu DbContext
-using Microsoft.Extensions.Logging;
+using backend.Features.Subscription.Domain.Enums;
+using backend.Features.Subscription.Domain.Interfaces; // Namespace do Enum
+using backend.Infrastructure.Cache;
+using backend.Infrastructure.Persistence;
 
 namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
 
 public class ProcessPaymentJob(
     ILogger<ProcessPaymentJob> logger,
-    IMercadoPagoPaymentService mpPaymentService, // Serviço que faz GET v1/payments/{id}
+    IMercadoPagoPaymentService mpPaymentService,
     IPaymentRepository paymentRepository,
+    ISubscriptionRepository subscriptionRepository, // Injeção do repositório de assinaturas
     AppDbContext dbContext,
-    ICacheService cacheService // Para invalidar o cache do Redis
-// IPlanAccessService planAccessService -> Injete aqui o serviço que libera acesso ao bueiro/plano
+    ICacheService cacheService,
+    IRealtimeService realtimeService
 ) : IJob<PaymentNotificationData>
 {
     public async Task ExecuteAsync(PaymentNotificationData resource)
     {
-        logger.LogInformation(
-            "🚀 Iniciando processamento do Pagamento MP: {PaymentId}",
-            resource.Id
-        );
+        logger.LogInformation("🚀 Processando Pagamento MP: {PaymentId}", resource.Id);
 
-        if (string.IsNullOrEmpty(resource.Id))
-        {
-            logger.LogWarning("Pagamento recebido sem ID. Ignorando.");
-            return;
-        }
+        if (string.IsNullOrEmpty(resource.Id)) return;
 
-        // 1. Consulta o status ATUALIZADO diretamente na API do Mercado Pago
-        // Precisaremos deste endpoint (v1/payments/{id}) para pegar o status e o external_reference
-        var mpPaymentInfo = await mpPaymentService.GetPaymentAsync(resource.Id);
+        // 1. Consulta o status atualizado na API do Mercado Pago[cite: 21, 23]
+        var mpPaymentInfo = await mpPaymentService.GetPaymentAsync(resource.Id) ??
+                            throw new Exception("Pagamento não encontrado na API do Mercado Pago.");
 
-        if (mpPaymentInfo == null)
-        {
-            logger.LogWarning("Pagamento {PaymentId} não encontrado no Mercado Pago.", resource.Id);
-            return;
-        }
+        if (!Guid.TryParse(mpPaymentInfo.ExternalReference, out Guid transactionId)) return;
 
-        // Converte o external_reference de volta para o nosso Guid
-        if (!Guid.TryParse(mpPaymentInfo.ExternalReference, out Guid transactionId))
-        {
-            logger.LogWarning(
-                "ExternalReference '{ExtRef}' inválido para o Pagamento {PaymentId}.",
-                mpPaymentInfo.ExternalReference,
-                resource.Id
-            );
-            return;
-        }
-
-        // 2. Inicia a Transação para garantir Atomicidade
+        // 2. Inicia Transação Atômica[cite: 21]
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
         try
         {
-            // 3. Idempotência: Busca a transação no banco
             var localTransaction = await paymentRepository.GetByIdAsync(transactionId);
+            if (localTransaction == null) return;
 
-            if (localTransaction == null)
-            {
-                logger.LogWarning("Transação local {TransactionId} não encontrada.", transactionId);
-                return;
-            }
+            // Evita reprocessamento se o status já estiver atualizado[cite: 21]
+            if (localTransaction.Status == mpPaymentInfo.Status) return;
 
-            // Se o status no banco já for igual ao do MP, ignoramos (já foi processado)
-            if (localTransaction.Status == mpPaymentInfo.Status)
-            {
-                logger.LogInformation(
-                    "Transação {TransactionId} já está com status {Status}. Ignorando.",
-                    transactionId,
-                    localTransaction.Status
-                );
-                return;
-            }
-
-            // 4. Atualiza o status na entidade
-            // O ID do pagamento do webhook vem como string, precisamos converter se for o caso
+            // 3. Atualiza a transação de pagamento[cite: 22]
             long.TryParse(resource.Id, out long paymentIdLong);
-
-            localTransaction.UpdateStatus(
-                mpPaymentInfo.Status,
-                mpPaymentInfo.StatusDetail,
-                paymentIdLong
-            );
+            localTransaction.UpdateStatus(mpPaymentInfo.Status, mpPaymentInfo.StatusDetail, paymentIdLong);
             await paymentRepository.UpdateAsync(localTransaction);
 
-            // 5. Regras de Negócio Pós-Pagamento (Ex: Liberar acesso ao Painel do Bueiro)
+            // 4. Lógica de Liberação da Assinatura
             if (mpPaymentInfo.Status == "approved")
             {
-                logger.LogInformation(
-                    "✅ Pagamento {PaymentId} APROVADO. Liberando acesso para o usuário {UserId}.",
-                    resource.Id,
-                    localTransaction.UserId
+                logger.LogInformation("✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
+                    localTransaction.UserId);
+
+                await realtimeService.PublishToUserAsync(
+                    localTransaction.UserId.ToString(),
+                    "PAYMENT_AUTHORIZED",
+                    new { transaction_id = localTransaction.Id, status = "success" }
                 );
 
-                // Exemplo: await planAccessService.GrantAccessAsync(localTransaction.UserId, localTransaction.PlanId);
+                // Busca a assinatura vinculada ao usuário[cite: 4]
+                var cacheSub = await subscriptionRepository.GetByUserIdAsync(localTransaction.UserId);
+                var subscription = cacheSub.Data;
+
+                if (subscription != null)
+                {
+                    // Atualiza para o status autorizado conforme a regra de negócio[cite: 5]
+                    subscription.Status = SubscriptionStatus.Authorized;
+                    subscription.LastModified = DateTime.UtcNow;
+
+                    // Se o pagamento for aprovado hoje, podemos atualizar a data de modificação
+                    await subscriptionRepository.UpdateAsync(subscription);
+
+                    // Invalida o cache da assinatura para que o app/web perceba a liberação
+                    await cacheService.RemoveAsync($"subscription:user:{localTransaction.UserId}");
+                }
             }
 
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            // 6. Invalidação de Cache (Redis)
-            // Para que o frontend (React) perceba a mudança imediatamente
+            // 5. Invalida o cache do status do pagamento[cite: 21]
             await cacheService.RemoveAsync($"payment_status_{localTransaction.Id}");
 
-            logger.LogInformation(
-                "✅ Job concluído e transação {TransactionId} atualizada com sucesso.",
-                transactionId
-            );
+            logger.LogInformation("✅ Job concluído. Transação {TransactionId} e Assinatura processadas.",
+                transactionId);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError(ex, "❌ Erro crítico ao processar pagamento {PaymentId}.", resource.Id);
-
-            // O Hangfire captura essa exceção e agenda um retry automático com base no delay configurado[cite: 15].
-            throw;
+            logger.LogError(ex, "❌ Erro ao processar pagamento e liberar assinatura {PaymentId}.", resource.Id);
+            throw; // Permite que o Hangfire realize o Retry[cite: 18]
         }
     }
 }

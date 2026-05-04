@@ -1,5 +1,6 @@
 using backend.extensions.Services.Realtime.Abstractions;
 using backend.Features.Monitoring.Domain.Configuration;
+using Polly.Caching;
 
 namespace backend.Tests.Features.Monitoring;
 
@@ -86,16 +87,16 @@ public sealed class MonitoringServiceTests
         );
 
         if (shouldBroadcast)
-            _realtimeMock.Verify(rt => rt.BroadcastMonitoringData(It.IsAny<object>()), Times.Once);
+            _realtimeMock.Verify(rt => rt.PublishAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
         else
-            _realtimeMock.Verify(rt => rt.BroadcastMonitoringData(It.IsAny<object>()), Times.Never);
+            _realtimeMock.Verify(rt => rt.PublishAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
     }
 
     [Fact]
     public async Task GetDrainStatus_CacheHit_NaoDeveConsultarDB()
     {
         // Arrange
-        var id = "DRN-01";
+        const string id = "DRN-01";
         var status = CreateStatus(id);
         _cacheMock
             .Setup(c =>
@@ -136,9 +137,8 @@ public sealed class MonitoringServiceTests
                     It.IsAny<TimeSpan?>()
                 )
             )
-            .Returns(
-                async (string k, Func<Task<DrainStatusDTO>> fetchFunc, TimeSpan? t) =>
-                    new CacheResponseDto<DrainStatusDTO>(await fetchFunc(), false)
+            .Returns(async (string k, Func<Task<DrainStatusDTO>> fetchFunc, TimeSpan? t) =>
+                new CacheResponseDto<DrainStatusDTO>(await fetchFunc(), false)
             );
 
         // Act

@@ -4,11 +4,11 @@ using backend.Extensions.Security;
 using backend.extensions.Services.App;
 using backend.extensions.Services.Auth.Infrastructure;
 using backend.extensions.Services.Security;
+using backend.Features.Realtime.Presentation.Hubs;
 using backend.Infrastructure;
 using backend.Infrastructure.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
-using MonitoringHub = backend.Features.Realtime.Presentation.Hubs.MonitoringHub;
 
 namespace backend.Extensions.App;
 
@@ -44,7 +44,7 @@ public static class AppPipelineExtensions
         app.UseAuthorization();
 
         // 3. Endpoints e Hubs
-        app.MapHub<MonitoringHub>("/realtime/ws");
+        app.MapHub<ApplicationHub>("/realtime/ws");
         app.MapControllers();
         app.MapGet("/health", () => Results.Ok()).AllowAnonymous();
 

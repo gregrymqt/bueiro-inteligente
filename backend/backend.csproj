@@ -32,7 +32,4 @@
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
     <PackageReference Include="supabase-csharp" Version="0.16.2" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Features\Subscription\Application\" />
-  </ItemGroup>
 </Project>

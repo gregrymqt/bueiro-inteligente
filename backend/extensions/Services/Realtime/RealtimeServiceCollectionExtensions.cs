@@ -13,23 +13,18 @@ public static class RealtimeServiceCollectionExtensions
         services.AddSingleton<HubExceptionFilter>();
         services.AddSingleton<HubLoggingFilter>();
 
-        services
-            .AddSignalR(options =>
+        services.AddSignalR(options =>
             {
-                options.EnableDetailedErrors = true;
                 options.AddFilter<HubExceptionFilter>();
                 options.AddFilter<HubLoggingFilter>();
             })
             .AddJsonProtocol(options =>
             {
-                options.PayloadSerializerOptions.PropertyNamingPolicy =
-                    JsonNamingPolicy.SnakeCaseLower;
-                options.PayloadSerializerOptions.DictionaryKeyPolicy =
-                    JsonNamingPolicy.SnakeCaseLower;
+                // Mantém o padrão snake_case que seu frontend já espera[cite: 28]
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
             });
 
         services.AddSingleton<IRealtimeService, RealtimeService>();
-
         return services;
     }
 }
