@@ -3,7 +3,7 @@ global using backend.Core;
 global using backend.Features.Auth.Application.DTOs;
 global using backend.Features.Auth.Application.Services;
 global using backend.Features.Auth.Domain;
-global using backend.Features.Auth.Infrastructure.Repositories;
+global using backend.Features.Auth.Infrastructure;
 global using backend.Features.Auth.Presentation.Controllers;
 global using backend.Features.Drains.Application.DTOs;
 global using backend.Features.Drains.Application.Services;

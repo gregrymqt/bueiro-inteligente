@@ -2,10 +2,12 @@ using backend.Features.Auth.Domain;
 using backend.Features.Auth.Domain.Entities;
 using backend.Features.Drains.Domain;
 using backend.Features.Drains.Domain.Entities;
+using backend.Features.Feedbacks.Domain.Entities;
 using backend.Features.Home.Domain;
 using backend.Features.Home.Domain.Entities;
 using backend.Features.Monitoring.Domain;
 using backend.Features.Monitoring.Domain.Entities;
+using backend.Features.Notifications.Domain.Entities;
 using backend.Features.Payment.Domain;
 using backend.Features.Payment.Domain.Entities;
 using backend.Features.Subscription.Domain.Entities;
@@ -35,7 +37,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         Set<UserSubscription>();
 
     public DbSet<SubscriptionPlan> SubscriptionPlans =>
-        Set<SubscriptionPlan>();    
+        Set<SubscriptionPlan>();
+
+    public DbSet<Notification> Notifications =>
+        Set<Notification>();
+
+    public DbSet<Feedback> Feedbacks =>
+        Set<Feedback>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();

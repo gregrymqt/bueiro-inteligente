@@ -137,16 +137,12 @@ public sealed class MonitoringService(
 
     private void ValidateSensorNoise(string id, double distanceCm, double maxHeight)
     {
-        if (
-            double.IsNaN(distanceCm)
-            || double.IsInfinity(distanceCm)
-            || distanceCm < 0
-            || distanceCm > maxHeight
-        )
-        {
-            logger.LogWarning("Ruído detectado: {DistanceCm} ignorada para {Id}", distanceCm, id);
-            throw LogicException.InvalidValue(nameof(distanceCm), distanceCm);
-        }
+        if (!double.IsNaN(distanceCm)
+            && !double.IsInfinity(distanceCm)
+            && !(distanceCm < 0)
+            && !(distanceCm > maxHeight)) return;
+        logger.LogWarning("Ruído detectado: {DistanceCm} ignorada para {Id}", distanceCm, id);
+        throw LogicException.InvalidValue(nameof(distanceCm), distanceCm);
     }
 
     private static double CalculateObstructionLevel(double dist, double maxHeight) =>
@@ -159,8 +155,8 @@ public sealed class MonitoringService(
     ) =>
         level switch
         {
-            var l when l >= criticalThreshold => "Crítico",
-            var l when l >= alertThreshold => "Alerta",
+            _ when level >= criticalThreshold => "Crítico",
+            _ when level >= alertThreshold => "Alerta",
             _ => "Normal",
         };
 }

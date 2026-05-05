@@ -9,7 +9,6 @@ using backend.Features.Auth.Domain;
 using backend.Features.Auth.Domain.Entities;
 using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Auth.Infrastructure.Authentication;
-using backend.Features.Auth.Infrastructure.Repositories;
 using backend.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
