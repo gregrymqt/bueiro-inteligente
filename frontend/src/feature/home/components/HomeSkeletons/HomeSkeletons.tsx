@@ -1,44 +1,19 @@
+// HomeSkeletons.tsx
 import styles from '@/pages/Home/Home.module.scss';
 
 export function HeroSkeleton() {
-  return <div className={styles.heroSkeleton} aria-busy="true" aria-label="Carregando destaques" />;
+  return <div className={styles.skeletonHero} aria-busy="true" aria-label="Carregando destaques" />;
 }
 
 export function HowItWorksSkeleton() {
   return (
-    <div className={styles.statsSkeletonGrid} aria-busy="true" aria-label="Carregando como funciona">
+    <div className={styles.skeletonGrid} aria-busy="true">
       {Array.from({ length: 3 }).map((_, index) => (
-        <div key={`how-it-works-skeleton-${index}`} className={styles.statsSkeletonCard}>
-          <div className={styles.statsSkeletonHeader}>
-            <div className={styles.statsSkeletonIcon} style={{ borderRadius: '50%', width: '3rem', height: '3rem' }} />
-            <div className={styles.statsSkeletonMeta}>
-              <div className={styles.statsSkeletonLine} style={{ height: '1.2rem', width: '80%' }} />
-            </div>
-          </div>
-          <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineWide}`} style={{ marginTop: '1rem' }} />
-          <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineWide}`} />
-          <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineShort}`} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function StatsSkeleton() {
-  return (
-    <div className={styles.statsSkeletonGrid} aria-busy="true" aria-label="Carregando métricas">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div key={`stats-skeleton-${index}`} className={styles.statsSkeletonCard}>
-          <div className={styles.statsSkeletonHeader}>
-            <div className={styles.statsSkeletonIcon} />
-            <div className={styles.statsSkeletonMeta}>
-              <div className={styles.statsSkeletonLine} />
-              <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineShort}`} />
-            </div>
-          </div>
-
-          <div className={styles.statsSkeletonValue} />
-          <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineWide}`} />
+        <div key={index} className={styles.stepItem}> {/* Reutilizando classe do componente real */}
+          <div className={styles.skeletonCircle} style={{ margin: '0 auto 1.5rem' }} />
+          <div className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`} />
+          <div className={styles.skeletonLine} style={{ marginTop: '1rem' }} />
+          <div className={styles.skeletonLine} />
         </div>
       ))}
     </div>
@@ -47,9 +22,9 @@ export function StatsSkeleton() {
 
 export function PricingSkeleton() {
   return (
-    <div className={styles.statsSkeletonGrid}>
+    <div className={styles.skeletonGrid}>
       {[1, 2, 3].map((i) => (
-        <div key={i} className={styles.statsSkeletonCard} style={{ height: '350px' }} />
+        <div key={i} className={styles.skeletonCard} />
       ))}
     </div>
   );
@@ -57,25 +32,18 @@ export function PricingSkeleton() {
 
 export function ReviewsSkeleton() {
   return (
-    <div className={styles.statsSkeletonGrid} aria-busy="true" aria-label="Carregando avaliações">
+    <div className={styles.skeletonGrid} aria-busy="true">
       {Array.from({ length: 3 }).map((_, index) => (
-        <div key={`review-skeleton-${index}`} className={styles.statsSkeletonCard}>
-          {/* Estrelas */}
-          <div className={styles.statsSkeletonHeader} style={{ marginBottom: '0.5rem' }}>
-            <div className={styles.statsSkeletonLine} style={{ width: '40%', height: '1rem' }} />
-          </div>
+        <div key={index} className={styles.skeletonCard}>
+          <div className={styles.skeletonLine} style={{ width: '40%', marginBottom: '1rem' }} />
+          <div className={styles.skeletonLine} />
+          <div className={styles.skeletonLine} style={{ width: '90%', marginTop: '0.5rem' }} />
           
-          {/* Corpo do comentário */}
-          <div className={styles.statsSkeletonLine} style={{ width: '100%' }} />
-          <div className={styles.statsSkeletonLine} style={{ width: '90%' }} />
-          <div className={`${styles.statsSkeletonLine} ${styles.statsSkeletonLineShort}`} />
-
-          {/* Autor (Avatar + Texto) */}
-          <div className={styles.statsSkeletonHeader} style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-            <div className={styles.statsSkeletonIcon} style={{ width: '2.5rem', height: '2.5rem' }} />
-            <div className={styles.statsSkeletonMeta}>
-              <div className={styles.statsSkeletonLine} style={{ width: '60%' }} />
-              <div className={styles.statsSkeletonLineShort} style={{ height: '0.6rem' }} />
+          <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div className={styles.skeletonCircle} style={{ width: '2.5rem', height: '2.5rem' }} />
+            <div style={{ flex: 1 }}>
+              <div className={styles.skeletonLine} style={{ width: '60%' }} />
+              <div className={`${styles.skeletonLine} ${styles.skeletonLineSmall}`} style={{ marginTop: '0.4rem' }} />
             </div>
           </div>
         </div>
@@ -84,30 +52,24 @@ export function ReviewsSkeleton() {
   );
 }
 
-// O componente que você vai chamar na sua página Home.tsx[cite: 5]
 export function HomeLoading() {
   return (
     <div className={styles.homeContainer}>
-      <HeroSkeleton />
+      <div className={styles.heroWrapper}>
+        <HeroSkeleton />
+      </div>
       
       <section className={styles.section}>
         <div className={styles.container}>
-          <div className={styles.statsSkeletonLine} style={{ width: '200px', height: '2rem', margin: '0 auto 2rem' }} />
+          <div className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
           <HowItWorksSkeleton />
         </div>
       </section>
 
-      <section className={styles.section} style={{ backgroundColor: '#f9fafb' }}>
+      <section className={`${styles.section} ${styles.bgAlt}`}>
         <div className={styles.container}>
-          <div className={styles.statsSkeletonLine} style={{ width: '200px', height: '2rem', margin: '0 auto 2rem' }} />
+          <div className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
           <PricingSkeleton />
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <div className={styles.container}>
-          <div className={styles.statsSkeletonLine} style={{ width: '200px', height: '2rem', margin: '0 auto 2rem' }} />
-          <ReviewsSkeleton />
         </div>
       </section>
     </div>

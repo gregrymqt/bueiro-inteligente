@@ -1,0 +1,88 @@
+
+.container {
+  width: 100%;
+  background-color: $color-background;
+  border-radius: $border-radius-md;
+  border: 1px solid $color-border;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  display: block; // Mobile-first: vira uma lista de blocos
+
+  @include respond-to('md') {
+    display: table;
+  }
+}
+
+.thead {
+  display: none; // Escondemos o cabeçalho no mobile
+
+  @include respond-to('md') {
+    display: table-header-group;
+    background-color: $color-bg-light;
+    border-bottom: 2px solid $color-border;
+  }
+}
+
+.th {
+  text-align: left;
+  padding: $spacing-md;
+  color: $color-text-light;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.row {
+  display: block;
+  border-bottom: 1px solid $color-border;
+  padding: $spacing-md;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover {
+    background-color: rgba($color-bg-light, 0.5);
+  }
+
+  @include respond-to('md') {
+    display: table-row;
+    padding: 0;
+  }
+}
+
+.cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+  font-size: 0.95rem;
+
+  // Truque de UX: Mostrar o Label no mobile usando data-attribute
+  &::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: $color-text-light;
+    font-size: 0.8rem;
+    
+    @include respond-to('md') {
+      display: none;
+    }
+  }
+
+  @include respond-to('md') {
+    display: table-cell;
+    padding: $spacing-md;
+    border-bottom: 1px solid $color-border;
+    vertical-align: middle;
+  }
+}
+
+.empty {
+  padding: $spacing-xl;
+  text-align: center;
+  color: $color-text-light;
+}

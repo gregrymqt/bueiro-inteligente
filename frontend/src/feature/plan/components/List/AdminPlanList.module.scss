@@ -1,0 +1,66 @@
+
+.listContainer {
+  margin-top: $spacing-lg;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+
+  h3 { color: $color-text-main; }
+}
+
+.actionButtons {
+  display: flex;
+  gap: $spacing-sm;
+
+  button {
+    padding: $spacing-xs;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: $border-radius-sm;
+    transition: background $transition-speed;
+
+    &:hover { background: $color-bg-light; }
+  }
+}
+
+.editBtn { color: $color-primary; }
+.activateBtn { color: $color-success; }
+.deactivateBtn { color: $color-danger; }
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  &.active {
+    background-color: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.inactive {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+  }
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: $color-text-light;
+  background: none;
+  border: 1px solid $color-border;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+
+  &:hover { background: $color-bg-light; }
+}

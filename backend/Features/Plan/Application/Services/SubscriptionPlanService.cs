@@ -49,7 +49,9 @@ public class SubscriptionPlanService(
             Frequency = mpResponse.AutoRecurring.Frequency,
             FrequencyType = mpResponse.AutoRecurring.FrequencyType,
             Status = mpResponse.Status,
-            InitPoint = mpResponse.InitPoint
+            InitPoint = mpResponse.InitPoint,
+            IsPopular = request.IsPopular,
+            Features = request.Features // Usa a propriedade NotMapped para serializar automaticamente
         };
 
         // 4. Persiste no PostgreSQL (já limpando o cache ativo)[cite: 27]
@@ -60,9 +62,13 @@ public class SubscriptionPlanService(
 
     public async Task<IEnumerable<PlanResponseDto>> GetAllActivePlansAsync()
     {
-        // Busca do repositório, que implementa cache no Redis[cite: 27]
         var cacheResult = await planRepository.GetAllActiveAsync();
+        return cacheResult.Data.Select(MapToResponseDto);
+    }
 
+    public async Task<IEnumerable<PlanResponseDto>> GetAllPlansAsync()
+    {
+        var cacheResult = await planRepository.GetAllAsync();
         return cacheResult.Data.Select(MapToResponseDto);
     }
 
@@ -101,10 +107,37 @@ public class SubscriptionPlanService(
         plan.Amount = mpResponse.AutoRecurring.TransactionAmount;
         plan.Status = mpResponse.Status;
         plan.InitPoint = mpResponse.InitPoint; // A InitPoint pode mudar ao atualizar
+        plan.IsPopular = request.IsPopular;
+        plan.Features = request.Features;
 
         await planRepository.UpdateAsync(plan);
 
         return MapToResponseDto(plan);
+    }
+
+    public async Task UpdatePlanStatusAsync(Guid id, string newStatus)
+    {
+        // Validação de segurança para garantir dados limpos
+        var statusNormalizado = newStatus.ToLower().Trim();
+        if (statusNormalizado != "active" && statusNormalizado != "inactive")
+        {
+            throw new ArgumentException("O status deve ser 'active' ou 'inactive'.");
+        }
+
+        var cacheResult = await planRepository.GetByIdAsync(id);
+        var plan = cacheResult.Data;
+
+        if (plan == null)
+            throw new Exception("Plano não encontrado no sistema local.");
+
+        // Atualiza apenas a propriedade localmente
+        plan.Status = statusNormalizado;
+
+        // Persiste a mudança no PostgreSQL e limpa o cache.
+        // O Mercado Pago não é notificado dessa mudança de status.
+        await planRepository.UpdateAsync(plan);
+
+        logger.LogInformation("Status do plano {PlanName} ({Id}) alterado para {Status} pelo Admin.", plan.Name, plan.Id, statusNormalizado);
     }
 
     // Helper method para mapear a Entidade para DTO de Resposta
@@ -114,9 +147,11 @@ public class SubscriptionPlanService(
         {
             Id = plan.Id,
             Name = plan.Name,
-            Amount = plan.Amount,
+            Price = plan.Amount, // Mapeia Amount (BD) para Price (Front-end)[cite: 28]
             Status = plan.Status,
-            InitPoint = plan.InitPoint
+            InitPoint = plan.InitPoint,
+            Features = plan.Features,
+            IsPopular = plan.IsPopular
         };
     }
 }

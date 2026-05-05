@@ -1,3 +1,4 @@
+// Pricing.tsx
 import React from 'react';
 import type { PricingPlan } from '../../types';
 import styles from './Pricing.module.scss';
@@ -5,9 +6,10 @@ import { Card } from '@/components/ui/Card/Card';
 
 interface PricingProps {
   plans: PricingPlan[];
+  onSelectPlan: (planId: string) => void; // Nova propriedade injetada[cite: 20]
 }
 
-export const Pricing: React.FC<PricingProps> = ({ plans }) => {
+export const Pricing: React.FC<PricingProps> = ({ plans, onSelectPlan }) => {
   return (
     <div className={styles.pricingGrid}>
       {plans.map((plan) => (
@@ -25,7 +27,14 @@ export const Pricing: React.FC<PricingProps> = ({ plans }) => {
               <li key={index}>{feature}</li>
             ))}
           </ul>
-          <button className={styles.planButton}>Começar Agora</button>
+          {/* Botão agora aciona a função passando o ID do plano[cite: 20] */}
+          <button 
+            className={styles.planButton}
+            onClick={() => onSelectPlan(plan.id)}
+            aria-label={`Escolher ${plan.name}`} // Acessibilidade
+          >
+            Começar Agora
+          </button>
         </Card>
       ))}
     </div>

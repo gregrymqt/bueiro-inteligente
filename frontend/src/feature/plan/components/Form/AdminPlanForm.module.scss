@@ -1,0 +1,49 @@
+
+.formWrapper {
+  background: $color-background;
+  padding: $spacing-lg;
+  border-radius: $border-radius-lg;
+  border: 1px solid $color-border;
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.featureItem {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+
+  input {
+    flex: 1;
+  }
+}
+
+.addFeatureBtn {
+  margin-top: $spacing-md;
+  background: none;
+  border: 1px dashed $color-primary;
+  color: $color-primary;
+  padding: $spacing-sm;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 600;
+  transition: background $transition-speed;
+
+  &:hover {
+    background: rgba($color-primary, 0.05);
+  }
+}
+
+.removeBtn {
+  color: $color-danger;
+  padding: $spacing-xs;
+  background: none;
+  border: none;
+  cursor: pointer;
+}

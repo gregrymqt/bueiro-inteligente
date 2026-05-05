@@ -17,6 +17,7 @@ public sealed class SubscriptionPlanRepository(
     private static readonly TimeSpan CacheExpiry = TimeSpan.FromHours(12);
 
     private const string ActivePlansCacheKey = "subscription_plans:active";
+    private const string AllPlansCacheKey = "subscription_plans:all";
 
     public async Task<CacheResponseDto<SubscriptionPlan?>> GetByIdAsync(Guid id)
     {
@@ -40,6 +41,31 @@ public sealed class SubscriptionPlanRepository(
         }
     }
 
+    public async Task<CacheResponseDto<IEnumerable<SubscriptionPlan>>> GetAllAsync()
+    {
+        try
+        {
+            return await cacheService.GetOrSetAsync(
+                AllPlansCacheKey,
+                async () =>
+                {
+                    var plans = await context.SubscriptionPlans
+                        .AsNoTracking()
+                        .ToListAsync() // Busca todos sem filtro de status
+                        .ConfigureAwait(false);
+
+                    return plans.AsEnumerable();
+                },
+                CacheExpiry
+            ).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao listar todos os planos de assinatura (Admin).");
+            throw;
+        }
+    }
+
     public async Task<CacheResponseDto<SubscriptionPlan?>> GetByExternalIdAsync(string externalId)
     {
         string cacheKey = $"subscription_plan:external_id:{externalId}";
@@ -53,7 +79,7 @@ public sealed class SubscriptionPlanRepository(
                     .FirstOrDefaultAsync(x => x.ExternalId == externalId)
                     .ConfigureAwait(false),
                 CacheExpiry
-            ).ConfigureAwait(false); 
+            ).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -79,7 +105,7 @@ public sealed class SubscriptionPlanRepository(
                     return plans.AsEnumerable();
                 },
                 CacheExpiry
-            ).ConfigureAwait(false); 
+            ).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -95,13 +121,14 @@ public sealed class SubscriptionPlanRepository(
             plan.DateCreated = DateTime.UtcNow;
             plan.LastModified = DateTime.UtcNow;
 
-            await context.SubscriptionPlans.AddAsync(plan).ConfigureAwait(false); 
+            await context.SubscriptionPlans.AddAsync(plan).ConfigureAwait(false);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Plano de assinatura '{PlanName}' ({ExternalId}) criado com sucesso.", plan.Name, plan.ExternalId);
 
             // Invalida o cache da lista global de planos, forçando uma nova consulta do PostgreSQL na próxima vez
-            await cacheService.RemoveAsync(ActivePlansCacheKey).ConfigureAwait(false);
+            await Task.WhenAll(cacheService.RemoveAsync(ActivePlansCacheKey),
+             cacheService.RemoveAsync(AllPlansCacheKey)).ConfigureAwait(false);
 
             return plan;
         }
@@ -118,7 +145,7 @@ public sealed class SubscriptionPlanRepository(
         {
             plan.LastModified = DateTime.UtcNow;
 
-            context.SubscriptionPlans.Update(plan); 
+            context.SubscriptionPlans.Update(plan);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Plano de assinatura '{PlanName}' ({ExternalId}) atualizado.", plan.Name, plan.ExternalId);
@@ -127,7 +154,8 @@ public sealed class SubscriptionPlanRepository(
             await Task.WhenAll(
                 cacheService.RemoveAsync($"subscription_plan:id:{plan.Id}"),
                 cacheService.RemoveAsync($"subscription_plan:external_id:{plan.ExternalId}"),
-                cacheService.RemoveAsync(ActivePlansCacheKey)
+                cacheService.RemoveAsync(ActivePlansCacheKey),
+                cacheService.RemoveAsync(AllPlansCacheKey) // Adicione esta linha!
             ).ConfigureAwait(false);
         }
         catch (Exception ex)

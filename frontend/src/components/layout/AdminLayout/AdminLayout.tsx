@@ -1,91 +1,55 @@
-import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Droplets, LayoutDashboard, Menu } from 'lucide-react'; // <-- CORRIGIDO: Removido Mail, adicionado Droplets
-import { Button } from '@/components/ui/Button/Button';
-import { Sidebar } from '../Sidebar/Sidebar';
-import type { NavigationItem } from '../Sidebar/types';
-import styles from './AdminLayout.module.scss';
+// AdminLayout.tsx
+import React, { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Home, Layers, List, PlusSquare } from 'lucide-react';
+import { Sidebar } from '@/components/layout/Sidebar/Sidebar'; //[cite: 42]
+import styles from './AdminDashboard.module.scss';
 
-interface AdminNavigationItem extends NavigationItem {
-  path: string;
-}
-
-export const AdminLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isOpenMobile, setIsOpenMobile] = useState(false);
 
-  const navItems: AdminNavigationItem[] = [
+  // Mapeamos o path atual para o activeId da Sidebar
+  const activeId = location.pathname.split('/').pop() || 'home';
+
+  const navigationItems = [
+    { id: 'home', label: 'Home', icon: <Home size={20} /> },
     {
-      id: 'drains',
-      label: 'Bueiros',
-      path: '/admin/drains',
-      icon: <Droplets size={20} />,
-      component: <></>,
-    },
-    {
-      id: 'home',
-      label: 'Gestão da Home',
-      path: '/admin/home',
-      icon: <LayoutDashboard size={20} />,
-      component: <></>,
-    },
-    {
-      id: 'messages',
-      label: 'Mensagens',
-      path: '/admin/messages',
-      icon: <Droplets size={20} />,
-      component: <></>,
-    },
+      id: 'plans',
+      label: 'Planos',
+      icon: <Layers size={20} />,
+      children: [
+        { id: 'plans-list', label: 'Lista de Planos', icon: <List size={18} />, path: '/admin/plans' },
+        { id: 'plans-new', label: 'Novo Plano', icon: <PlusSquare size={18} />, path: '/admin/plans/new' }
+      ]
+    }
   ];
 
-  const activeItem =
-    navItems.find(
-      (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
-    ) ?? navItems[0];
-
   const handleNavigate = (id: string) => {
-    const targetItem = navItems.find((item) => item.id === id);
-
-    if (targetItem) {
-      navigate(targetItem.path);
-      setIsSidebarOpen(false);
-    }
+    // Encontra o item para saber o path real
+    if (id === 'home') navigate('/admin/home');
+    if (id === 'plans-list') navigate('/admin/plans');
+    if (id === 'plans-new') navigate('/admin/plans/new');
   };
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.dashboardLayout}>
       <Sidebar
         id="admin-sidebar"
-        items={navItems}
-        activeId={activeItem.id}
-        onNavigate={handleNavigate}
-        isOpenMobile={isSidebarOpen}
-        onCloseMobile={() => setIsSidebarOpen(false)}
+        items={navigationItems}
+        activeId={activeId}
+        onNavigate={handleNavigate} //[cite: 42]
+        isOpenMobile={isOpenMobile}
+        onCloseMobile={() => setIsOpenMobile(false)}
+        onToggleMobile={() => setIsOpenMobile(prev => !prev)}
+        showMobileSubheader={true} //[cite: 42]
       />
 
-      <div className={styles.mainColumn}>
-        <header className={styles.toolbar}>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            leftIcon={<Menu size={16} />}
-            className={styles.menuButton}
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            Menu
-          </Button>
-
-          <span className={styles.toolbarLabel}>Painel Administrativo</span>
-        </header>
-
-        <main className={styles.content}>
-          <div className={styles.contentInner}>
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      <main className={styles.mainContent}>
+        {/* O Outlet renderiza o componente da rota filha definida no router.tsx */}
+        <Outlet />
+      </main>
     </div>
   );
 };

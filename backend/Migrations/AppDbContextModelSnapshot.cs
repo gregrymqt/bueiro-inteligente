@@ -495,6 +495,12 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("FeaturesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]");
+
                     b.Property<int>("Frequency")
                         .HasColumnType("integer");
 
@@ -506,6 +512,11 @@ namespace backend.Migrations
                     b.Property<string>("InitPoint")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsPopular")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime>("LastModified")
                         .HasColumnType("timestamp with time zone");

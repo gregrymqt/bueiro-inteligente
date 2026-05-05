@@ -5,21 +5,36 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Plan.Presentation.Controllers;
 
-public class PlansController(ISubscriptionPlanService planService, ILogger<PlansController> logger) 
+public class PlansController(ISubscriptionPlanService planService, ILogger<PlansController> logger)
     : ApiControllerBase
 {
     /// <summary>
     /// Lista todos os planos de assinatura ativos.
     /// Ideal para renderizar a tela de pricing no frontend.
     /// </summary>
-    [HttpGet]
-    [AllowAnonymous] // Geralmente planos são públicos para visualização
+    [HttpGet("active")]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<PlanResponseDto>>> GetActivePlans()
     {
         var plans = await planService.GetAllActivePlansAsync();
         return Ok(plans);
     }
 
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<PlanResponseDto>>> GetAllPlans()
+    {
+        var plans = await planService.GetAllPlansAsync();
+        return Ok(plans);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> TogglePlanStatus(Guid id, [FromBody] UpdatePlanStatusRequestDto request)
+    {
+        await planService.UpdatePlanStatusAsync(id, request.Status);
+        return NoContent();
+    }
     /// <summary>
     /// Cria um novo plano de assinatura integrado ao Mercado Pago.
     /// </summary>
@@ -28,9 +43,9 @@ public class PlansController(ISubscriptionPlanService planService, ILogger<Plans
     public async Task<ActionResult<PlanResponseDto>> CreatePlan([FromBody] CreatePlanRequestDto request)
     {
         logger.LogInformation("Recebida requisição para criar plano: {Name}", request.Name);
-        
+
         var response = await planService.CreatePlanAsync(request);
-        
+
         return CreatedAtAction(nameof(GetActivePlans), new { id = response.Id }, response);
     }
 
@@ -42,9 +57,9 @@ public class PlansController(ISubscriptionPlanService planService, ILogger<Plans
     public async Task<ActionResult<PlanResponseDto>> UpdatePlan(Guid id, [FromBody] UpdatePlanRequestDto request)
     {
         logger.LogInformation("Recebida requisição para atualizar plano: {Id}", id);
-        
+
         var response = await planService.UpdatePlanAsync(id, request);
-        
+
         return Ok(response);
     }
 }

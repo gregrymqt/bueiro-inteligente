@@ -23,6 +23,8 @@ public interface ISubscriptionPlanRepository
     /// </summary>
     Task<CacheResponseDto<IEnumerable<SubscriptionPlan>>> GetAllActiveAsync();
 
+    Task<CacheResponseDto<IEnumerable<SubscriptionPlan>>> GetAllAsync();
+
     Task<SubscriptionPlan> CreateAsync(SubscriptionPlan plan);
     Task UpdateAsync(SubscriptionPlan plan);
 }

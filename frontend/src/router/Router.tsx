@@ -7,8 +7,6 @@ import { RoleMiddleware } from './middleware/RoleMiddleware';
 import Home from '@/pages/Home/Home';
 import About from '@/pages/About/About';
 import { Login } from '@/pages/Auth/Login';
-import { HomeManagement } from '@/pages/Admin/HomeManagement';
-import { MessageManagement } from '@/pages/Admin/MessageManagement';
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
@@ -17,6 +15,9 @@ import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
 import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 import { AuthProvider } from '@/feature/auth/hooks/AuthContext';
+import { AdminPlanForm } from '@/feature/plan/components/Form/AdminPlanForm';
+import { AdminPlanList } from '@/feature/plan/components/List/AdminPlanList';
+import { DashboardHome } from '@/pages/Admin/AdminDashboard';
 
 export const router = createBrowserRouter([
   {
@@ -77,37 +78,46 @@ export const router = createBrowserRouter([
       // 2. ROTAS PROTEGIDAS (A mágica acontece aqui)
       // ==========================================
       {
-        element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
+        element: <ProtectedLayout />, // Verifica login
         children: [
           {
-            element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
+            element: <RoleMiddleware allowedRoles={['admin']} />, // Apenas Admin[cite: 45]
             children: [
               {
                 path: 'admin',
-                element: <AdminLayout />,
+                element: <AdminLayout />, // O Dashboard com Sidebar e Outlet[cite: 45]
                 children: [
                   {
                     index: true,
-                    element: <Navigate to="messages" replace />,
-                  },
-                  {
-                    path: 'messages',
-                    element: <MessageManagement />,
+                    element: <Navigate to="home" replace />, // Redireciona /admin para /admin/home[cite: 45]
                   },
                   {
                     path: 'home',
-                    element: <HomeManagement />,
+                    element: <DashboardHome />, // Aquela aba Home provisória
                   },
                   {
-                    path: 'messages',
-                    element: <MessageManagement />,
+                    path: 'plans',
+                    children: [
+                      {
+                        index: true, // Rota: /admin/plans
+                        element: <AdminPlanList />,
+                      },
+                      {
+                        path: 'new', // Rota: /admin/plans/new
+                        element: <AdminPlanForm />,
+                      },
+                      {
+                        path: 'edit/:id', // Rota: /admin/plans/edit/123
+                        element: <AdminPlanForm />,
+                      },
+                    ],
                   },
                 ],
               },
             ],
           },
         ],
-      }
+      },
     ],
   },
 

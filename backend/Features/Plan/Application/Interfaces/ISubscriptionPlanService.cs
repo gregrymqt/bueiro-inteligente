@@ -18,4 +18,8 @@ public interface ISubscriptionPlanService
     /// Atualiza o plano no Mercado Pago e reflete a mudança no banco local.
     /// </summary>
     Task<PlanResponseDto> UpdatePlanAsync(Guid id, UpdatePlanRequestDto request);
+
+    Task UpdatePlanStatusAsync(Guid id, string newStatus);
+
+    Task<IEnumerable<PlanResponseDto>> GetAllPlansAsync();
 }

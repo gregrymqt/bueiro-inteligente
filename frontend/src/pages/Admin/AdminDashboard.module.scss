@@ -1,0 +1,39 @@
+
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: $color-bg-light;
+}
+
+.mainContent {
+  flex: 1;
+  width: 100%;
+  padding: $spacing-md;
+  // A margem superior no mobile evita que o conteúdo fique escondido 
+  // pelo 'mobile-subheader' gerado pela Sidebar
+  padding-top: calc(60px + #{$spacing-md}); 
+
+  @include respond-to('md') {
+    padding: $spacing-xl;
+    // Ajuste este valor caso sua Sidebar desktop tenha uma largura diferente
+    margin-left: 260px; 
+  }
+}
+
+// Estilo básico para a Home provisória
+.homeTab {
+  background: $color-background;
+  padding: $spacing-lg;
+  border-radius: $border-radius-lg;
+  border: 1px solid $color-border;
+
+  h2 {
+    color: $color-text-main;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    color: $color-text-light;
+  }
+}
