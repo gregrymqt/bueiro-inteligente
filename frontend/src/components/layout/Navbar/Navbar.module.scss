@@ -1,4 +1,3 @@
-
 .header {
   background-color: $color-bg-light;
   border-bottom: 1px solid $color-border;
@@ -108,7 +107,8 @@
 
 .dropdownMenu {
   position: absolute;
-  top: 100%; /* Força a abrir para baixo */
+  top: 100%;
+  /* Força a abrir para baixo */
   bottom: auto;
   right: 0;
   margin-top: $spacing-xs;
@@ -157,4 +157,30 @@
   &:hover {
     background-color: #0d4a8c;
   }
+}
+
+.notificationWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: $spacing-sm;
+}
+
+.bellIcon {
+  font-size: 1.2rem;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background-color: $color-danger; // Cor vermelha para destaque
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 2px solid $color-bg-light; // Contorno para não "sumir" no fundo
+  min-width: 18px;
+  text-align: center;
 }

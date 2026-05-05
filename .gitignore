@@ -85,3 +85,9 @@ hs_err_pid*
 
 # .env do C++
 secrets.h
+
+# Ignora todos os arquivos dentro da pasta Migrations
+backend/Migrations/*
+
+# Abre uma exceção para o Snapshot do banco de dados
+!backend/Migrations/AppDbContextModelSnapshot.cs
