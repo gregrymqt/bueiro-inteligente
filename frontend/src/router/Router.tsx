@@ -18,6 +18,7 @@ import { AuthProvider } from '@/feature/auth/hooks/AuthContext';
 import { AdminPlanForm } from '@/feature/plan/components/Form/AdminPlanForm';
 import { AdminPlanList } from '@/feature/plan/components/List/AdminPlanList';
 import { DashboardHome } from '@/pages/Admin/AdminDashboard';
+import { CheckoutPage } from '@/pages/Checkout/CheckoutPage';
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
               {
                 path: 'dashboard',
                 element: <Dashboard />,
+              },
+              {
+                path: 'checkout', // <-- ADICIONA ESTA ROTA AQUI
+                element: <CheckoutPage />, // O StatusScreen vai redirecionar para cá em caso de erro
               },
               // ==========================================
               // 3. EXMPLO DE ROTA COM ROLE (Apenas 'admin' e 'manutencao')

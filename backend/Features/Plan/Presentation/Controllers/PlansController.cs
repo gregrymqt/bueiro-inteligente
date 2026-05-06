@@ -28,19 +28,45 @@ public class PlansController(ISubscriptionPlanService planService, ILogger<Plans
         return Ok(plans);
     }
 
+    /// <summary>
+    /// Busca os detalhes de um plano específico pelo seu ID.
+    /// Utilizado para renderizar valores na tela de checkout.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PlanResponseDto>> GetPlanById(Guid id)
+    {
+        try
+        {
+            var plan = await planService.GetPlanByIdAsync(id);
+            return Ok(plan);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Tentativa de acessar plano inexistente: {Id}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> TogglePlanStatus(Guid id, [FromBody] UpdatePlanStatusRequestDto request)
+    public async Task<IActionResult> TogglePlanStatus(
+        Guid id,
+        [FromBody] UpdatePlanStatusRequestDto request
+    )
     {
         await planService.UpdatePlanStatusAsync(id, request.Status);
         return NoContent();
     }
+
     /// <summary>
     /// Cria um novo plano de assinatura integrado ao Mercado Pago.
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")] // Apenas administradores devem criar planos
-    public async Task<ActionResult<PlanResponseDto>> CreatePlan([FromBody] CreatePlanRequestDto request)
+    public async Task<ActionResult<PlanResponseDto>> CreatePlan(
+        [FromBody] CreatePlanRequestDto request
+    )
     {
         logger.LogInformation("Recebida requisição para criar plano: {Name}", request.Name);
 
@@ -54,7 +80,10 @@ public class PlansController(ISubscriptionPlanService planService, ILogger<Plans
     /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<PlanResponseDto>> UpdatePlan(Guid id, [FromBody] UpdatePlanRequestDto request)
+    public async Task<ActionResult<PlanResponseDto>> UpdatePlan(
+        Guid id,
+        [FromBody] UpdatePlanRequestDto request
+    )
     {
         logger.LogInformation("Recebida requisição para atualizar plano: {Id}", id);
 

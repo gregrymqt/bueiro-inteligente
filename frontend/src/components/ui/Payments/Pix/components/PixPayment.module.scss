@@ -1,0 +1,144 @@
+.pixFormWrapper {
+  animation: fadeIn 0.3s ease-in-out;
+
+  header {
+    margin-bottom: $spacing-lg;
+
+    h3 {
+      font-size: 1.25rem;
+      color: $color-text-main;
+      margin-bottom: $spacing-xs;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: $color-text-light;
+    }
+  }
+}
+
+.pixForm {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    @include respond-to('md') {
+      flex-direction: row;
+      & > div {
+        flex: 1;
+      }
+    }
+  }
+
+  .generateBtn {
+    width: 100%;
+    padding: $spacing-md;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: $spacing-md;
+    background-color: $color-success; // Pix remete a sucesso/aprovação rápida
+    
+    &:hover:not(:disabled) {
+      background-color: darken($color-success, 10%);
+    }
+  }
+}
+
+// ==========================================
+// ESTILOS DO QR CODE (PENDING STATE)
+// ==========================================
+.qrContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideUp 0.4s ease-out;
+
+  h3 {
+    color: $color-text-main;
+    margin-bottom: $spacing-xs;
+  }
+
+  .qrImageWrapper {
+    background: white;
+    padding: $spacing-md;
+    border-radius: $border-radius-md;
+    border: 1px solid $color-border;
+    margin: $spacing-lg 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+    img {
+      display: block;
+      max-width: 200px;
+      height: auto;
+    }
+  }
+}
+
+.copyArea {
+  display: flex;
+  width: 100%;
+  max-width: 400px;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+
+  input {
+    flex: 1;
+    padding: $spacing-sm;
+    border: 1px solid $color-border;
+    border-radius: $border-radius-sm 0 0 $border-radius-sm;
+    background-color: $color-bg-light;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: $color-secondary;
+  }
+
+  button {
+    padding: $spacing-sm $spacing-md;
+    background-color: $color-primary;
+    color: white;
+    border: none;
+    border-radius: 0 $border-radius-sm $border-radius-sm 0;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background $transition-speed;
+
+    &:hover {
+      background-color: darken($color-primary, 10%);
+    }
+  }
+}
+
+.expiry {
+  font-size: 0.85rem;
+  color: $color-danger;
+  font-weight: 500;
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  color: $color-success;
+  font-weight: 600;
+  text-align: center;
+  gap: $spacing-md;
+}
+
+// Animações sutis para UX
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

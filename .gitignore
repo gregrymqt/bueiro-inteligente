@@ -13,15 +13,7 @@ Thumbs.db
 *.user
 .vs/
 
-### Python ###
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Ambientes virtuais
-venv/
-env/
-.venv/
+
 # Pacotes e distribuição
 build/
 dist/

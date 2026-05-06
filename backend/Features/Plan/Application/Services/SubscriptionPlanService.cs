@@ -27,8 +27,8 @@ public class SubscriptionPlanService(
                 Frequency = request.Frequency,
                 FrequencyType = request.FrequencyType,
                 TransactionAmount = request.Amount,
-                CurrencyId = "BRL"
-            }
+                CurrencyId = "BRL",
+            },
         };
 
         // 2. Chama a API do Mercado Pago[cite: 24]
@@ -51,7 +51,7 @@ public class SubscriptionPlanService(
             Status = mpResponse.Status,
             InitPoint = mpResponse.InitPoint,
             IsPopular = request.IsPopular,
-            Features = request.Features // Usa a propriedade NotMapped para serializar automaticamente
+            Features = request.Features, // Usa a propriedade NotMapped para serializar automaticamente
         };
 
         // 4. Persiste no PostgreSQL (já limpando o cache ativo)[cite: 27]
@@ -72,6 +72,20 @@ public class SubscriptionPlanService(
         return cacheResult.Data.Select(MapToResponseDto);
     }
 
+    public async Task<PlanResponseDto> GetPlanByIdAsync(Guid id)
+    {
+        // 1. Busca o plano pelo repositório (que já utiliza o CacheService)
+        var cacheResult = await planRepository.GetByIdAsync(id);
+        var plan = cacheResult.Data;
+
+        // 2. Valida se o plano existe
+        if (plan == null)
+            throw new KeyNotFoundException($"Plano com ID {id} não encontrado.");
+
+        // 3. Retorna mapeado para DTO
+        return MapToResponseDto(plan);
+    }
+
     public async Task<PlanResponseDto> UpdatePlanAsync(Guid id, UpdatePlanRequestDto request)
     {
         // 1. Busca o plano localmente para obter o ExternalId
@@ -81,7 +95,11 @@ public class SubscriptionPlanService(
         if (plan == null)
             throw new Exception($"Plano com ID {id} não encontrado.");
 
-        logger.LogInformation("Atualizando plano {PlanName} ({ExternalId})", plan.Name, plan.ExternalId);
+        logger.LogInformation(
+            "Atualizando plano {PlanName} ({ExternalId})",
+            plan.Name,
+            plan.ExternalId
+        );
 
         // 2. Monta o request de atualização para o MP[cite: 25]
         var mpRequest = new MercadoPagoPlanRequest
@@ -92,8 +110,8 @@ public class SubscriptionPlanService(
                 Frequency = plan.Frequency,
                 FrequencyType = plan.FrequencyType,
                 TransactionAmount = request.Amount,
-                CurrencyId = "BRL"
-            }
+                CurrencyId = "BRL",
+            },
         };
 
         // 3. Atualiza na API do Mercado Pago[cite: 24]
@@ -137,7 +155,12 @@ public class SubscriptionPlanService(
         // O Mercado Pago não é notificado dessa mudança de status.
         await planRepository.UpdateAsync(plan);
 
-        logger.LogInformation("Status do plano {PlanName} ({Id}) alterado para {Status} pelo Admin.", plan.Name, plan.Id, statusNormalizado);
+        logger.LogInformation(
+            "Status do plano {PlanName} ({Id}) alterado para {Status} pelo Admin.",
+            plan.Name,
+            plan.Id,
+            statusNormalizado
+        );
     }
 
     // Helper method para mapear a Entidade para DTO de Resposta
@@ -151,7 +174,7 @@ public class SubscriptionPlanService(
             Status = plan.Status,
             InitPoint = plan.InitPoint,
             Features = plan.Features,
-            IsPopular = plan.IsPopular
+            IsPopular = plan.IsPopular,
         };
     }
 }

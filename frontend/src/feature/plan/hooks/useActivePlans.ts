@@ -15,7 +15,7 @@ export function useActivePlans() {
       setPlans(data);
     } catch (err) {
       // Tratamento de erro centralizado
-      AlertService.error('Erro', 'Não foi possível carregar os planos de assinatura.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }

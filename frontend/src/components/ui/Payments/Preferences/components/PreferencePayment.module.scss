@@ -1,0 +1,60 @@
+
+.preferenceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  animation: fadeIn 0.3s ease-out;
+
+  .header {
+    h3 {
+      font-size: 1.25rem;
+      color: $color-text-main;
+      margin-bottom: $spacing-xs;
+    }
+
+    p {
+      color: $color-text-light;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.benefitsBox {
+  background-color: $color-bg-light;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  padding: $spacing-md;
+  margin: $spacing-sm 0;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    li {
+      font-size: 0.9rem;
+      color: $color-text-main;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+    }
+  }
+}
+
+.brickWrapper {
+  margin-top: $spacing-md;
+  min-height: 80px; // Evita CLS enquanto o botão renderiza
+  
+  // Customizações para garantir que o botão preencha o container
+  :global(.mercadopago-button) {
+    width: 100% !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

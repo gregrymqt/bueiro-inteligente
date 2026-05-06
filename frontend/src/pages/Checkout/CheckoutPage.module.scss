@@ -1,0 +1,223 @@
+.checkoutPage {
+  padding: $spacing-md;
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: $color-bg-light;
+  color: $color-text;
+
+  @include respond-to('lg') {
+    max-width: 1200px;
+    padding: $spacing-xl;
+  }
+}
+
+.header {
+  margin-bottom: $spacing-lg;
+  text-align: left;
+
+  .backButton {
+    background: transparent;
+    border: none;
+    color: $color-primary;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: $spacing-sm;
+    font-size: 1rem;
+    transition: color $transition-speed;
+
+    &:hover {
+      color: darken($color-primary, 15%);
+    }
+  }
+
+  .title {
+    font-size: 1.5rem;
+    color: $color-text-main;
+    margin: 0;
+
+    @include respond-to('md') {
+      font-size: 2rem;
+    }
+  }
+
+  .subtitle {
+    color: $color-text-light;
+    margin-top: $spacing-xs;
+    font-size: 0.9rem;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  // No desktop, transformamos num layout de duas colunas (Split View)
+  @include respond-to('lg') {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+// ==========================================
+// SELETOR DE MÉTODOS DE PAGAMENTO
+// ==========================================
+.methodSelector {
+  width: 100%;
+  transition: opacity $transition-speed;
+
+  @include respond-to('lg') {
+    width: 40%; // Ocupa a esquerda no desktop
+    position: sticky;
+    top: $spacing-xl;
+  }
+
+  // Esconde as opções no mobile caso um método seja escolhido (para focar no formulário)
+  &.hiddenOnMobile {
+    display: none;
+
+    @include respond-to('lg') {
+      display: block; // No desktop, continua visível
+    }
+  }
+
+  .sectionTitle {
+    font-size: 1.2rem;
+    margin-bottom: $spacing-md;
+    color: $color-text-main;
+  }
+
+  .gridOptions {
+    display: grid;
+    gap: $spacing-md;
+    grid-template-columns: 1fr;
+  }
+}
+
+.optionCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-background;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: $spacing-md;
+  cursor: pointer;
+  text-align: left;
+  transition: all $transition-speed ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    border-color: $color-primary;
+    box-shadow: 0 4px 12px rgba(11, 95, 180, 0.1);
+  }
+
+  &.active {
+    border-color: $color-primary;
+    background-color: rgba(11, 95, 180, 0.03); // Fundo sutil primário
+    
+    .iconWrapper {
+      background-color: $color-primary;
+      color: $color-background;
+    }
+  }
+
+  .badge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background-color: $color-success;
+    color: $color-background;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+  }
+
+  .iconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: $color-bg-light;
+    border-radius: $border-radius-md;
+    font-size: 1.5rem;
+    transition: all $transition-speed;
+  }
+
+  .optionInfo {
+    display: flex;
+    flex-direction: column;
+
+    .optionTitle {
+      font-weight: 600;
+      color: $color-text-main;
+      font-size: 1rem;
+    }
+
+    .optionDesc {
+      font-size: 0.8rem;
+      color: $color-text-light;
+      margin-top: 2px;
+    }
+  }
+}
+
+// ==========================================
+// ÁREA DO COMPONENTE GENÉRICO (Bricks, Pix)
+// ==========================================
+.paymentDetails {
+  width: 100%;
+  background: $color-background;
+  border-radius: $border-radius-lg;
+  border: 1px solid $color-border;
+  padding: $spacing-md;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  min-height: 300px;
+
+  @include respond-to('lg') {
+    width: 60%; // Ocupa a direita no desktop
+    padding: $spacing-xl;
+  }
+
+  .emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: $color-secondary;
+    font-size: 1rem;
+    padding: $spacing-xl 0;
+  }
+}
+
+// Estilo de fallback caso não haja plano
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: $spacing-md;
+  color: $color-danger;
+
+  .backButton {
+    background-color: $color-primary;
+    color: $color-background;
+    padding: $spacing-sm $spacing-lg;
+    border-radius: $border-radius-md;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    
+    &:hover {
+      background-color: darken($color-primary, 10%);
+    }
+  }
+}

@@ -20,7 +20,7 @@ export function useAdminPlans() {
       const data = await PlanService.getAllPlans();
       setPlans(data);
     } catch (err) {
-      AlertService.error('Erro', 'Falha ao carregar a lista administrativa de planos.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export function useAdminPlans() {
       await fetchAllPlans(); // Atualiza a lista
       return true;
     } catch (err) {
-      AlertService.error('Erro', 'Não foi possível criar o plano no gateway de pagamento.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Não foi possível criar o plano no gateway de pagamento.');
       return false;
     } finally {
       setIsSubmitting(false);
@@ -51,7 +51,7 @@ export function useAdminPlans() {
       await fetchAllPlans();
       return true;
     } catch (err) {
-      AlertService.error('Erro', 'Erro ao atualizar o plano.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Erro ao atualizar o plano.');
       return false;
     } finally {
       setIsSubmitting(false);
@@ -66,7 +66,7 @@ export function useAdminPlans() {
       AlertService.success('Status Atualizado', `O plano agora está ${newStatus === 'active' ? 'Ativo' : 'Inativo'}.`);
       await fetchAllPlans();
     } catch (err) {
-      AlertService.error('Erro', 'Falha ao alterar a visibilidade do plano.');
+      AlertService.error('Erro', err instanceof Error ? err.message : 'Falha ao alterar a visibilidade do plano.');
     }
   };
 

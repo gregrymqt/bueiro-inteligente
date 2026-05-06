@@ -20,6 +20,13 @@ export class PlanService {
   }
 
   /**
+   * Busca os detalhes de um único plano pelo seu ID
+   */
+  public static async getPlanById(id: string): Promise<PricingPlan> {
+    return apiClient.get<PricingPlan>(`${this.BASE_API}/${id}`);
+  }
+
+  /**
    * [ADMIN] Cria um novo plano integrado ao Mercado Pago
    */
   public static async createPlan(payload: PricingPlanCreatePayload): Promise<PricingPlan> {
