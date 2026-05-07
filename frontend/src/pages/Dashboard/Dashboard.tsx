@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
 import {
   Activity,
@@ -19,15 +19,16 @@ import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 // Feature: Gestão de Bueiros (Drains)
 import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
-import { useDrains } from '@/feature/drain/hooks/useDrains'; //
-import type { Drain } from '@/feature/drain/types'; //[cite: 62]
+import { useDrains } from '@/feature/drain/hooks/useDrains'; 
+import type { Drain } from '@/feature/drain/types'; 
 
 // Feature: Feedback
 import { FeedbackForm } from '@/feature/feedback/components/FeedbackForm/FeedbackForm';
 import { FeedbackList } from '@/feature/feedback/components/FeedbackList/FeedbackList';
-import type { Feedback } from '@/feature/feedback/types'; //[cite: 39]
+import type { Feedback } from '@/feature/feedback/types'; 
 
 import styles from './Dashboard.module.scss';
+import { tokenService } from '@/core/http/TokenService';
 
 export const Dashboard: React.FC = () => {
   // --- ESTADOS DE NAVEGAÇÃO E UI ---
@@ -38,6 +39,10 @@ export const Dashboard: React.FC = () => {
   const [editingFeedback, setEditingFeedback] = useState<Feedback | null>(null);
   const [editingDrain, setEditingDrain] = useState<Drain | null>(null);
 
+  // 1. Verificar se o utilizador é gestor (admin ou manutenção)
+  const userRole = tokenService.getRole();
+  const isManager = userRole === 'admin' || userRole === 'manutencao';
+
   // --- HOOKS DE DADOS ---
   const {
     drains,
@@ -47,35 +52,42 @@ export const Dashboard: React.FC = () => {
     createDrain,
     updateDrain,
     deleteDrain
-  } = useDrains(); //[cite: 60]
+  } = useDrains(); 
 
   // Estado para refresh manual do feedback (via key re-mount)
   const [feedbackListKey, setFeedbackListKey] = useState(0);
 
   const handleRefreshFeedback = () => {
-    setFeedbackListKey(prev => prev + 1); //[cite: 63]
+    setFeedbackListKey(prev => prev + 1); 
   };
 
-  const dashboardItems: NavigationItem[] = [
-    {
-      id: 'monitoring',
-      label: 'Tempo Real',
-      icon: <Activity size={20} />,
-      children: [
-        { id: 'live-monitor', label: 'Monitor ao Vivo', icon: <Activity size={16} /> },
-        { id: 'analysis', label: 'Análise de Histórico', icon: <LineChart size={16} /> },
-      ],
-    },
-    {
-      id: 'drains-management',
-      label: 'Gestão de Bueiros',
-      icon: <Database size={20} />,
-      children: [
-        { id: 'drain-list', label: 'Lista de Bueiros', icon: <List size={16} /> },
-        { id: 'drain-create', label: 'Cadastrar Novo', icon: <PlusCircle size={16} /> },
-      ],
-    },
-    {
+  const dashboardItems = useMemo((): NavigationItem[] => {
+    const items: NavigationItem[] = [
+      {
+        id: 'monitoring',
+        label: 'Tempo Real',
+        icon: <Activity size={20} />,
+        children: [
+          { id: 'live-monitor', label: 'Monitor ao Vivo', icon: <Activity size={16} /> },
+          { id: 'analysis', label: 'Análise de Histórico', icon: <LineChart size={16} /> },
+        ],
+      },
+    ];
+
+    // Só adiciona Gestão de Bueiros se for Manager/Manutenção
+    if (isManager) {
+      items.push({
+        id: 'drains-management',
+        label: 'Gestão de Bueiros',
+        icon: <Database size={20} />,
+        children: [
+          { id: 'drain-list', label: 'Lista de Bueiros', icon: <List size={16} /> },
+          { id: 'drain-create', label: 'Cadastrar Novo', icon: <PlusCircle size={16} /> },
+        ],
+      });
+    }
+
+    items.push({
       id: 'feedback-management',
       label: 'Meu Feedback',
       icon: <MessageSquare size={20} />,
@@ -83,8 +95,10 @@ export const Dashboard: React.FC = () => {
         { id: 'feedback-send', label: 'Enviar Avaliação', icon: <PlusCircle size={16} /> },
         { id: 'feedback-history', label: 'Histórico de Reviews', icon: <History size={16} /> },
       ],
-    },
-  ];
+    });
+
+    return items;
+  }, [isManager]);
 
   const renderContent = () => {
     switch (activeTabId) {
@@ -96,6 +110,16 @@ export const Dashboard: React.FC = () => {
 
       // --- GESTÃO DE BUEIROS ---
       case 'drain-list':
+        // Bloqueio de renderização para utilizadores sem permissão
+        if (!isManager) {
+          return (
+            <div className={styles.emptyState}>
+              <h2>Acesso Restrito</h2>
+              <p>Apenas utilizadores com plano de manutenção ou administradores podem gerir bueiros.</p>
+            </div>
+          );
+        }
+
         if (editingDrain) {
           return (
             <DrainForm
@@ -107,7 +131,7 @@ export const Dashboard: React.FC = () => {
                 if (success) setEditingDrain(null);
               }}
             />
-          ); //[cite: 58]
+          ); 
         }
         return (
           <div className={styles.sectionContainer}>
@@ -128,9 +152,19 @@ export const Dashboard: React.FC = () => {
               onDelete={(drain) => deleteDrain(drain.id)}
             />
           </div>
-        ); //[cite: 59, 60]
+        ); 
 
       case 'drain-create':
+        // Bloqueio de renderização para utilizadores sem permissão
+        if (!isManager) {
+          return (
+            <div className={styles.emptyState}>
+              <h2>Acesso Restrito</h2>
+              <p>Apenas utilizadores com plano de manutenção ou administradores podem cadastrar bueiros.</p>
+            </div>
+          );
+        }
+
         return (
           <DrainForm
             isLoading={drainsSaving}
@@ -139,7 +173,7 @@ export const Dashboard: React.FC = () => {
               if (success) setActiveTabId('drain-list');
             }}
           />
-        ); //[cite: 58]
+        ); 
 
       // --- FEEDBACK ---
       case 'feedback-send':
@@ -156,7 +190,7 @@ export const Dashboard: React.FC = () => {
                 handleRefreshFeedback();
               }}
             />
-          ); //[cite: 53]
+          ); 
         }
         return (
           <div className={styles.sectionContainer}>
@@ -171,7 +205,7 @@ export const Dashboard: React.FC = () => {
             </header>
             <FeedbackList key={feedbackListKey} onEditFeedback={setEditingFeedback} />
           </div>
-        ); //[cite: 63]
+        ); 
 
       default:
         return <div className={styles.emptyState}>Selecione uma opção no menu lateral.</div>;

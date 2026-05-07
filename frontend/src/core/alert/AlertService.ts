@@ -1,3 +1,4 @@
+// src/core/alert/AlertService.ts
 import Swal from 'sweetalert2';
 import { RATE_LIMIT_THROTTLED_EVENT } from '../http/RateLimitService';
 import styles from './Alert.module.scss';
@@ -17,6 +18,23 @@ export class AlertService {
       customClass: {
         popup: styles.popup,
         title: styles.title,
+      },
+    });
+  }
+
+  // ==========================================
+  // NOVO MÉTODO: INFO (Retorna Promise)
+  // ==========================================
+  static info(title: string, text?: string) {
+    return Swal.fire({
+      icon: 'info',
+      title,
+      text,
+      confirmButtonText: 'OK',
+      customClass: {
+        popup: styles.popup,
+        title: styles.title,
+        confirmButton: styles.infoButton, // Adicionaremos esta classe no SCSS
       },
     });
   }

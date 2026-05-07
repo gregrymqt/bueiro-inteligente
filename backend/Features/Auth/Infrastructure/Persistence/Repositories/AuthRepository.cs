@@ -16,8 +16,8 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
     {
         try
         {
-            return await dbContext.Users
-                .AsNoTracking()
+            return await dbContext
+                .Users.AsNoTracking()
                 .Include(u => u.Roles)
                 .FirstOrDefaultAsync(u => u.GoogleId == googleId, ct)
                 .ConfigureAwait(false);
@@ -25,7 +25,11 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving user by Google id {GoogleId}", googleId);
-            throw new ConnectionException("AuthRepository.FindByGoogleIdAsync", $"Failed to query user by Google id '{googleId}'.", ex);
+            throw new ConnectionException(
+                "AuthRepository.FindByGoogleIdAsync",
+                $"Failed to query user by Google id '{googleId}'.",
+                ex
+            );
         }
     }
 
@@ -33,8 +37,8 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
     {
         try
         {
-            return await dbContext.Users
-                .AsNoTracking()
+            return await dbContext
+                .Users.AsNoTracking()
                 .Include(u => u.Roles)
                 .FirstOrDefaultAsync(u => u.Email == email, ct)
                 .ConfigureAwait(false);
@@ -42,7 +46,11 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving user by email {Email}", email);
-            throw new ConnectionException("AuthRepository.GetUserByEmailAsync", $"Failed to query user by email '{email}'.", ex);
+            throw new ConnectionException(
+                "AuthRepository.GetUserByEmailAsync",
+                $"Failed to query user by email '{email}'.",
+                ex
+            );
         }
     }
 
@@ -50,15 +58,19 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
     {
         try
         {
-            return await dbContext.Roles
-                .AsNoTracking()
+            return await dbContext
+                .Roles.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Name == roleName, ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving role by name {RoleName}", roleName);
-            throw new ConnectionException("AuthRepository.GetRoleByNameAsync", $"Failed to query role '{roleName}'.", ex);
+            throw new ConnectionException(
+                "AuthRepository.GetRoleByNameAsync",
+                $"Failed to query role '{roleName}'.",
+                ex
+            );
         }
     }
 
@@ -80,7 +92,11 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         catch (Exception ex)
         {
             logger.LogError(ex, "Error adding user {Email}", user.Email);
-            throw new ConnectionException("AuthRepository.AddUserAsync", $"Failed to add user '{user.Email}'.", ex);
+            throw new ConnectionException(
+                "AuthRepository.AddUserAsync",
+                $"Failed to add user '{user.Email}'.",
+                ex
+            );
         }
     }
 }

@@ -55,10 +55,6 @@ export const router = createBrowserRouter([
             element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
             children: [
               {
-                path: 'dashboard',
-                element: <Dashboard />,
-              },
-              {
                 path: 'checkout', // <-- ADICIONA ESTA ROTA AQUI
                 element: <CheckoutPage />, // O StatusScreen vai redirecionar para cá em caso de erro
               },
@@ -69,8 +65,8 @@ export const router = createBrowserRouter([
                 element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
                 children: [
                   {
-                    path: 'configuracoes',
-                    element: <h1>Página de Configurações (Apenas Admin e Manutenção)</h1>,
+                    path: 'dashboard',
+                    element: <Dashboard />,
                   },
                 ],
               },

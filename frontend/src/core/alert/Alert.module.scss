@@ -1,3 +1,5 @@
+/* src/core/alert/Alert.module.scss */
+
 @use "sass:color";
 
 .popup {
@@ -49,6 +51,21 @@
 
 .warningButton {
   background-color: $color-warning !important;
+  color: white !important;
+  border-radius: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// ==========================================
+// NOVO: Estilo para o botão de Informação
+// ==========================================
+.infoButton {
+  background-color: $color-primary !important;
   color: white !important;
   border-radius: $spacing-sm;
   padding: $spacing-sm $spacing-md;

@@ -23,7 +23,11 @@ public sealed class UserTokenData
     private static IReadOnlyList<string> NormalizeRoles(IEnumerable<string> roles)
     {
         List<string> normalizedRoles = [];
-        normalizedRoles.AddRange(from role in roles where !string.IsNullOrWhiteSpace(role) select role.Trim());
+        normalizedRoles.AddRange(
+            from role in roles
+            where !string.IsNullOrWhiteSpace(role)
+            select role.Trim()
+        );
 
         return normalizedRoles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
