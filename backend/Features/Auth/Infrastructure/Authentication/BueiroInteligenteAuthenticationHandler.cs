@@ -28,6 +28,11 @@ public sealed class BueiroInteligenteAuthenticationHandler(
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (Context.Request.Path.StartsWithSegments("/health"))
+        {
+            return AuthenticateResult.NoResult();
+        }
+        
         // Simplificação da busca do token usando expressões de atribuição
         string? token = AuthExtension.NormalizeBearerToken(
             Request.Headers.Authorization.ToString()
