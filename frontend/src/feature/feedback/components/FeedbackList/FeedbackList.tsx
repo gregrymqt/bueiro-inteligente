@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFeedbacks } from '../../hooks/useFeedbacks';
-import { ReviewsSkeleton } from '@/feature/home/components/HomeSkeletons/HomeSkeletons'; // Reutilizando seu skeleton[cite: 15]
+import { ReviewsSkeleton } from '@/feature/home/allow/components/HomeSkeletons/HomeSkeletons'; // Reutilizando seu skeleton[cite: 15]
 import styles from './FeedbackList.module.scss';
 import { FeedbackCard } from './FeedbackCard';
 import type { Feedback } from '../../types';

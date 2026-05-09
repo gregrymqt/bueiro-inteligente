@@ -5,6 +5,7 @@ import { Form } from '@/components/layout/Form';
 import { useAdminPlans } from '../../hooks/useAdminPlans';
 import { Plus, Trash2 } from 'lucide-react';
 import styles from './AdminPlanForm.module.scss';
+import type { PricingPlan } from '../../types';
 
 type PlanFeatureField = { value: string; };
 
@@ -13,14 +14,20 @@ type AdminPlanFormValues = {
     frequency: number; frequencyType: string; features: PlanFeatureField[];
 };
 
-// 2. Não precisa mais de props (initialData, onSuccess)
-export const AdminPlanForm: React.FC = () => {
+interface AdminPlanFormProps {
+    initialData?: PricingPlan;
+    onSuccess?: () => void;
+}
+
+export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuccess }) => {
     const { id } = useParams<{ id: string }>(); // Pega o ID da URL se estiver editando
     const navigate = useNavigate();
 
     // Extraímos 'plans' e 'loading' para poder buscar os dados da edição
     const { plans, addPlan, editPlan, isSubmitting, loading } = useAdminPlans();
-    const isEditing = Boolean(id);
+    const isEditing = Boolean(initialData || id);
+
+    const effectivePlan = initialData ?? plans.find(p => p.id === id);
 
     const methods = useForm<AdminPlanFormValues>({
         defaultValues: {
@@ -32,22 +39,19 @@ export const AdminPlanForm: React.FC = () => {
 
     // 3. Preenche o formulário assim que a lista de planos carregar
     useEffect(() => {
-        if (isEditing && plans.length > 0) {
-            const planToEdit = plans.find(p => p.id === id);
-            if (planToEdit) {
+        if (isEditing && effectivePlan) {
                 methods.reset({
-                    name: planToEdit.name,
-                    amount: planToEdit.price,
-                    isPopular: planToEdit.isPopular ?? false,
+                    name: effectivePlan.name,
+                    amount: effectivePlan.price,
+                    isPopular: effectivePlan.isPopular ?? false,
                     frequency: 1, // Valores fixos assumidos ou vindos do backend
                     frequencyType: 'months',
-                    features: planToEdit.features?.length
-                        ? planToEdit.features.map(f => ({ value: f }))
+                    features: effectivePlan.features?.length
+                        ? effectivePlan.features.map(f => ({ value: f }))
                         : [{ value: '' }]
                 });
-            }
         }
-    }, [id, plans, methods, isEditing]);
+    }, [effectivePlan, methods, isEditing]);
 
     const { fields, append, remove } = useFieldArray({
         control: methods.control,
@@ -64,7 +68,11 @@ export const AdminPlanForm: React.FC = () => {
             : await addPlan({ name: data.name, amount: Number(data.amount), features, isPopular: data.isPopular, frequency: data.frequency, frequencyType: data.frequencyType });
 
         if (success) {
-            navigate('/admin/plans'); // 4. Voltar para a lista em caso de sucesso
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/admin/plans'); // 4. Voltar para a lista em caso de sucesso
+            }
         }
     };
 

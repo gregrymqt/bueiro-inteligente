@@ -1,0 +1,38 @@
+
+.formContainer {
+  padding: $spacing-md;
+  
+  // No mobile, todos os campos ocupam 100% (o Form.tsx já lida com colSpan 12 por padrão)
+  // Mas garantimos um espaçamento vertical confortável.
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+}
+
+.formTitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: $color-text-main;
+  margin-bottom: $spacing-md;
+  border-bottom: 1px solid $color-border;
+  padding-bottom: $spacing-sm;
+}
+
+.uploadPreview {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm;
+  border: 2px dashed $color-border;
+  border-radius: $border-radius-sm;
+  text-align: center;
+  color: $color-text-light;
+  font-size: 0.875rem;
+  
+  &:hover {
+    border-color: $color-primary;
+    background-color: rgba($color-primary, 0.02);
+  }
+}

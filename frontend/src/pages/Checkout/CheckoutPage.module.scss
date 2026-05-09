@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .checkoutPage {
   padding: $spacing-md;
   max-width: 100%;
@@ -28,7 +30,7 @@
     transition: color $transition-speed;
 
     &:hover {
-      color: darken($color-primary, 15%);
+      color: color.adjust($color-primary, $lightness: -15%);
     }
   }
 
@@ -217,7 +219,7 @@
     font-weight: 600;
     
     &:hover {
-      background-color: darken($color-primary, 10%);
+      background-color: color.adjust($color-primary, $lightness: -10%);
     }
   }
 }

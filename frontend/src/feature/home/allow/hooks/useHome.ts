@@ -1,14 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
-import { usePlans } from '../../plan/hooks/usePlans';
+import { useActivePlans } from '@/feature/plan/hooks/useActivePlans';
 import type { HowItWorksStep, UserReview } from '../types';
+import type { PricingPlan } from '@/feature/plan/types';
 
 interface UseHomeResult {
   steps: HowItWorksStep[];
   reviews: UserReview[];
   // Re-exportamos os planos e o loading combinado
-  plans: ReturnType<typeof usePlans>['plans'];
+  plans: PricingPlan[];
   loading: boolean;
 }
 
@@ -18,7 +19,7 @@ export function useHome(): UseHomeResult {
   const [homeLoading, setHomeLoading] = useState(true);
 
   // Instanciamos o hook da feature de Planos
-  const { plans, loading: plansLoading } = usePlans();
+  const { plans, loading: plansLoading } = useActivePlans();
 
   const fetchHomeData = useCallback(async () => {
     setHomeLoading(true);

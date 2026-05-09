@@ -6,6 +6,7 @@ export interface PricingPlan {
   initPoint: string; // URL do Mercado Pago vinda do DTO[cite: 39, 42]
   features: string[]; // Lista de benefícios[cite: 42]
   isPopular: boolean; // Flag para UI de destaque[cite: 39, 42]
+  order: number;
 }
 
 export interface PricingPlanCreatePayload {

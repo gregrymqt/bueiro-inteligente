@@ -1,4 +1,6 @@
 
+@use "sass:color";
+
 .homeContainer {
   display: grid;
   gap: $spacing-xl; // Aumentado para maior espaçamento entre seções
@@ -121,7 +123,7 @@
 
   &:hover {
     transform: translateY(-3px);
-    background-color: lighten($color-primary, 5%);
+    background-color: color.adjust($color-primary, $lightness: 5%);
     box-shadow: 0 15px 30px rgba($color-primary, 0.5);
   }
 

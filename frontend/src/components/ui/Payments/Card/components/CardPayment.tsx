@@ -3,7 +3,7 @@ import { CardPayment as MPCardPayment } from '@mercadopago/sdk-react';
 import styles from './CardPayment.module.scss';
 import { useCardPayment } from '../hooks/useCardPayment';
 // Tipos nativos do SDK[cite: 34, 38]
-import type { ICardPaymentBrickPayer, ICardPaymentFormData, IAdditionalData } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type';
+import type { ICardPaymentBrickPayer, ICardPaymentFormData } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type';
 
 interface CardPaymentProps {
   planId: string;
@@ -39,12 +39,8 @@ export const CardPayment: React.FC<CardPaymentProps> = ({ planId, amount, payerE
     },
   };
 
-  /**
-   * Assinatura idêntica ao contrato exigido pela prop 'onSubmit'[cite: 34, 38]
-   */
   const onSubmit = async (
-    formData: ICardPaymentFormData<ICardPaymentBrickPayer>,
-    _additionalData?: IAdditionalData
+    formData: ICardPaymentFormData<ICardPaymentBrickPayer>
   ): Promise<void> => {
     await handleCardSubmit(formData);
   };

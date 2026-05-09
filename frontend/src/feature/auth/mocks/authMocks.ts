@@ -20,12 +20,14 @@ const createMockRegisteredUser = (payload: RegisterRequestDTO): UserDTO => ({
   roles: ['cidadao'],
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const loginWithMockCredentials = async (credentials: LoginRequestDTO): Promise<LoginResponseDTO> =>
-  withMockLatency(() => ({
+export const loginWithMockCredentials = async (_credentials: LoginRequestDTO): Promise<LoginResponseDTO> => {
+  void _credentials;
+
+  return withMockLatency(() => ({
     access_token: mockAuthToken,
     token_type: 'Bearer',
   }), 240);
+};
 
 export const registerWithMockData = async (payload: RegisterRequestDTO): Promise<UserDTO> =>
   withMockLatency(() => createMockRegisteredUser(payload), 280);

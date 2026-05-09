@@ -19,7 +19,7 @@ export const CheckoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const planId = searchParams.get('plan');
-  const { plan, loading: loadingPlan } = usePlanDetails(planId);
+  const { plan } = usePlanDetails(planId);
 
   const {
     selectedMethod,

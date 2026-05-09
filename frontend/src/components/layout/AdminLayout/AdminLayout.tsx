@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Layers, List, PlusSquare } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar/Sidebar'; //[cite: 42]
-import styles from './AdminDashboard.module.scss';
+import styles from './AdminLayout.module.scss';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();

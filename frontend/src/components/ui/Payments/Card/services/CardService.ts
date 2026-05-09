@@ -2,7 +2,6 @@ import { apiClient } from '@/core/http/ApiClient';
 import type { 
   CreditCardRequest, 
   CreditCardResponse, 
-  RetryCreditCardRequest 
 } from '../types/card.types';
 
 export const CardService = {
@@ -17,7 +16,7 @@ export const CardService = {
   /**
    * Solicita uma retentativa de pagamento (caso de cartão recusado ou erro)[cite: 24]
    */
-  async retryPayment(request: RetryCreditCardRequest): Promise<{ message: string }> {
+  async retryPayment(request: CreditCardRequest): Promise<{ message: string }> {
     return await apiClient.put<{ message: string }>('/credit-card/retry', request);
   }
 };

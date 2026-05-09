@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import styles from './GenericTable.module.scss';
 import type { GenericTableProps } from './types/index.types';
 
@@ -27,20 +28,24 @@ export function GenericTable<T extends { id: string | number }>({
         <tbody className={styles.tbody}>
           {data.map((item) => (
             <tr key={item.id} className={styles.row}>
-              {columns.map((col) => (
-                <td 
-                  key={String(col.key)} 
-                  className={styles.cell} 
-                  data-label={col.label} // Vital para UX mobile
-                >
-                  <div className={styles.cellContent}>
-                    {col.render 
-                      ? col.render((item as any)[col.key], item)
-                      : (item as any)[col.key]
-                    }
-                  </div>
-                </td>
-              ))}
+              {columns.map((col) => {
+                const cellValue = item[col.key as keyof T];
+                const cellContent: ReactNode = col.render
+                  ? col.render(cellValue, item)
+                  : (cellValue as ReactNode);
+
+                return (
+                  <td 
+                    key={String(col.key)} 
+                    className={styles.cell} 
+                    data-label={col.label} // Vital para UX mobile
+                  >
+                    <div className={styles.cellContent}>
+                      {cellContent}
+                    </div>
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

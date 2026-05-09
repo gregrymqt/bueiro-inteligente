@@ -7,8 +7,11 @@ import type { PricingPlan } from '../../types';
 import styles from './AdminPlanList.module.scss';
 import { GenericTable } from '@/components/ui/Table/GenericTable';
 
-// 2. Interface limpa, sem props de navegação
-export const AdminPlanList: React.FC = () => {
+interface AdminPlanListProps {
+  onEdit?: (plan: PricingPlan) => void;
+}
+
+export const AdminPlanList: React.FC<AdminPlanListProps> = ({ onEdit }) => {
   const { plans, loading, toggleStatus, refresh } = useAdminPlans();
   const navigate = useNavigate(); // 3. Hook de navegação
 
@@ -39,8 +42,7 @@ export const AdminPlanList: React.FC = () => {
       render: (_value: unknown, plan: PricingPlan) => (
         <div className={styles.actionButtons}>
           <button
-            // 4. Navegação direta pela URL
-            onClick={() => navigate(`/admin/plans/edit/${plan.id}`)}
+            onClick={() => (onEdit ? onEdit(plan) : navigate(`/admin/plans/edit/${plan.id}`))}
             className={styles.editBtn}
             title="Editar Plano"
           >

@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Home, Layers, List, PlusSquare } from 'lucide-react';
-import { Sidebar } from '@/components/layout/Sidebar/Sidebar'; // Ajuste o path se necessário
-import type { NavigationItem } from '@/components/layout/Sidebar/types'; // Ajuste o path
+import { Home, Layers, List, PlusSquare, LayoutTemplate } from 'lucide-react'; // Adicionamos LayoutTemplate
+import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
+import type { NavigationItem } from '@/components/layout/Sidebar/types';
 import type { PricingPlan } from '@/feature/plan/types';
 import styles from './AdminDashboard.module.scss';
 import { AdminPlanList } from '@/feature/plan/components/List/AdminPlanList';
 import { AdminPlanForm } from '@/feature/plan/components/Form/AdminPlanForm';
 
-// Componente provisório para a Home
+// Importamos o nosso novo gerenciador
+import { HomeAdminManager } from '@/feature/home/admin/components/HomeAdminManager';
+
+// Componente provisório para a Visão Geral
 export const DashboardHome = () => (
   <div className={styles.homeTab}>
     <h2>Visão Geral</h2>
@@ -16,13 +19,18 @@ export const DashboardHome = () => (
 );
 
 export const AdminDashboard: React.FC = () => {
-  const [activeId, setActiveId] = useState('home');
+  const [activeId, setActiveId] = useState('overview'); // Trocado de 'home' para 'overview'
   const [isOpenMobile, setIsOpenMobile] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PricingPlan | undefined>(undefined);
 
-  // Configuração dos itens da Sidebar
+  // Configuração dos itens da Sidebar com a nova Feature embutida
   const navigationItems: NavigationItem[] = [
-    { id: 'home', label: 'Home', icon: <Home size={20} /> },
+    { id: 'overview', label: 'Visão Geral', icon: <Home size={20} /> },
+    {
+      id: 'gestao-home',
+      label: 'Conteúdo Home',
+      icon: <LayoutTemplate size={20} />
+    },
     {
       id: 'planos',
       label: 'Planos',
@@ -36,9 +44,7 @@ export const AdminDashboard: React.FC = () => {
 
   const handleNavigate = (id: string) => {
     setActiveId(id);
-    
-    // Se saiu da aba de formulário, limpamos o estado de edição para 
-    // que o próximo clique em "Novo Plano" venha vazio.
+
     if (id !== 'planos-form') {
       setEditingPlan(undefined);
     }
@@ -46,11 +52,10 @@ export const AdminDashboard: React.FC = () => {
 
   const handleEditPlan = (plan: PricingPlan) => {
     setEditingPlan(plan);
-    setActiveId('planos-form'); // Muda visualmente para a aba do formulário
+    setActiveId('planos-form');
   };
 
   const handleFormSuccess = () => {
-    // Após salvar com sucesso, volta para a lista e limpa o formulário
     setActiveId('planos-list');
     setEditingPlan(undefined);
   };
@@ -65,21 +70,24 @@ export const AdminDashboard: React.FC = () => {
         isOpenMobile={isOpenMobile}
         onCloseMobile={() => setIsOpenMobile(false)}
         onToggleMobile={() => setIsOpenMobile(prev => !prev)}
-        showMobileSubheader={true} // Ativa o header no mobile automaticamente[cite: 37]
+        showMobileSubheader={true}
       />
 
       <main className={styles.mainContent}>
         {/* Renderização Condicional das Abas */}
-        {activeId === 'home' && <DashboardHome />}
-        
+        {activeId === 'overview' && <DashboardHome />}
+
+        {/* --- NOSSA NOVA FEATURE EMBUTIDA --- */}
+        {activeId === 'gestao-home' && <HomeAdminManager />}
+
         {activeId === 'planos-list' && (
           <AdminPlanList onEdit={handleEditPlan} />
         )}
-        
+
         {activeId === 'planos-form' && (
-          <AdminPlanForm 
-            initialData={editingPlan} 
-            onSuccess={handleFormSuccess} 
+          <AdminPlanForm
+            initialData={editingPlan}
+            onSuccess={handleFormSuccess}
           />
         )}
       </main>

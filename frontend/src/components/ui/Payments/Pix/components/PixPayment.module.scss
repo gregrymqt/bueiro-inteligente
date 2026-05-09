@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .pixFormWrapper {
   animation: fadeIn 0.3s ease-in-out;
 
@@ -44,7 +46,7 @@
     background-color: $color-success; // Pix remete a sucesso/aprovação rápida
     
     &:hover:not(:disabled) {
-      background-color: darken($color-success, 10%);
+      background-color: color.adjust($color-success, $lightness: -10%);
     }
   }
 }
@@ -109,7 +111,7 @@
     transition: background $transition-speed;
 
     &:hover {
-      background-color: darken($color-primary, 10%);
+      background-color: color.adjust($color-primary, $lightness: -10%);
     }
   }
 }

@@ -1,10 +1,10 @@
 ﻿import React from 'react';
-import { useHome } from '@/feature/home/hooks/useHome';
-import { HeroSlide } from '@/feature/home/components/HeroSlide/HeroSlide';
-import { HowItWorks } from '@/feature/home/components/HowItWorks/HowItWorks';
+import { useHome } from '@/feature/home/allow/hooks/useHome';
+import { HeroSlide } from '@/feature/home/allow/components/HeroSlide/HeroSlide';
+import { HowItWorks } from '@/feature/home/allow/components/HowItWorks/HowItWorks';
 import { FeedbackList } from '@/feature/feedback/components/FeedbackList/FeedbackList';
 import { Pricing } from '@/feature/plan/components/Pricing/Pricing';
-import { HomeLoading } from '@/feature/home/components/HomeSkeletons/HomeSkeletons';
+import { HomeLoading } from '@/feature/home/allow/components/HomeSkeletons/HomeSkeletons';
 import styles from './Home.module.scss';
 import { useNavigate } from 'react-router-dom';
 

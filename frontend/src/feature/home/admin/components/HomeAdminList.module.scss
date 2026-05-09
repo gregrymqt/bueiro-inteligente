@@ -1,0 +1,81 @@
+
+.adminListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+  padding: $spacing-md;
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+}
+
+.section {
+  background-color: $color-background;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  padding: $spacing-md;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  @include respond-to('md') {
+    padding: $spacing-lg;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.thumbnail {
+  width: 60px;
+  height: 40px;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  background-color: $color-bg-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $color-border;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  svg {
+    color: $color-text-light;
+  }
+}
+
+.iconCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: $color-bg-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $color-primary;
+  border: 1px solid $color-border;
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: flex-end;
+}

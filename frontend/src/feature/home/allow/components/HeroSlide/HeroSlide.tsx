@@ -25,7 +25,7 @@ export function HeroSlide({ slide }: HeroSlideProps) {
             src={slide.image_url} 
             alt={slide.title}
             loading="eager" // Garante que não haverá lazy loading nesta imagem
-            // @ts-ignore - fetchpriority é um atributo novo e pode exigir ignore dependendo da versão do @types/react
+            // @ts-expect-error fetchpriority não é reconhecido pelo @types/react atual
             fetchpriority="high" // Indica ao navegador que esta imagem é a prioridade número 1
             decoding="async" // Permite que o resto da página continue processando enquanto a imagem decodifica
           />

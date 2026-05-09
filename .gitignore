@@ -83,3 +83,8 @@ backend/Migrations/*
 
 # Abre uma exceção para o Snapshot do banco de dados
 !backend/Migrations/AppDbContextModelSnapshot.cs
+
+# Ignora arquivos de report
+build-report*.txt
+eslint-report*.txt
+eslint-report*.json

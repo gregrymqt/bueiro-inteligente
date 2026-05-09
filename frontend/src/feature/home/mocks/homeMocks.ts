@@ -166,6 +166,8 @@ let statSequence = initialStats.length + 1;
 let homeState: HomeDataResponse = {
   carousels: initialCarousels.map(cloneCarousel),
   stats: initialStats.map(cloneStat),
+  plans: [],
+  reviews: [],
 };
 
 const createCarouselId = (): string => `carousel-${String(carouselSequence++).padStart(2, '0')}`;
@@ -198,6 +200,8 @@ export const resetMockHomeData = (): void => {
   homeState = {
     carousels: initialCarousels.map(cloneCarousel),
     stats: initialStats.map(cloneStat),
+    plans: [],
+    reviews: [],
   };
 };
 
@@ -219,7 +223,7 @@ export const createMockCarouselItem = async (payload: CarouselCreatePayload): Pr
 
 export const updateMockCarouselItem = async (id: string, payload: CarouselUpdatePayload): Promise<CarouselContent> =>
   withMockLatency(() => {
-    const currentItem = homeState.carousels.find((item) => item.id === id);
+    const currentItem = homeState.carousels.find((item: CarouselContent) => item.id === id);
 
     if (!currentItem) {
       throw new Error(`Banner ${id} não encontrado.`);
@@ -230,20 +234,20 @@ export const updateMockCarouselItem = async (id: string, payload: CarouselUpdate
       ...payload,
     };
 
-    replaceHomeCarousels(homeState.carousels.map((item) => (item.id === id ? updatedItem : item)));
+    replaceHomeCarousels(homeState.carousels.map((item: CarouselContent) => (item.id === id ? updatedItem : item)));
 
     return cloneCarousel(updatedItem);
   }, 280);
 
 export const deleteMockCarouselItem = async (id: string): Promise<void> =>
   withMockLatency(() => {
-    const existingItem = homeState.carousels.find((item) => item.id === id);
+    const existingItem = homeState.carousels.find((item: CarouselContent) => item.id === id);
 
     if (!existingItem) {
       throw new Error(`Banner ${id} não encontrado.`);
     }
 
-    replaceHomeCarousels(homeState.carousels.filter((item) => item.id !== id));
+    replaceHomeCarousels(homeState.carousels.filter((item: CarouselContent) => item.id !== id));
   }, 220);
 
 export const createMockStatCard = async (payload: StatCardCreatePayload): Promise<StatCardContent> =>
@@ -260,7 +264,7 @@ export const createMockStatCard = async (payload: StatCardCreatePayload): Promis
 
 export const updateMockStatCard = async (id: string, payload: StatCardUpdatePayload): Promise<StatCardContent> =>
   withMockLatency(() => {
-    const currentStat = homeState.stats.find((item) => item.id === id);
+    const currentStat = homeState.stats.find((item: StatCardContent) => item.id === id);
 
     if (!currentStat) {
       throw new Error(`Card ${id} não encontrado.`);
@@ -271,18 +275,18 @@ export const updateMockStatCard = async (id: string, payload: StatCardUpdatePayl
       ...payload,
     };
 
-    replaceHomeStats(homeState.stats.map((item) => (item.id === id ? updatedStat : item)));
+    replaceHomeStats(homeState.stats.map((item: StatCardContent) => (item.id === id ? updatedStat : item)));
 
     return cloneStat(updatedStat);
   }, 280);
 
 export const deleteMockStatCard = async (id: string): Promise<void> =>
   withMockLatency(() => {
-    const existingStat = homeState.stats.find((item) => item.id === id);
+    const existingStat = homeState.stats.find((item: StatCardContent) => item.id === id);
 
     if (!existingStat) {
       throw new Error(`Card ${id} não encontrado.`);
     }
 
-    replaceHomeStats(homeState.stats.filter((item) => item.id !== id));
+    replaceHomeStats(homeState.stats.filter((item: StatCardContent) => item.id !== id));
   }, 220);

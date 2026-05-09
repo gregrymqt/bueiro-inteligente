@@ -1,32 +1,20 @@
 ﻿import React from 'react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import './LoginForm.scss';
 import { useAuth } from '../hooks/useAuth';
 import { GoogleLoginButton } from './GoogleLoginButton';
-import { GenericForm, type FormField } from '@/components/layout/Form/GenericForm';
-import { type LoginRequestDTO } from '../types';
+import { Form, FormActions, FormInput, FormSubmit } from '@/components/layout/Form/Form';
+import type { LoginRequestDTO } from '../types';
 
 export const LoginForm: React.FC = () => {
   const { login, loading, error } = useAuth();
-
-  const fields: FormField<LoginRequestDTO>[] = [
-    {
-      name: 'email',
-      label: 'E-mail',
-      type: 'email',
-      placeholder: 'seu@email.com',
-      validation: { required: 'E-mail é obrigatório' }
-    },
-    {
-      name: 'password',
-      label: 'Senha',
-      type: 'password',
-      placeholder: '••••••••',
-      validation: { 
-        required: 'Senha é obrigatória'
-      }
+  const methods = useForm<LoginRequestDTO>({
+    defaultValues: {
+      email: '',
+      password: ''
     }
-  ];
+  });
 
   const onSubmit = async (data: LoginRequestDTO) => {
     await login(data);
@@ -40,12 +28,27 @@ export const LoginForm: React.FC = () => {
 
         {error && <div className="login-form__error">{error}</div>}
 
-        <GenericForm<LoginRequestDTO>
-          fields={fields}
-          onSubmit={onSubmit}
-          isLoading={loading}
-          submitText="Entrar"
-        >
+        <Form methods={methods} onSubmit={onSubmit}>
+          <FormInput
+            name="email"
+            label="E-mail"
+            type="email"
+            placeholder="seu@email.com"
+            validation={{ required: 'E-mail é obrigatório' }}
+          />
+
+          <FormInput
+            name="password"
+            label="Senha"
+            type="password"
+            placeholder="••••••••"
+            validation={{ required: 'Senha é obrigatória' }}
+          />
+
+          <FormActions>
+            <FormSubmit isLoading={loading}>Entrar</FormSubmit>
+          </FormActions>
+
           <div className="login-form__register-link">
             <span>Não possui conta?</span> <Link to="/register">Crie uma aqui</Link>
           </div>
@@ -57,7 +60,7 @@ export const LoginForm: React.FC = () => {
 
             <GoogleLoginButton className="login-form__google-button" />
           </div>
-        </GenericForm>
+        </Form>
       </div>
     </div>
   );
