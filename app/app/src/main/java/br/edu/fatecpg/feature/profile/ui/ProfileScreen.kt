@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.edu.fatecpg.feature.profile.viewmodel.ProfileAction
 import br.edu.fatecpg.feature.profile.viewmodel.ProfileUiState
 import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,7 +26,7 @@ fun ProfileScreen(
 
         LaunchedEffect(Unit) {
             Log.d("ProfileScreen", "Iniciando recomposicao com efeito lancavel, requisitando load de log de Profile.")
-            viewModel.loadProfile()
+            viewModel.onAction(ProfileAction.LoadProfile)
         }
 
         Scaffold { paddingValues ->
@@ -52,7 +53,7 @@ fun ProfileScreen(
                             )
                             Button(onClick = {
                                 Log.d("ProfileScreen", "Clique para recarregar perfil efetuado pelo usuario em fallback Screen.")
-                                viewModel.loadProfile()
+                                viewModel.onAction(ProfileAction.LoadProfile)
                             }) {
                                 Text("Tentar Novamente")
                             }
@@ -114,6 +115,26 @@ fun ProfileScreen(
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
+                                }
+                            }
+
+                            if (viewModel.canOpenDashboardWeb) {
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        Log.d("ProfileScreen", "Disparando action de abertura do dashboard web")
+                                        viewModel.onAction(ProfileAction.OpenDashboardWeb)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
+                                ) {
+                                    Text(
+                                        text = "Abrir Dashboard Web",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
 

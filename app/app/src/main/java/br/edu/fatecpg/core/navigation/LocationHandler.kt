@@ -7,7 +7,8 @@ import android.util.Log
 import android.widget.Toast
 
 interface LocationHandler {
-    fun openLocation(latitude: Double, longitude: Double, label: String)        
+    fun openLocation(latitude: Double, longitude: Double, label: String)
+    fun openWebUrl(url: String)
 }
 
 class AndroidLocationHandler(private val context: Context) : LocationHandler {  
@@ -21,13 +22,31 @@ class AndroidLocationHandler(private val context: Context) : LocationHandler {
             if (mapIntent.resolveActivity(context.packageManager) != null) {    
                 context.startActivity(mapIntent)
             } else {
-                Log.w("LocationHandler", "Google Maps não instalado, usando fallback de browser")
+                Log.w("LocationHandler", "Google Maps nï¿½o instalado, usando fallback de browser")
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com/?q=${latitude},${longitude}"))
                 context.startActivity(browserIntent)
             }
         } catch (e: Exception) {
-            Log.e("LocationHandler", "Erro brutal ao tentar abrir localização: ${e.message}", e)
+            Log.e("LocationHandler", "Erro brutal ao tentar abrir localizaï¿½ï¿½o: ${e.message}", e)
             Toast.makeText(context, "Erro ao abrir o mapa", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun openWebUrl(url: String) {
+        try {
+            Log.d("LocationHandler", "Tentando abrir URL externa: $url")
+
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+
+            if (browserIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(browserIntent)
+            } else {
+                Log.w("LocationHandler", "Nenhum navegador disponivel para abrir a URL externa")
+                Toast.makeText(context, "Nenhum navegador disponÃ­vel", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("LocationHandler", "Erro ao tentar abrir URL externa: ${e.message}", e)
+            Toast.makeText(context, "Erro ao abrir o navegador", Toast.LENGTH_SHORT).show()
         }
     }
 }

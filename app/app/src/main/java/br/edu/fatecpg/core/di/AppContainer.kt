@@ -3,6 +3,7 @@ package br.edu.fatecpg.core.di
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
+import br.edu.fatecpg.BuildConfig
 import br.edu.fatecpg.core.data.local.AppDatabase
 import br.edu.fatecpg.core.data.local.LocalCacheService
 import br.edu.fatecpg.core.navigation.AndroidLocationHandler
@@ -60,6 +61,10 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
             Log.e("AppContainer", "Erro ao criar LocationHandler", e)
             throw e
         }
+    }
+
+    val dashboardWebUrl: String by lazy {
+        BuildConfig.DASHBOARD_WEB_URL
     }
 
     init {
@@ -144,7 +149,13 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     }
     val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler) }
 
-    val profileViewModelFactory by lazy { ProfileViewModelFactory(profileRepository) }
+    val profileViewModelFactory by lazy {
+        ProfileViewModelFactory(
+            repository = profileRepository,
+            locationHandler = locationHandler,
+            dashboardWebUrl = dashboardWebUrl
+        )
+    }
 
     fun close() {
         try {
