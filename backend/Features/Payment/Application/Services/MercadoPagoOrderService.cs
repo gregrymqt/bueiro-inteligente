@@ -28,13 +28,20 @@ public class MercadoPagoOrderService(
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Falha ao processar e mapear a Order {OrderId} do Mercado Pago.", orderId);
+            Logger.LogError(
+                ex,
+                "Falha ao processar e mapear a Order {OrderId} do Mercado Pago.",
+                orderId
+            );
             return null;
         }
     }
 
-    public async Task<bool> UpdateTransactionAsync(string orderId, string transactionId,
-        MpUpdateTransactionRequest request)
+    public async Task<bool> UpdateTransactionAsync(
+        string orderId,
+        string transactionId,
+        MpUpdateTransactionRequest request
+    )
     {
         try
         {
@@ -46,15 +53,22 @@ public class MercadoPagoOrderService(
                 request
             );
 
-            Logger.LogInformation("Transação {TransactionId} da Ordem {OrderId} atualizada com sucesso.", transactionId,
-                orderId);
+            Logger.LogInformation(
+                "Transação {TransactionId} da Ordem {OrderId} atualizada com sucesso.",
+                transactionId,
+                orderId
+            );
             return true;
         }
         catch (Exception ex)
         {
             // O BaseService já capturou o corpo do erro (HTTP 4xx/5xx).
-            Logger.LogError(ex, "Falha ao atualizar a transação {TransactionId} da Order {OrderId}.", transactionId,
-                orderId);
+            Logger.LogError(
+                ex,
+                "Falha ao atualizar a transação {TransactionId} da Order {OrderId}.",
+                transactionId,
+                orderId
+            );
             return false;
         }
     }
@@ -70,14 +84,21 @@ public class MercadoPagoOrderService(
                 null
             );
 
-            Logger.LogInformation("Transação {TransactionId} da Ordem {OrderId} cancelada/deletada com sucesso.",
-                transactionId, orderId);
+            Logger.LogInformation(
+                "Transação {TransactionId} da Ordem {OrderId} cancelada/deletada com sucesso.",
+                transactionId,
+                orderId
+            );
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Falha ao deletar a transação {TransactionId} da Order {OrderId}.", transactionId,
-                orderId);
+            Logger.LogError(
+                ex,
+                "Falha ao deletar a transação {TransactionId} da Order {OrderId}.",
+                transactionId,
+                orderId
+            );
             return false;
         }
     }
@@ -85,18 +106,16 @@ public class MercadoPagoOrderService(
     public async Task<MpOrderResponse> CreateOrderAsync<TRequest>(TRequest request)
     {
         // Centralizamos o POST v1/orders aqui. A classe base cuida do Idempotency-Key.
-        var jsonResponse = await SendMercadoPagoRequestAsync(
-            HttpMethod.Post,
-            "v1/orders",
-            request
-        );
+        var jsonResponse = await SendMercadoPagoRequestAsync(HttpMethod.Post, "v1/orders", request);
 
         var responseDto = JsonSerializer.Deserialize<MpOrderResponse>(
             jsonResponse,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
         );
 
-        return responseDto ??
-               throw new Exception("Falha ao desserializar a resposta de criação de Ordem do Mercado Pago.");
+        return responseDto
+            ?? throw new Exception(
+                "Falha ao desserializar a resposta de criação de Ordem do Mercado Pago."
+            );
     }
 }

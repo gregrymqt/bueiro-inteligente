@@ -75,7 +75,9 @@ public sealed class PaymentRepository(
             var response = await _cache.GetOrSetAsync(
                 key,
                 async () =>
-                    await _context.PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false),
+                    await _context
+                        .PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id)
+                        .ConfigureAwait(false),
                 TimeSpan.FromMinutes(15) // TTL de 15 minutos
             );
 
@@ -85,7 +87,9 @@ public sealed class PaymentRepository(
         {
             _logger.LogError(ex, "Erro na camada de dados ao buscar transação por ID: {Id}", id);
             // Fallback direto no banco caso o Redis apresente instabilidade
-            return await _context.PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
+            return await _context
+                .PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id)
+                .ConfigureAwait(false);
         }
     }
 
@@ -94,8 +98,8 @@ public sealed class PaymentRepository(
         try
         {
             _logger.LogDebug("Buscando transação pelo ID de Pagamento MP: {PaymentId}", paymentId);
-            return await _context.PaymentTransactions
-                .FirstOrDefaultAsync(p => p.MercadoPagoPaymentId == paymentId)
+            return await _context
+                .PaymentTransactions.FirstOrDefaultAsync(p => p.MercadoPagoPaymentId == paymentId)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -115,8 +119,7 @@ public sealed class PaymentRepository(
         {
             _logger.LogDebug("Buscando transação pelo ID de Ordem MP: {OrderId}", orderId);
             return await _context
-                .PaymentTransactions
-                .FirstOrDefaultAsync(p => p.MercadoPagoOrderId == orderId)
+                .PaymentTransactions.FirstOrDefaultAsync(p => p.MercadoPagoOrderId == orderId)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

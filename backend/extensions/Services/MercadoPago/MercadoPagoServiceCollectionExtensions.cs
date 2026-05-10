@@ -3,7 +3,6 @@ using backend.core.Settings;
 using MercadoPago.Config;
 using Polly;
 
-
 namespace backend.Extensions.Services.MercadoPago;
 
 public static class MercadoPagoServiceCollectionExtensions

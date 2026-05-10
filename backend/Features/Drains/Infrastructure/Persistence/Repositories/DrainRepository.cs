@@ -7,47 +7,62 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Features.Drains.Infrastructure.Persistence.Repositories;
 
 // C# 12: Injeção direta via Primary Constructor
-public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainRepository> logger) : IDrainRepository
+public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainRepository> logger)
+    : IDrainRepository
 {
     public async Task<Drain?> GetByIdAsync(Guid drainId, CancellationToken ct = default)
     {
         try
         {
-            return await dbContext.Drains
-                .AsNoTracking()
+            return await dbContext
+                .Drains.AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Id == drainId, ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving drain by id {DrainId}", drainId);
-            throw new ConnectionException("DrainRepository.GetByIdAsync", $"Failed to query drain '{drainId}'.", ex);
+            throw new ConnectionException(
+                "DrainRepository.GetByIdAsync",
+                $"Failed to query drain '{drainId}'.",
+                ex
+            );
         }
     }
 
-    public async Task<Drain?> GetByHardwareIdAsync(string hardwareId, CancellationToken ct = default)
+    public async Task<Drain?> GetByHardwareIdAsync(
+        string hardwareId,
+        CancellationToken ct = default
+    )
     {
         try
         {
-            return await dbContext.Drains
-                .AsNoTracking()
+            return await dbContext
+                .Drains.AsNoTracking()
                 .FirstOrDefaultAsync(d => d.HardwareId == hardwareId, ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving drain by hardwareId {HardwareId}", hardwareId);
-            throw new ConnectionException("DrainRepository.GetByHardwareIdAsync",
-                $"Failed to query drain with hardwareId '{hardwareId}'.", ex);
+            throw new ConnectionException(
+                "DrainRepository.GetByHardwareIdAsync",
+                $"Failed to query drain with hardwareId '{hardwareId}'.",
+                ex
+            );
         }
     }
 
-    public async Task<IReadOnlyList<Drain>> GetAllAsync(int skip = 0, int limit = 100, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Drain>> GetAllAsync(
+        int skip = 0,
+        int limit = 100,
+        CancellationToken ct = default
+    )
     {
         try
         {
-            return await dbContext.Drains
-                .AsNoTracking()
+            return await dbContext
+                .Drains.AsNoTracking()
                 .OrderByDescending(d => d.CreatedAt)
                 .Skip(skip)
                 .Take(limit)
@@ -57,7 +72,11 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving drains list");
-            throw new ConnectionException("DrainRepository.GetAllAsync", "Failed to query drains list.", ex);
+            throw new ConnectionException(
+                "DrainRepository.GetAllAsync",
+                "Failed to query drains list.",
+                ex
+            );
         }
     }
 
@@ -73,8 +92,11 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating drain {HardwareId}", drain.HardwareId);
-            throw new ConnectionException("DrainRepository.CreateAsync",
-                $"Failed to create drain '{drain.HardwareId}'.", ex);
+            throw new ConnectionException(
+                "DrainRepository.CreateAsync",
+                $"Failed to create drain '{drain.HardwareId}'.",
+                ex
+            );
         }
     }
 
@@ -90,7 +112,11 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error updating drain {DrainId}", drain.Id);
-            throw new ConnectionException("DrainRepository.UpdateAsync", $"Failed to update drain '{drain.Id}'.", ex);
+            throw new ConnectionException(
+                "DrainRepository.UpdateAsync",
+                $"Failed to update drain '{drain.Id}'.",
+                ex
+            );
         }
     }
 
@@ -105,7 +131,11 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting drain {DrainId}", drain.Id);
-            throw new ConnectionException("DrainRepository.DeleteAsync", $"Failed to delete drain '{drain.Id}'.", ex);
+            throw new ConnectionException(
+                "DrainRepository.DeleteAsync",
+                $"Failed to delete drain '{drain.Id}'.",
+                ex
+            );
         }
     }
 }
