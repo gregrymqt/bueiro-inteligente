@@ -13,6 +13,8 @@ import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import br.edu.fatecpg.feature.auth.services.AuthService
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
+import br.edu.fatecpg.feature.home.repository.HomeRepository
+import br.edu.fatecpg.feature.home.services.HomeService
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
@@ -115,6 +117,17 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
     private val realtimeService: RealtimeService by lazy { RealtimeService(realtimeWebSocketClient) }
     private val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }
 
+    private val homeService: HomeService by lazy {
+        ApiClient.createService(HomeService::class.java)
+    }
+
+    // Se quiseres criar um HomeRepository dedicado para isolar a chamada HTTP:
+    val homeRepository: HomeRepository by lazy {
+        HomeRepository(
+            homeService = homeService,
+            localCacheService = localCacheService // Reutilizando seu serviço de cache do Room
+        )
+    }
 
     // --- ViewModel Factories ---
 
@@ -122,8 +135,13 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     val registerViewModelFactory by lazy { RegisterViewModelFactory(authRepository) }
 
-    val homeViewModelFactory by lazy { HomeViewModelFactory(realtimeRepository, tokenManager) }
-
+    val homeViewModelFactory by lazy {
+        HomeViewModelFactory(
+            realtimeRepository = realtimeRepository,
+            homeRepository = homeRepository, // Injetando o repositório HTTP/Cache
+            tokenManager = tokenManager
+        )
+    }
     val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler) }
 
     val profileViewModelFactory by lazy { ProfileViewModelFactory(profileRepository) }

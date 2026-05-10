@@ -1,4 +1,5 @@
 // HomeSkeletons.tsx
+import type { ReactNode } from 'react';
 import styles from '@/pages/Home/Home.module.scss';
 
 export function HeroSkeleton() {
@@ -52,9 +53,14 @@ export function ReviewsSkeleton() {
   );
 }
 
-export function HomeLoading() {
+interface HomeLoadingProps {
+  banner?: ReactNode;
+}
+
+export function HomeLoading({ banner }: HomeLoadingProps) {
   return (
     <div className={styles.homeContainer}>
+      {banner}
       <div className={styles.heroWrapper}>
         <HeroSkeleton />
       </div>

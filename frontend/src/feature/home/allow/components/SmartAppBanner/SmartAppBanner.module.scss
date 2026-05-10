@@ -1,0 +1,178 @@
+@use "sass:color";
+
+.banner {
+  position: relative;
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  padding: $spacing-md;
+  border: 1px solid rgba($color-primary, 0.14);
+  border-radius: $border-radius-lg;
+  background:
+    linear-gradient(135deg, rgba($color-primary, 0.08), rgba($color-success, 0.08)),
+    rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: $spacing-md;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  animation: bannerIn 220ms ease-out;
+}
+
+.banner::before {
+  content: '';
+  position: absolute;
+  inset: -35% auto auto -12%;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba($color-primary, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-start;
+}
+
+.badge {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba($color-primary, 0.12);
+  color: $color-primary;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.kicker {
+  margin: 0;
+  color: $color-secondary;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: $color-text-main;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.description {
+  margin: 0;
+  color: $color-text-light;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+.actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.25rem;
+  border-radius: 999px;
+  background: $color-primary;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 12px 20px rgba($color-primary, 0.24);
+  transition:
+    transform $transition-speed ease,
+    box-shadow $transition-speed ease,
+    background-color $transition-speed ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: color.adjust($color-primary, $lightness: 5%);
+    box-shadow: 0 14px 24px rgba($color-primary, 0.28);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba($color-primary, 0.28);
+    outline-offset: 3px;
+  }
+}
+
+.dismissButton {
+  border: 0;
+  background: transparent;
+  color: $color-text-light;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 0.25rem;
+  cursor: pointer;
+  transition: color $transition-speed ease;
+
+  &:hover {
+    color: $color-text-main;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba($color-primary, 0.2);
+    outline-offset: 3px;
+    border-radius: 999px;
+  }
+}
+
+@include respond-to('md') {
+  .banner {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: $spacing-lg;
+  }
+
+  .content {
+    align-items: center;
+  }
+}
+
+@media (max-width: 575px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .primaryAction {
+    width: 100%;
+  }
+}
+
+@keyframes bannerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

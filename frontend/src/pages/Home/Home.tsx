@@ -2,6 +2,7 @@
 import { useHome } from '@/feature/home/allow/hooks/useHome';
 import { HeroSlide } from '@/feature/home/allow/components/HeroSlide/HeroSlide';
 import { HowItWorks } from '@/feature/home/allow/components/HowItWorks/HowItWorks';
+import { SmartAppBanner } from '@/feature/home/allow/components/SmartAppBanner/SmartAppBanner';
 import { FeedbackList } from '@/feature/feedback/components/FeedbackList/FeedbackList';
 import { Pricing } from '@/feature/plan/components/Pricing/Pricing';
 import { HomeLoading } from '@/feature/home/allow/components/HomeSkeletons/HomeSkeletons';
@@ -13,16 +14,20 @@ const Home: React.FC = () => {
   const { steps, plans, loading } = useHome();
   const navigate = useNavigate();
 
-  if (loading) return <HomeLoading />;
-
   const handleSelectPlan = (planId: string) => {
     // Redireciona para o Step 1 do Checkout, passando o ID do plano selecionado
     // via query string (ex: /checkout?plan=123) ou estado de navegação
     navigate(`/checkout?plan=${planId}`);
   };
 
+  const smartAppBanner = <SmartAppBanner />;
+
+  if (loading) return <HomeLoading banner={smartAppBanner} />;
+
   return (
     <div className={styles.homeContainer}>
+      {smartAppBanner}
+
       {/* Hero Section */}
       <section className={styles.heroWrapper}>
         <HeroSlide slide={{
