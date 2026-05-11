@@ -4,6 +4,7 @@ using backend.core.Settings;
 using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.MercadoPago.Application.Interfaces;
 using backend.Features.Scheduler.Application.Jobs.MercadoPago;
+using backend.Features.Scheduler.Application.Interfaces;
 using Microsoft.Extensions.Options;
 
 namespace backend.Features.MercadoPago.Application.Services;

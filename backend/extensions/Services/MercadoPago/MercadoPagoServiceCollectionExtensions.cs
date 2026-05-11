@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using backend.core.Settings;
+using backend.Features.MercadoPago.Application.Interfaces;
+using backend.Features.MercadoPago.Application.Services;
 using MercadoPago.Config;
 using Polly;
 

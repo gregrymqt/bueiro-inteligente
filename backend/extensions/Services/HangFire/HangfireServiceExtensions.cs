@@ -25,12 +25,7 @@ public static class HangfireServiceExtensions
                 new RedisStorageOptions { Prefix = "{bueiro-inteligente}:hangfire:" }
             )
         );
-
         services.AddHangfireServer();
-
-        // 🚀 Registrando a nossa Queue globalmente para ser usada por qualquer Feature
-        services.AddScoped<IQueueService, BackgroundJobQueueService>();
-
         return services;
     }
 }

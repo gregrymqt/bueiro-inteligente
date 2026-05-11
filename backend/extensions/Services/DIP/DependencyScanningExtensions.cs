@@ -4,12 +4,16 @@ using backend.Features.Feedbacks.Domain.Interfaces;
 using backend.Features.Feedbacks.Infrastructure.Persistence.Repositories;
 using backend.Features.Home.Domain.Interfaces;
 using backend.Features.Home.Infrastructure.Persistence.Repositories;
+using backend.Features.MercadoPago.Application.Interfaces;
+using backend.Features.MercadoPago.Application.Services;
 using backend.Features.Monitoring.Domain.Interfaces;
 using backend.Features.Monitoring.Infrastructure.Persistence.Repositories;
 using backend.Features.Notifications.Domain.Interfaces;
 using backend.Features.Notifications.Infrastructure.Persistence.Repositories;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Features.Payment.infrastructure.Persistence.Repositories;
+using backend.Features.Scheduler.Application.Interfaces;
+using backend.Features.Scheduler.Application.Services;
 using backend.Features.Subscription.Domain.Interfaces;
 using backend.Features.Subscription.Infrastructure.Persistence.Repositories;
 using backend.Infrastructure.Persistence; // Necessário para referenciar o AppDbContext
@@ -44,6 +48,10 @@ public static class DependencyScanningExtensions
         services.Decorate<INotificationRepository, CachedNotificationRepository>();
         services.Decorate<IPaymentRepository, CachedPaymentRepository>();
         services.Decorate<ISubscriptionRepository, CachedSubscriptionRepository>();
+
+        //Scoped para serviços específicos que não seguem a convenção de nomenclatura
+        services.AddScoped<IWebhookService, WebhookService>();
+        services.AddScoped<IQueueService, BackgroundJobQueueService>();
 
         return services;
     }
