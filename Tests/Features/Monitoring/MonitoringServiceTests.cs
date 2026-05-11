@@ -1,13 +1,13 @@
 using backend.extensions.Services.Realtime.Abstractions;
+using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Domain.Configuration;
-using Polly.Caching;
 
 namespace backend.Tests.Features.Monitoring;
 
 public sealed class MonitoringServiceTests
 {
     private readonly Mock<IMonitoringRepository> _repositoryMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
+    private readonly Mock<IMonitoringIngestionService> _ingestionMock = new();
     private readonly Mock<IRealtimeService> _realtimeMock = new();
     private readonly MonitoringService _service;
 
@@ -23,9 +23,13 @@ public sealed class MonitoringServiceTests
                 AlertThreshold = 50.0
             });
 
+        _ingestionMock
+            .Setup(i => i.SaveSensorDataAsync(It.IsAny<DrainStatusDTO>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
         _service = new MonitoringService(
             _repositoryMock.Object,
-            _cacheMock.Object,
+            _ingestionMock.Object,
             _realtimeMock.Object,
             Mock.Of<ILogger<MonitoringService>>()
         );
@@ -81,8 +85,8 @@ public sealed class MonitoringServiceTests
         result.Status.Should().Be(expectedStatus);
         result.NivelObstrucao.Should().Be(obstruction);
 
-        _repositoryMock.Verify(
-            r => r.SaveSensorDataAsync(It.IsAny<DrainStatusDTO>(), It.IsAny<CancellationToken>()),
+        _ingestionMock.Verify(
+            i => i.SaveSensorDataAsync(It.IsAny<DrainStatusDTO>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
 
@@ -93,34 +97,7 @@ public sealed class MonitoringServiceTests
     }
 
     [Fact]
-    public async Task GetDrainStatus_CacheHit_NaoDeveConsultarDB()
-    {
-        // Arrange
-        const string id = "DRN-01";
-        var status = CreateStatus(id);
-        _cacheMock
-            .Setup(c =>
-                c.GetOrSetAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<Func<Task<DrainStatusDTO>>>(),
-                    It.IsAny<TimeSpan?>()
-                )
-            )
-            .ReturnsAsync(new CacheResponseDto<DrainStatusDTO>(status, true));
-
-        // Act
-        var result = await _service.GetDrainStatusAsync(id);
-
-        // Assert
-        result.Should().BeEquivalentTo(status);
-        _repositoryMock.Verify(
-            r => r.GetLatestStatusAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
-    }
-
-    [Fact]
-    public async Task GetDrainStatus_CacheMiss_DeveConsultarDBEAtualizarCache()
+    public async Task GetDrainStatus_DeveRetornarUltimoStatusDoRepositorio()
     {
         // Arrange
         var id = "DRN-02";
@@ -129,26 +106,31 @@ public sealed class MonitoringServiceTests
             .Setup(r => r.GetLatestStatusAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(status);
 
-        _cacheMock
-            .Setup(c =>
-                c.GetOrSetAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<Func<Task<DrainStatusDTO>>>(),
-                    It.IsAny<TimeSpan?>()
-                )
-            )
-            .Returns(async (string k, Func<Task<DrainStatusDTO>> fetchFunc, TimeSpan? t) =>
-                new CacheResponseDto<DrainStatusDTO>(await fetchFunc(), false)
-            );
-
         // Act
-        await _service.GetDrainStatusAsync(id);
+        var result = await _service.GetDrainStatusAsync(id);
 
         // Assert
+        result.Should().BeEquivalentTo(status);
         _repositoryMock.Verify(
             r => r.GetLatestStatusAsync(id, It.IsAny<CancellationToken>()),
             Times.Once
         );
+    }
+
+    [Fact]
+    public async Task GetDrainStatus_NaoEncontrado_DeveLancarNotFoundException()
+    {
+        // Arrange
+        const string id = "DRN-404";
+        _repositoryMock
+            .Setup(r => r.GetLatestStatusAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DrainStatusDTO?)null);
+
+        // Act
+        Func<Task> act = () => _service.GetDrainStatusAsync(id);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]

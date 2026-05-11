@@ -1,11 +1,12 @@
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Configuration;
+using backend.Features.Monitoring.Domain.Entities;
 
 namespace backend.Features.Monitoring.Domain.Interfaces;
 
 public interface IMonitoringRepository
 {
-    Task SaveSensorDataAsync(DrainStatusDTO data, CancellationToken ct = default);
+    Task InsertAsync(DrainStatus entity, CancellationToken ct = default);
     Task<DrainStatusDTO?> GetLatestStatusAsync(string drainId, CancellationToken ct = default);
     Task<IReadOnlyList<DrainStatusDTO>> GetUnsyncedDataAsync(
         int limit = 100,

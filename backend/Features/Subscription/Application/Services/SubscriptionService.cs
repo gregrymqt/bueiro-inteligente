@@ -89,8 +89,7 @@ public sealed class SubscriptionService(
 
     public async Task<SubscriptionResponse?> GetSubscriptionStatusAsync(Guid userId)
     {
-        var cacheResult = await repository.GetByUserIdAsync(userId).ConfigureAwait(false);
-        var localData = cacheResult.Data;
+        var localData = await repository.GetByUserIdAsync(userId).ConfigureAwait(false);
 
         if (localData == null) return null;
 

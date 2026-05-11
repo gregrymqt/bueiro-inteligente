@@ -102,10 +102,9 @@ public class ProcessPaymentJob(
                         NotificationType.Success
                     );
 
-                    var cacheSub = await subscriptionRepository.GetByUserIdAsync(
+                    var subscription = await subscriptionRepository.GetByUserIdAsync(
                         localTransaction.UserId
                     );
-                    var subscription = cacheSub.Data;
 
                     if (subscription != null)
                     {
@@ -113,9 +112,6 @@ public class ProcessPaymentJob(
                         subscription.LastModified = DateTime.UtcNow;
 
                         await subscriptionRepository.UpdateAsync(subscription);
-                        await cacheService.RemoveAsync(
-                            $"subscription:user:{localTransaction.UserId}"
-                        );
                     }
 
                     break;

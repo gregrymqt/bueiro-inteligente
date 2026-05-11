@@ -1,6 +1,5 @@
 using backend.Features.Payment.Domain.Entities;
 using backend.Features.Payment.Domain.Interfaces;
-using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,17 +7,13 @@ namespace backend.Features.Payment.infrastructure.Persistence.Repositories;
 
 public sealed class PaymentRepository(
     AppDbContext context,
-    ICacheService cache,
     ILogger<PaymentRepository> logger
 ) : IPaymentRepository
 {
     private readonly AppDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));
-    private readonly ICacheService _cache = cache ?? throw new ArgumentNullException(nameof(cache));
     private readonly ILogger<PaymentRepository> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
-
-    private static string GetCacheKey(Guid id) => $"payment:transaction:{id}";
 
     public async Task AddAsync(PaymentTransaction transaction)
     {
@@ -50,9 +45,6 @@ public sealed class PaymentRepository(
 
             _context.PaymentTransactions.Update(transaction);
             await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            // Invalida o cache após atualização para manter consistência
-            await _cache.RemoveAsync(GetCacheKey(transaction.Id)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -69,27 +61,16 @@ public sealed class PaymentRepository(
     {
         try
         {
-            var key = GetCacheKey(id);
-
-            // Tenta obter do cache, se falhar, busca no banco e alimenta o cache
-            var response = await _cache.GetOrSetAsync(
-                key,
-                async () =>
-                    await _context
-                        .PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id)
-                        .ConfigureAwait(false),
-                TimeSpan.FromMinutes(15) // TTL de 15 minutos
-            );
-
-            return response.Data;
+            _logger.LogDebug("Buscando transação por ID: {Id}", id);
+            return await _context
+                .PaymentTransactions.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id)
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro na camada de dados ao buscar transação por ID: {Id}", id);
-            // Fallback direto no banco caso o Redis apresente instabilidade
-            return await _context
-                .PaymentTransactions.FirstOrDefaultAsync(p => p.Id == id)
-                .ConfigureAwait(false);
+            throw;
         }
     }
 
@@ -99,7 +80,8 @@ public sealed class PaymentRepository(
         {
             _logger.LogDebug("Buscando transação pelo ID de Pagamento MP: {PaymentId}", paymentId);
             return await _context
-                .PaymentTransactions.FirstOrDefaultAsync(p => p.MercadoPagoPaymentId == paymentId)
+                .PaymentTransactions.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.MercadoPagoPaymentId == paymentId)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -119,7 +101,8 @@ public sealed class PaymentRepository(
         {
             _logger.LogDebug("Buscando transação pelo ID de Ordem MP: {OrderId}", orderId);
             return await _context
-                .PaymentTransactions.FirstOrDefaultAsync(p => p.MercadoPagoOrderId == orderId)
+                .PaymentTransactions.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.MercadoPagoOrderId == orderId)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

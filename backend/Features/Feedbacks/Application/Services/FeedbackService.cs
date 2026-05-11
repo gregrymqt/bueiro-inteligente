@@ -20,7 +20,10 @@ public class FeedbackService(
         return await repository.GetAllAsync();
     }
 
-    public async Task<FeedbackResponseDTO> SubmitFeedbackAsync(Guid userId, FeedbackCreateRequestDTO dto)
+    public async Task<FeedbackResponseDTO> SubmitFeedbackAsync(
+        Guid userId,
+        FeedbackCreateRequestDTO dto
+    )
     {
         var feedback = new Feedback(userId, dto.Comment, dto.Rating);
 
@@ -37,10 +40,14 @@ public class FeedbackService(
         return MapToResponse(feedback); // Método auxiliar de mapeamento
     }
 
-    public async Task<FeedbackResponseDTO> UpdateFeedbackAsync(Guid id, Guid userId, FeedbackUpdateRequestDTO dto)
+    public async Task<FeedbackResponseDTO> UpdateFeedbackAsync(
+        Guid id,
+        Guid userId,
+        FeedbackUpdateRequestDTO dto
+    )
     {
-        var feedback = await repository.GetByIdAsync(id)
-                       ?? throw new Exception("Feedback não encontrado.");
+        var feedback =
+            await repository.GetByIdAsync(id) ?? throw new Exception("Feedback não encontrado.");
 
         if (feedback.UserId != userId)
             throw new UnauthorizedAccessException("Você não pode editar este feedback.");

@@ -1,6 +1,5 @@
 using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Subscription.Domain.Interfaces;
-using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,13 +7,9 @@ namespace backend.Features.Subscription.Infrastructure.Persistence.Repositories;
 
 public sealed class SubscriptionRepository(
     AppDbContext context,
-    ICacheService cacheService,
     ILogger<SubscriptionRepository> logger
 ) : ISubscriptionRepository
 {
-    // TimeSpan de 1 hora para o cache da assinatura
-    private static readonly TimeSpan CacheExpiry = TimeSpan.FromHours(1);
-
     public async Task<UserSubscription?> GetByIdAsync(Guid id)
     {
         try
@@ -37,6 +32,7 @@ public sealed class SubscriptionRepository(
         {
             // Muito acessado via Webhooks, portanto, a model deve ter Index em ExternalId
             return await context.UserSubscriptions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ExternalId == externalId)
                 .ConfigureAwait(false);
         }
@@ -47,25 +43,18 @@ public sealed class SubscriptionRepository(
         }
     }
 
-    public async Task<CacheResponseDto<UserSubscription?>> GetByUserIdAsync(Guid userId)
+    public async Task<UserSubscription?> GetByUserIdAsync(Guid userId)
     {
-        string cacheKey = $"subscription:user:{userId}";
-
         try
         {
-            // Utiliza a lógica de cache do projeto para evitar consultas excessivas ao PostgreSQL
-            return await cacheService.GetOrSetAsync(
-                cacheKey,
-                async () => await context.UserSubscriptions
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.UserId == userId)
-                    .ConfigureAwait(false),
-                CacheExpiry
-            ).ConfigureAwait(false);
+            return await context.UserSubscriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId)
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Erro ao buscar assinatura do usuário (Cache/DB): {UserId}", userId);
+            logger.LogError(ex, "Erro ao buscar assinatura do usuário: {UserId}", userId);
             throw;
         }
     }
@@ -82,9 +71,6 @@ public sealed class SubscriptionRepository(
 
             logger.LogInformation("Assinatura {ExternalId} criada para o usuário {UserId}.",
                 subscription.ExternalId, subscription.UserId);
-
-            // Invalida o cache do usuário caso ele já exista, para refletir o novo estado imediatamente
-            await cacheService.RemoveAsync($"subscription:user:{subscription.UserId}").ConfigureAwait(false);
 
             return subscription;
         }
@@ -105,9 +91,6 @@ public sealed class SubscriptionRepository(
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Assinatura {ExternalId} atualizada com sucesso.", subscription.ExternalId);
-
-            // Limpa o cache para que a próxima requisição busque o status/dados atualizados (ex: status Cancelled)
-            await cacheService.RemoveAsync($"subscription:user:{subscription.UserId}").ConfigureAwait(false);
         }
         catch (Exception ex)
         {

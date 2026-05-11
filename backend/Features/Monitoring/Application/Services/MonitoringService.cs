@@ -6,20 +6,17 @@ using backend.extensions.Services.Realtime.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Domain.Interfaces;
-using backend.Infrastructure.Cache;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Monitoring.Application.Services;
 
 public sealed class MonitoringService(
     IMonitoringRepository monitoringRepository,
-    ICacheService cacheService,
+    IMonitoringIngestionService monitoringIngestionService,
     IRealtimeService realtimeService,
     ILogger<MonitoringService> logger
 ) : IMonitoringService
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
-
     public async Task<DrainStatusDTO> ProcessSensorDataAsync(
         SensorPayloadDTO payload,
         CancellationToken ct = default
@@ -72,7 +69,7 @@ public sealed class MonitoringService(
                 dataHash
             );
 
-            await monitoringRepository.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
+            await monitoringIngestionService.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
 
             // Disparo condicional de Realtime
             if (result.Status is not ("Alerta" or "Crítico")) return result;
@@ -114,19 +111,11 @@ public sealed class MonitoringService(
             if (string.IsNullOrWhiteSpace(drainId))
                 throw LogicException.InvalidValue(nameof(drainId), drainId);
 
-            var response = await cacheService
-                .GetOrSetAsync(
-                    $"bueiro:{drainId}:status",
-                    async () =>
-                        await monitoringRepository
-                            .GetLatestStatusAsync(drainId, ct)
-                            .ConfigureAwait(false)
-                        ?? throw new NotFoundException("Bueiro", drainId),
-                    CacheTtl
-                )
+            var status = await monitoringRepository
+                .GetLatestStatusAsync(drainId, ct)
                 .ConfigureAwait(false);
 
-            return response.Data;
+            return status ?? throw new NotFoundException("Bueiro", drainId);
         }
         catch (Exception ex)
         {

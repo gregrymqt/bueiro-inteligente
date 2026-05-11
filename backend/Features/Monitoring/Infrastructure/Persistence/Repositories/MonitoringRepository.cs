@@ -3,7 +3,6 @@ using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Entities;
 using backend.Features.Monitoring.Domain.Interfaces;
-using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,108 +11,21 @@ namespace backend.Features.Monitoring.Infrastructure.Persistence.Repositories;
 // C# 12: Injeção direta via Primary Constructor
 public sealed class MonitoringRepository(
     AppDbContext dbContext,
-    ICacheService cacheService,
     ILogger<MonitoringRepository> logger
 ) : IMonitoringRepository
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
-
-    public async Task SaveSensorDataAsync(DrainStatusDTO data, CancellationToken ct = default)
+    public async Task InsertAsync(DrainStatus entity, CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(entity);
 
-        // 1. Atualização do Cache (Redis)
-        try
-        {
-            await cacheService
-                .SetAsync($"bueiro:{data.IdBueiro}:status", data, CacheTtl)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Falha no cache para {Id}. Prosseguindo com persistência.",
-                data.IdBueiro
-            );
-        }
+        logger.LogInformation(
+            "Inserindo leitura do bueiro {DrainIdentifier} em {LastUpdate}.",
+            entity.DrainIdentifier,
+            entity.LastUpdate
+        );
 
-        // 2. Verificação de Idempotência e Persistência Histórica (PostgreSQL)
-        try
-        {
-            var latestRecord = await dbContext
-                .DrainStatuses.AsNoTracking()
-                .Where(s => s.DrainIdentifier == data.IdBueiro)
-                .OrderByDescending(s => s.LastUpdate)
-                .FirstOrDefaultAsync(ct)
-                .ConfigureAwait(false);
-
-            if (
-                latestRecord is null
-                || Math.Abs(latestRecord.DistanceCm - data.DistanciaCm) > 0.01
-                || (data.UltimaAtualizacao - latestRecord.LastUpdate).TotalMinutes >= 1
-            )
-            {
-                DrainStatus entity = new()
-                {
-                    DrainIdentifier = data.IdBueiro,
-                    DistanceCm = data.DistanciaCm,
-                    ObstructionLevel = data.NivelObstrucao,
-                    Status = data.Status,
-                    Latitude = data.Latitude,
-                    Longitude = data.Longitude,
-                    LastUpdate = data.UltimaAtualizacao,
-                    SyncedToRows = false,
-                    DataHash = data.DataHash,
-                };
-
-                await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
-                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-            }
-            else
-            {
-                logger.LogInformation(
-                    "Leitura duplicada ignorada (idempotência) para o bueiro {DrainIdentifier}",
-                    data.IdBueiro
-                );
-            }
-        }
-        catch (DbUpdateException ex)
-            when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
-        {
-            if (pgEx.ConstraintName == "IX_drain_status_data_hash")
-            {
-                logger.LogInformation(
-                    "Leitura duplicada ignorada (idempotência via Constraint) para o bueiro {DrainIdentifier}",
-                    data.IdBueiro
-                );
-                return;
-            }
-
-            logger.LogError(
-                ex,
-                "Erro de violação de unicidade não esperada no PostgreSQL para {IdBueiro}. Constraint: {Constraint}. Payload: {@Payload}",
-                data.IdBueiro,
-                pgEx.ConstraintName,
-                data
-            );
-            throw;
-        }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(
-                ex,
-                "Erro ao salvar leitura no PostgreSQL para {IdBueiro}. Payload: {@Payload}",
-                data.IdBueiro,
-                data
-            );
-
-            throw new ConnectionException(
-                "PostgreSQL",
-                $"Erro ao salvar leitura de {data.IdBueiro}",
-                ex
-            );
-        }
+        await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<DrainStatusDTO?> GetLatestStatusAsync(
