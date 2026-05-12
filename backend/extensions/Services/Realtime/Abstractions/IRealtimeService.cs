@@ -7,4 +7,6 @@ public interface IRealtimeService
 
     // Envia dados apenas para um usuário específico (útil para pagamentos)
     Task PublishToUserAsync(string userId, string eventName, object data);
+
+    Task PublishToDrainAsync(string bueiroId, string eventName, object data);
 }

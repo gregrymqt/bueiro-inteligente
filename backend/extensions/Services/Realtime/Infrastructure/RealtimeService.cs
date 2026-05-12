@@ -36,4 +36,19 @@ public sealed class RealtimeService(IHubContext<ApplicationHub> hubContext, ILog
             logger.LogError(ex, "Falha ao enviar evento {Event} para o usuário {User}", eventName, userId);
         }
     }
+
+    public async Task PublishToDrainAsync(string bueiroId, string eventName, object data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        
+        try
+        {
+            // Envia APENAS para quem deu 'JoinDrain' nesse ID
+            await hubContext.Clients.Group(bueiroId).SendAsync(eventName, data).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Falha ao publicar atualização para o grupo do bueiro: {BueiroId}", bueiroId);
+        }
+    }
 }

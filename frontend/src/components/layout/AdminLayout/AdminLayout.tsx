@@ -1,36 +1,67 @@
-// AdminLayout.tsx
 import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Layers, List, PlusSquare } from 'lucide-react';
-import { Sidebar } from '@/components/layout/Sidebar/Sidebar'; //[cite: 42]
-import styles from './AdminLayout.module.scss';
+import { Home, Layers, List, PlusSquare, LayoutTemplate } from 'lucide-react';
+import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
+import type { NavigationItem } from '@/components/layout/Sidebar/types';
+import type { PricingPlan } from '@/feature/plan/types';
+import styles from './AdminDashboard.module.scss';
 
-export const AdminLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+// Importações da Feature de Planos
+import { AdminPlanList } from '@/feature/plan/components/List/AdminPlanList';
+import { AdminPlanForm } from '@/feature/plan/components/Form/AdminPlanForm';
+
+// Importação do Orquestrador de CRUD da Home (Feature AdminHome)
+import { HomeAdminManager } from '@/feature/home/admin/components/HomeAdminManager';
+
+// Componente da Visão Geral
+export const DashboardHome = () => (
+  <div className={styles.homeTab}>
+    <h2>Visão Geral</h2>
+    <p>Bem-vindo ao painel de administração do Bueiro Inteligente. Aqui você poderá acompanhar as métricas e gerenciar o sistema.</p>
+  </div>
+);
+
+export const AdminDashboard: React.FC = () => {
+  const [activeId, setActiveId] = useState('overview');
   const [isOpenMobile, setIsOpenMobile] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<PricingPlan | undefined>(undefined);
 
-  // Mapeamos o path atual para o activeId da Sidebar
-  const activeId = location.pathname.split('/').pop() || 'home';
-
-  const navigationItems = [
-    { id: 'home', label: 'Home', icon: <Home size={20} /> },
+  // Configuração dos itens da Sidebar
+  const navigationItems: NavigationItem[] = [
+    { id: 'overview', label: 'Visão Geral', icon: <Home size={20} /> },
     {
-      id: 'plans',
+      id: 'gestao-home',
+      label: 'Conteúdo Home',
+      icon: <LayoutTemplate size={20} />
+    },
+    {
+      id: 'planos',
       label: 'Planos',
       icon: <Layers size={20} />,
       children: [
-        { id: 'plans-list', label: 'Lista de Planos', icon: <List size={18} />, path: '/admin/plans' },
-        { id: 'plans-new', label: 'Novo Plano', icon: <PlusSquare size={18} />, path: '/admin/plans/new' }
+        { id: 'planos-list', label: 'Lista de Planos', icon: <List size={18} /> },
+        { id: 'planos-form', label: 'Novo Plano', icon: <PlusSquare size={18} /> }
       ]
     }
   ];
 
   const handleNavigate = (id: string) => {
-    // Encontra o item para saber o path real
-    if (id === 'home') navigate('/admin/home');
-    if (id === 'plans-list') navigate('/admin/plans');
-    if (id === 'plans-new') navigate('/admin/plans/new');
+    setActiveId(id);
+
+    // Limpa o plano em edição caso o usuário saia da tela de formulário
+    if (id !== 'planos-form') {
+      setEditingPlan(undefined);
+    }
+  };
+
+  // Handlers de Sucesso e Edição para a Feature de Planos
+  const handleEditPlan = (plan: PricingPlan) => {
+    setEditingPlan(plan);
+    setActiveId('planos-form');
+  };
+
+  const handleFormSuccess = () => {
+    setActiveId('planos-list');
+    setEditingPlan(undefined);
   };
 
   return (
@@ -39,16 +70,31 @@ export const AdminLayout: React.FC = () => {
         id="admin-sidebar"
         items={navigationItems}
         activeId={activeId}
-        onNavigate={handleNavigate} //[cite: 42]
+        onNavigate={handleNavigate}
         isOpenMobile={isOpenMobile}
         onCloseMobile={() => setIsOpenMobile(false)}
         onToggleMobile={() => setIsOpenMobile(prev => !prev)}
-        showMobileSubheader={true} //[cite: 42]
+        showMobileSubheader={true}
       />
 
       <main className={styles.mainContent}>
-        {/* O Outlet renderiza o componente da rota filha definida no router.tsx */}
-        <Outlet />
+        {/* Renderização Condicional das Abas baseada no estado local */}
+        {activeId === 'overview' && <DashboardHome />}
+
+        {/* --- CRUD DA HOME (Totalmente encapsulado pelo Manager) --- */}
+        {activeId === 'gestao-home' && <HomeAdminManager />}
+
+        {/* --- CRUD DE PLANOS --- */}
+        {activeId === 'planos-list' && (
+          <AdminPlanList onEdit={handleEditPlan} />
+        )}
+
+        {activeId === 'planos-form' && (
+          <AdminPlanForm
+            initialData={editingPlan}
+            onSuccess={handleFormSuccess}
+          />
+        )}
       </main>
     </div>
   );

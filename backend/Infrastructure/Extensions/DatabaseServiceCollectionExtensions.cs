@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Net.Sockets;
+using backend.Core.Settings;
 using backend.Features.Auth.Domain;
 using backend.Features.Auth.Domain.Entities;
 using backend.Infrastructure.Persistence;
@@ -51,18 +52,7 @@ public static class DatabaseServiceCollectionExtensions
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseNpgsql(
-                resolvedConnectionString,
-                npgsql =>
-                {
-                    // ParÃ¢metros explÃ­citos sÃ£o melhores para cloud (Render/Supabase)
-                    npgsql.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(15),
-                        errorCodesToAdd: null
-                    );
-                }
-            );
+            ConfigureNpgsql(options, resolvedConnectionString);
 
             // Ativa logs detalhados APENAS em desenvolvimento
             if (environment.IsDevelopment())
@@ -87,6 +77,8 @@ public static class DatabaseServiceCollectionExtensions
 
         using var scope = sp.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var generalSettings = scope.ServiceProvider.GetRequiredService<IOptions<GeneralSettings>>().Value;
+        var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var logger = scope
             .ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("DatabaseBootstrap");
@@ -97,12 +89,19 @@ public static class DatabaseServiceCollectionExtensions
             ?? configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Nenhuma ConnectionString configurada.");
 
+        var resolvedMigrationsConnectionString = ResolveDevelopmentConnectionString(
+            migrationsConnectionString,
+            environment
+        );
+
         // 2. Criamos um construtor de opÃ§Ãµes manual apontando para a porta 5432 (MigrationsConnection)
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql(migrationsConnectionString);
+        ConfigureNpgsql(optionsBuilder, resolvedMigrationsConnectionString);
 
         // 3. Instanciamos um DbContext isolado apenas para a rotina de boot
         using var migrationContext = new AppDbContext(optionsBuilder.Options);
+        var nuclearResetRequested = generalSettings.DatabaseResetNuclear;
+        var nuclearResetExecuted = false;
 
         const int maxAttempts = 5;
         TimeSpan delay = TimeSpan.FromSeconds(3);
@@ -117,15 +116,18 @@ public static class DatabaseServiceCollectionExtensions
                     maxAttempts
                 );
 
-                if (!await migrationContext.Database.CanConnectAsync(ct).ConfigureAwait(false))
+                if (nuclearResetRequested && !nuclearResetExecuted)
                 {
-                    throw new NpgsqlException(
-                        "CanConnectAsync retornou falso. Banco de dados indisponÃ­vel."
+                    logger.LogWarning(
+                        "DatabaseResetNuclear habilitado. Executando EnsureDeletedAsync antes das migraÃ§Ãµes..."
                     );
+
+                    await migrationContext.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
+                    nuclearResetExecuted = true;
                 }
 
                 logger.LogInformation(
-                    "ConexÃ£o para MigraÃ§Ã£o estabelecida na porta correta. Aplicando migraÃ§Ãµes pendentes..."
+                    "Aplicando migraÃ§Ãµes pendentes..."
                 );
                 await migrationContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
@@ -203,6 +205,32 @@ public static class DatabaseServiceCollectionExtensions
         }
 
         return builder.ConnectionString;
+    }
+
+    private static void ConfigureNpgsql(
+        DbContextOptionsBuilder optionsBuilder,
+        string connectionString
+    )
+    {
+        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+
+        optionsBuilder.UseNpgsql(
+            connectionStringBuilder.ConnectionString,
+            npgsql =>
+            {
+                // Mantém a mesma resiliência usada no runtime e evita falhas transitórias em cloud.
+                npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(15),
+                    errorCodesToAdd: null
+                );
+
+                if (connectionStringBuilder.CommandTimeout > 0)
+                {
+                    npgsql.CommandTimeout(connectionStringBuilder.CommandTimeout);
+                }
+            }
+        );
     }
 
     private static bool IsRunningInsideContainer()

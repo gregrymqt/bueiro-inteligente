@@ -13,7 +13,7 @@ import {
 import type { NavigationItem } from '@/components/layout/Sidebar/types';
 
 // Feature: Monitoramento
-import { RealTimeMonitor } from '@/feature/monitoring/components/RealTimeMonitor';
+import { LiveMonitorContainer } from '@/feature/monitoring/components/LiveMonitorContainer';
 import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 
 // Feature: Gestão de Bueiros (Drains)
@@ -104,7 +104,7 @@ export const Dashboard: React.FC = () => {
     switch (activeTabId) {
       // --- MONITORAMENTO ---
       case 'live-monitor':
-        return <RealTimeMonitor bueiroId="ESP32-FIXO-01" />;
+        return <LiveMonitorContainer />;
       case 'analysis':
         return <RowsEmbed embedUrl="mock:demo" title="Tendência de Enchentes" />;
 

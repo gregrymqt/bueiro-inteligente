@@ -10,14 +10,15 @@ import { Login } from '@/pages/Auth/Login';
 
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
-// Importando o novo MainLayout
+// Importando o novo MainLayout e outros layouts
 import { MainLayout } from '@/components/layout/MainLayout/MainLayout';
-import { AdminLayout } from '@/components/layout/AdminLayout/AdminLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout/DashboardLayout';
+import { CheckoutLayout } from '@/components/layout/CheckoutLayout/CheckoutLayout';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 import { AuthProvider } from '@/feature/auth/hooks/AuthContext';
 import { AdminPlanForm } from '@/feature/plan/components/Form/AdminPlanForm';
 import { AdminPlanList } from '@/feature/plan/components/List/AdminPlanList';
-import { DashboardHome } from '@/pages/Admin/AdminDashboard';
+import { AdminDashboard, DashboardHome } from '@/pages/Admin/AdminDashboard';
 import { CheckoutPage } from '@/pages/Checkout/CheckoutPage';
 
 export const router = createBrowserRouter([
@@ -51,24 +52,37 @@ export const router = createBrowserRouter([
             path: 'sobre',
             element: <About />,
           },
+        ],
+      },
+      
+      // ==========================================
+      // ROTAS PROTEGIDAS (Sem Main Layout)
+      // ==========================================
+      {
+        element: <ProtectedLayout />,
+        children: [
           {
-            element: <ProtectedLayout />, // Verifica inicialmente se a pessoa está logada
+            path: 'checkout',
+            element: <CheckoutLayout />,
             children: [
               {
-                path: 'checkout', // <-- ADICIONA ESTA ROTA AQUI
-                element: <CheckoutPage />, // O StatusScreen vai redirecionar para cá em caso de erro
+                index: true,
+                element: <CheckoutPage />,
               },
-              // ==========================================
-              // 3. EXMPLO DE ROTA COM ROLE (Apenas 'admin' e 'manutencao')
-              // ==========================================
+            ]
+          },
+          {
+            element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
+            children: [
               {
-                element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
+                path: 'dashboard',
+                element: <DashboardLayout />,
                 children: [
                   {
-                    path: 'dashboard',
-                    element: <Dashboard />,
-                  },
-                ],
+                    index: true,
+                    element: <Dashboard />, 
+                  }
+                ]
               },
             ],
           },
@@ -86,7 +100,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'admin',
-                element: <AdminLayout />, // O Dashboard com Sidebar e Outlet[cite: 45]
+                element: <AdminDashboard />, // O Dashboard com Sidebar e Outlet[cite: 45]
                 children: [
                   {
                     index: true,

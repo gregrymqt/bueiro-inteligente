@@ -44,14 +44,28 @@ export const useDrainStatus = (bueiroId: string) => {
     }, MONITORING_MOCK_UPDATE_INTERVAL_MS);
   }, [bueiroId, clearRealtimeConnections]);
 
-  const startBackendUpdates = useCallback(() => {
+  const startBackendUpdates = useCallback(async () => {
     clearRealtimeConnections();
 
-    unsubscribeRef.current = MonitoringService.subscribeToUpdates((payload) => {
-      if (payload.id_bueiro === bueiroId) {
-        setData(payload);
-      }
-    });
+    try {
+      // 1. Entra no grupo do SignalR no Backend
+      await MonitoringService.joinDrainGroup(bueiroId);
+
+      // 2. Registra o listener local
+      const unsubscribe = MonitoringService.subscribeToUpdates((payload) => {
+        if (payload.id_bueiro === bueiroId) {
+          setData(payload);
+        }
+      });
+
+      // 3. Armazena a limpeza combinada
+      unsubscribeRef.current = () => {
+        unsubscribe();
+        void MonitoringService.leaveDrainGroup(bueiroId);
+      };
+    } catch (err) {
+      console.error("Falha ao entrar no grupo de monitoramento", err);
+    }
   }, [bueiroId, clearRealtimeConnections]);
 
   // 1. Lógica de Busca Inicial

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { NavigationItem } from './types';
 import './Sidebar.scss';
 
@@ -50,7 +50,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleMobile,
   showMobileSubheader = false,
 }) => {
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      items.forEach(item => {
+        if (containsItemId(item.children, activeId)) {
+          newSet.add(item.id);
+        }
+      });
+      return newSet;
+    });
+  }, [activeId, items]);
 
   const activeItemLabel = findNavigationItem(items, activeId)?.label || 'Menu';
 
@@ -79,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const hasActiveDescendant = containsItemId(item.children, activeId);
         const isCurrent = item.id === activeId;
         const isActive = isCurrent || hasActiveDescendant;
-        const isExpanded = expandedItems.has(item.id) || hasActiveDescendant;
+        const isExpanded = expandedItems.has(item.id);
         const isNestedVisible = isVisible && isExpanded;
 
         return (
@@ -91,24 +103,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isActive ? 'sidebar__btn--active' : '',
                 hasChildren ? 'sidebar__btn--parent' : '',
                 isChildLevel ? 'sidebar__btn--child' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              tabIndex={isVisible ? 0 : -1}
+              ].filter(Boolean).join(' ')}
               onClick={(e) => {
                 e.stopPropagation();
-
                 if (hasChildren) {
                   toggleExpandedItem(item.id);
-                  return;
+                } else {
+                  onNavigate(item.id);
+                  onCloseMobile();
                 }
-
-                onNavigate(item.id);
-                onCloseMobile();
               }}
-              aria-current={isCurrent ? 'page' : undefined}
               aria-expanded={hasChildren ? isExpanded : undefined}
-              aria-haspopup={hasChildren ? 'true' : undefined}
             >
               <span className="sidebar__btn-content">
                 <span className="sidebar__icon">{item.icon}</span>
@@ -116,10 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
 
               {hasChildren && (
-                <span
-                  className={`sidebar__chevron ${isExpanded ? 'sidebar__chevron--expanded' : ''}`}
-                  aria-hidden="true"
-                >
+                <span className={`sidebar__chevron ${isExpanded ? 'sidebar__chevron--expanded' : ''}`}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m6 9 6 6 6-6" />
                   </svg>
@@ -128,16 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {hasChildren && (
-              <ul
-                className={[
-                  'sidebar__list',
-                  'sidebar__list--nested',
-                  isExpanded ? 'sidebar__list--nested--expanded' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-hidden={!isNestedVisible}
-              >
+              <ul className={`sidebar__list sidebar__list--nested ${isExpanded ? 'sidebar__list--nested--expanded' : ''}`}>
                 {renderNavigationItems(item.children ?? [], true, isNestedVisible)}
               </ul>
             )}
@@ -193,21 +186,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             className="sidebar__close-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCloseMobile();
-          }}
-        >
-          &times;
-        </button>
-      </div>
+            onClick={(e) => {
+              e.stopPropagation();
+              onCloseMobile();
+            }}
+          >
+            &times;
+          </button>
+        </div>
 
-      <nav className="sidebar__nav">
-        <ul className="sidebar__list">
-          {renderNavigationItems(items)}
-        </ul>
-      </nav>
-    </aside >
+        <nav className="sidebar__nav">
+          <ul className="sidebar__list">
+            {renderNavigationItems(items)}
+          </ul>
+        </nav>
+      </aside >
     </>
   );
 };

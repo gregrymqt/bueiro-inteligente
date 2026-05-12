@@ -84,6 +84,17 @@ export const Navbar: React.FC = () => {
                     <button
                       type="button"
                       className={styles.logoutBtn}
+                      onClick={() => {
+                        navigate('/dashboard');
+                        setIsDropdownOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      Ir para Dashboard
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.logoutBtn}
                       onClick={async () => {
                         setIsDropdownOpen(false);
                         await logout();

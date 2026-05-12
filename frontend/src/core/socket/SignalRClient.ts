@@ -18,7 +18,7 @@ export class SignalRClient {
   private connection: HubConnection | null = null;
   private startPromise: Promise<void> | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): SignalRClient {
     if (SignalRClient.instance === null) {
@@ -36,6 +36,12 @@ export class SignalRClient {
     return () => {
       connection.off(eventName, handler);
     };
+  }
+
+  public async invoke(methodName: string, ...args: any[]): Promise<void> {
+    const connection = this.getConnection();
+    await this.ensureStarted(); // Garante que a conexão está ativa antes de enviar
+    return connection.invoke(methodName, ...args);
   }
 
   private getConnection(): HubConnection {

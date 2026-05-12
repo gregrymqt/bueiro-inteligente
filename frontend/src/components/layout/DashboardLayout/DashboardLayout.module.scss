@@ -1,0 +1,13 @@
+.layoutWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  overflow: hidden; /* O conteúdo interno (como a própria sidebar do Dashboard) deve gerir os seus overflows */
+  background-color: #f5f5f5; /* Ou estilo de fundo padrão */
+}

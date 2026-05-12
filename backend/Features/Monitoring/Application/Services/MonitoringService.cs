@@ -13,7 +13,7 @@ namespace backend.Features.Monitoring.Application.Services;
 public sealed class MonitoringService(
     IMonitoringRepository monitoringRepository,
     IMonitoringIngestionService monitoringIngestionService,
-    IRealtimeService realtimeService,
+    IRealtimeService _realtimeService,
     ILogger<MonitoringService> logger
 ) : IMonitoringService
 {
@@ -75,7 +75,7 @@ public sealed class MonitoringService(
             if (result.Status is not ("Alerta" or "Crítico")) return result;
             try
             {
-                await realtimeService.PublishAsync("Monitoring_Data", result).ConfigureAwait(false);
+                await _realtimeService.PublishToDrainAsync(result.IdBueiro, "BUEIRO_STATUS_MUDOU", result);
             }
             catch (Exception)
             {
