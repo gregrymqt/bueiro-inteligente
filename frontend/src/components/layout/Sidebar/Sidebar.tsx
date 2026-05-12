@@ -180,7 +180,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onNavigate('home');
             onCloseMobile();
           }}>
-            Bueiro Inteligente
+            <a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Bueiro Inteligente
+            </a>
           </h1>
           {/* Opcional: botão de fechar para mobile */}
           <button
