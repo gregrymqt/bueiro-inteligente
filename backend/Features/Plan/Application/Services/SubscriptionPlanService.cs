@@ -3,25 +3,37 @@ using backend.Features.Plan.Application.Interfaces;
 using backend.Features.Subscription.Application.Interfaces; // Interface do MP Plan Service
 using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Subscription.Domain.Interfaces; // Repository
+using backend.core.Settings;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace backend.Features.Plan.Application.Services;
 
 public class SubscriptionPlanService(
     IMercadoPagoPlanService mercadoPagoPlanService,
     ISubscriptionPlanRepository planRepository,
-    ILogger<SubscriptionPlanService> logger
+    ILogger<SubscriptionPlanService> logger,
+    IOptions<MercadoPagoSettings> mpOptions
 ) : ISubscriptionPlanService
 {
     public async Task<PlanResponseDto> CreatePlanAsync(CreatePlanRequestDto request)
     {
         logger.LogInformation("Iniciando criação de plano: {PlanName}", request.Name);
 
+        var backUrl = !string.IsNullOrEmpty(request.BackUrl)
+            ? request.BackUrl
+            : mpOptions.Value.PlanBackUrl;
+
+        if (string.IsNullOrEmpty(backUrl))
+        {
+            throw new ArgumentException("A URL de retorno (BackUrl) é obrigatória. Forneça no request ou configure via variável de ambiente.");
+        }
+
         // 1. Monta o DTO exigido pelo Mercado Pago[cite: 25]
         var mpRequest = new MercadoPagoPlanRequest
         {
             Reason = request.Name,
-            BackUrl = request.BackUrl,
+            BackUrl = backUrl,
             AutoRecurring = new AutoRecurringDTO
             {
                 Frequency = request.Frequency,

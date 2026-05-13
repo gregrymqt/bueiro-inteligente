@@ -67,6 +67,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           ws: true, // <- MUITO IMPORTANTE: Diz ao Vite para habilitar o upgrade para WebSocket
         },
+        // NOVA REGRA: Roteia requisições de imagens locais diretamente para o wwwroot do backend
+        "/uploads": {
+          target: env.VITE_BACKEND_URL || "http://localhost:5045",
+          changeOrigin: true,
+        },
       },
     },
   };

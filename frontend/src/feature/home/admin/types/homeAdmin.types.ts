@@ -1,6 +1,16 @@
+// feature/home/types/homeAdmin.types.ts
+
 // Enums espelhados do Backend
 export type CarouselSection = 'hero' | 'alerts' | 'stats';
 export type StatCardColor = 'success' | 'warning' | 'danger';
+
+// DTO de Retorno do Upload de Arquivos
+export interface UploadDto {
+  id?: string;
+  Id?: string;
+  url?: string;
+  Url?: string;
+}
 
 // Respostas (GET)
 export interface CarouselResponse {

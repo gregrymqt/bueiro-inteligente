@@ -88,3 +88,5 @@ backend/Migrations/*
 build-report*.txt
 eslint-report*.txt
 eslint-report*.json
+
+*/wwwroot

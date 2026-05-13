@@ -1,35 +1,29 @@
-// HeroSlide.tsx
+// feature/home/components/HeroSlide.tsx
 import { Link } from 'react-router-dom';
 import type { CarouselContent } from '../../types';
 import styles from '@/pages/Home/Home.module.scss';
+import { ImageResolver } from '@/core/http/ImageResolver';
 
 interface HeroSlideProps {
   slide: CarouselContent;
 }
 
 export function HeroSlide({ slide }: HeroSlideProps) {
-  // Exemplo de como você lidaria com WebP se sua CDN/Backend suportar
-  // Se não tiver WebP agora, pode usar apenas o JPG, mas a estrutura já fica pronta.
-  const webpUrl = slide.image_url.replace(/\.(jpg|jpeg|png)$/, '.webp');
+  const resolvedImageUrl = ImageResolver.resolve(slide.image_url);
 
   return (
     <article className={styles.heroSlide}>
       <div className={styles.heroMedia}>
-        <picture>
-          {/* O navegador tentará carregar o WebP primeiro por ser mais leve */}
-          <source srcSet={webpUrl} type="image/webp" />
-          
-          {/* Fallback para JPG/PNG padrão */}
-          <img 
-            className={styles.heroImage} 
-            src={slide.image_url} 
-            alt={slide.title}
-            loading="eager" // Garante que não haverá lazy loading nesta imagem
-            // @ts-expect-error fetchpriority não é reconhecido pelo @types/react atual
-            fetchpriority="high" // Indica ao navegador que esta imagem é a prioridade número 1
-            decoding="async" // Permite que o resto da página continue processando enquanto a imagem decodifica
-          />
-        </picture>
+        {/* Removemos o <picture> e a lógica de .webp para carregar apenas o arquivo real */}
+        <img 
+          className={styles.heroImage} 
+          src={resolvedImageUrl} 
+          alt={slide.title}
+          loading="eager" 
+          // @ts-expect-error fetchpriority
+          fetchpriority="high" 
+          decoding="async" 
+        />
       </div>
 
       <div className={styles.heroContent}>

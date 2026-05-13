@@ -14,7 +14,8 @@ const IconMapper: Record<string, React.ReactNode> = {
   dashboard: <BarChart3 size={40} />
 };
 
-export const HowItWorks: React.FC<HowItWorksProps> = ({ steps }) => {
+export const HowItWorks: React.FC<HowItWorksProps> = ({ steps = [] }) => { // Adicionado default []
+  if (!steps || steps.length === 0) return null; // Evita erro se estiver vazio
   return (
     <div className={styles.stepsContainer}>
       {steps.map((step) => (

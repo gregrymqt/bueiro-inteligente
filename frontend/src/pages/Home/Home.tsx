@@ -1,4 +1,5 @@
-﻿import React from 'react';
+﻿// src/pages/Home/Home.tsx
+import React from 'react';
 import { useHome } from '@/feature/home/allow/hooks/useHome';
 import { HeroSlide } from '@/feature/home/allow/components/HeroSlide/HeroSlide';
 import { HowItWorks } from '@/feature/home/allow/components/HowItWorks/HowItWorks';
@@ -10,13 +11,11 @@ import styles from './Home.module.scss';
 import { useNavigate } from 'react-router-dom';
 
 const Home: React.FC = () => {
-  // Removido 'reviews' do hook, pois o FeedbackList cuida disso agora[cite: 23, 24]
-  const { steps, plans, loading } = useHome();
+  // Extraímos corretamente os dados do hook
+  const { carousels, stats, plans, loading } = useHome();
   const navigate = useNavigate();
 
   const handleSelectPlan = (planId: string) => {
-    // Redireciona para o Step 1 do Checkout, passando o ID do plano selecionado
-    // via query string (ex: /checkout?plan=123) ou estado de navegação
     navigate(`/checkout?plan=${planId}`);
   };
 
@@ -28,23 +27,29 @@ const Home: React.FC = () => {
     <div className={styles.homeContainer}>
       {smartAppBanner}
 
-      {/* Hero Section */}
+      {/* Hero Section - Agora usando o primeiro slide vindo do Banco de Dados */}
       <section className={styles.heroWrapper}>
-        <HeroSlide slide={{
-          id: '1',
-          title: "Proteja sua cidade com Inteligência",
-          subtitle: "Monitoramento de bueiros em tempo real com tecnologia ESP32.",
-          image_url: "/assets/hero-bg.jpg",
-          section: 'hero',
-          order: 1
-        }} />
+        {carousels.length > 0 ? (
+          <HeroSlide slide={carousels[0]} />
+        ) : (
+          // Fallback caso não existam slides no banco
+          <HeroSlide slide={{
+            id: '1',
+            title: "Proteja sua cidade com Inteligência",
+            subtitle: "Monitoramento de bueiros em tempo real com tecnologia ESP32.",
+            image_url: "/assets/hero-bg.jpg",
+            section: 'hero',
+            order: 1
+          }} />
+        )}
       </section>
 
-      {/* Seção 2: Como Funciona */}
+      {/* Seção 2: Como Funciona (Usando os dados de 'stats' do backend) */}
       <section className={styles.section} aria-label="Como Funciona">
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Como Funciona</h2>
-          <HowItWorks steps={steps} />
+          {/* Alterado de 'steps' para 'stats' que é o que o hook retorna agora */}
+          <HowItWorks steps={stats} />
         </div>
       </section>
 
@@ -56,7 +61,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Seção 4: Avaliações (Agora usando a feature isolada)[cite: 23] */}
+      {/* Seção 4: Avaliações */}
       <section className={styles.section} aria-label="Avaliações">
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Depoimentos</h2>

@@ -8,4 +8,5 @@ public sealed class MercadoPagoSettings
     public string WebhookUrl { get; set; } = string.Empty;
     public string PublicKey { get; set; } = string.Empty;
     public string WebhookKey { get; set; } = string.Empty;
+    public string PlanBackUrl { get; set; } = string.Empty;
 }

@@ -1,9 +1,11 @@
+// backend/Features/Uploads/Presentation/Controllers/UploadsController.cs
 using backend.Extensions.App.Filters;
 using backend.Features.Uploads.Application.DTOs;
 using backend.Features.Uploads.Application.Interfaces;
-using backend.Features.Uploads.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace backend.Features.Uploads.Presentation.Controllers;
 
@@ -22,42 +24,18 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
         }
 
         var result = await _uploadService.ProcessUploadAsync(file).ConfigureAwait(false);
-        var absoluteUrl = BuildAbsoluteUploadUrl(
-            HttpContext.Request,
-            result.Url,
-            result.StoragePath
-        );
 
+        // Devolvemos diretamente o result.Url que já contém o caminho relativo correto (/uploads/...)
+        // ou o URL público absoluto do Supabase Storage, integrando nativamente com o ImageResolver.ts
         var response = new UploadDto(
             result.Id,
             result.FileName,
             result.ContentType,
             result.Size,
-            absoluteUrl,
+            result.Url, 
             result.CreatedAt
         );
 
-        return Created(absoluteUrl, response);
-    }
-
-    private static string BuildAbsoluteUploadUrl(
-        HttpRequest request,
-        string url,
-        string storagePath
-    )
-    {
-        if (
-            !string.IsNullOrWhiteSpace(url)
-            && Uri.TryCreate(url, UriKind.Absolute, out var absoluteUrl)
-        )
-        {
-            return absoluteUrl.ToString();
-        }
-
-        var relativePath = !string.IsNullOrWhiteSpace(url)
-            ? url
-            : $"/uploads/{Path.GetFileName(storagePath)}";
-
-        return $"{request.Scheme}://{request.Host}{request.PathBase}{relativePath}";
+        return Created(result.Url, response);
     }
 }

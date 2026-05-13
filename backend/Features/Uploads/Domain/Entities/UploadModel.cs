@@ -11,7 +11,6 @@ public class UploadModel
     public string StoragePath { get; set; } = string.Empty;
     public string Extension { get; set; } = string.Empty;
     public string Checksum { get; set; } = string.Empty;
-    [NotMapped]
     public string Url { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

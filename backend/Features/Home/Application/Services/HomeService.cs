@@ -1,10 +1,15 @@
+// backend/Features/Home/Application/Services/HomeService.cs
 using backend.Core;
 using backend.Features.Home.Application.Interfaces;
 using backend.Features.Home.Domain.Interfaces;
+using backend.Features.Uploads.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.IO;
-using backend.Features.Uploads.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using HomeDomain = backend.Features.Home.Domain.Entities;
 using HomeDtos = backend.Features.Home.Application.DTOs;
 
@@ -99,7 +104,7 @@ public sealed class HomeService(
                 .CreateCarouselAsync(MapToCarouselModel(request), ct)
                 .ConfigureAwait(false);
 
-            // Reload to get the Included Upload for mapping
+            // Recarrega para obter a entidade Upload associada via .Include
             created = await _homeRepository.GetCarouselByIdAsync(created.Id, ct).ConfigureAwait(false)
                 ?? created;
 
@@ -132,19 +137,24 @@ public sealed class HomeService(
                 await _homeRepository.GetCarouselByIdAsync(id, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("Carousel", id);
 
-            c.Order = req.Order ?? c.Order;
+            if (req.Order.HasValue)
+                c.Order = req.Order.Value;
             if (req.Section.HasValue)
                 c.Section = MapEnum<HomeDomain.CarouselSection>(req.Section.Value);
             if (req.Title is not null)
                 c.Title = Normalize(req.Title, nameof(req.Title));
             if (req.UploadId.HasValue)
                 c.UploadId = req.UploadId.Value;
-            c.Subtitle = req.Subtitle is not null ? req.Subtitle.Trim() : c.Subtitle;
-            c.ActionUrl = req.ActionUrl is not null ? req.ActionUrl.Trim() : c.ActionUrl;
+
+            // Como o formulário envia sempre a totalidade dos dados no PATCH,
+            // permitimos a atribuição direta para que strings vazias convertidas em null
+            // limpem efetivamente o campo na base de dados.
+            c.Subtitle = req.Subtitle?.Trim();
+            c.ActionUrl = req.ActionUrl?.Trim();
 
             var updated = await _homeRepository.UpdateCarouselAsync(c, ct).ConfigureAwait(false);
 
-            // Reload to get the Included Upload for mapping
+            // Recarrega para garantir o mapeamento correto da imagem de navegação
             updated = await _homeRepository.GetCarouselByIdAsync(updated.Id, ct).ConfigureAwait(false)
                 ?? updated;
 
@@ -266,7 +276,8 @@ public sealed class HomeService(
                 await _homeRepository.GetStatCardByIdAsync(id, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("StatCard", id);
 
-            s.Order = req.Order ?? s.Order;
+            if (req.Order.HasValue)
+                s.Order = req.Order.Value;
             if (req.Color.HasValue)
                 s.Color = MapEnum<HomeDomain.StatCardColor>(req.Color.Value);
             if (req.Title is not null)
@@ -320,7 +331,7 @@ public sealed class HomeService(
             c.Id,
             c.Title,
             c.Subtitle,
-            BuildPublicUploadUrl(c.Upload),
+            c.Upload?.Url ?? string.Empty,
             c.ActionUrl,
             c.Order,
             MapEnum<HomeDtos.CarouselSection>(c.Section)
@@ -366,25 +377,6 @@ public sealed class HomeService(
         !string.IsNullOrWhiteSpace(value)
             ? value.Trim()
             : throw LogicException.InvalidValue(param, value);
-
-    private string BuildPublicUploadUrl(UploadModel? upload)
-    {
-        if (upload is null || string.IsNullOrWhiteSpace(upload.StoragePath))
-        {
-            return string.Empty;
-        }
-
-        var request = _httpContextAccessor.HttpContext?.Request;
-        var fileName = Path.GetFileName(upload.StoragePath);
-        var relativePath = $"/uploads/{fileName}";
-
-        if (request is null)
-        {
-            return relativePath;
-        }
-
-        return $"{request.Scheme}://{request.Host}{request.PathBase}{relativePath}";
-    }
 
     #endregion
 }

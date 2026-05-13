@@ -1,37 +1,36 @@
+// feature/home/hooks/useHome.ts
 import { useState, useCallback, useEffect } from 'react';
 import { HomeService } from '../services/HomeService';
 import { AlertService } from '@/core/alert/AlertService';
 import { useActivePlans } from '@/feature/plan/hooks/useActivePlans';
-import type { HowItWorksStep, UserReview } from '../types';
 import type { PricingPlan } from '@/feature/plan/types';
+import type { CarouselResponse, StatCardResponse } from '../../admin/types/homeAdmin.types';
 
 interface UseHomeResult {
-  steps: HowItWorksStep[];
-  reviews: UserReview[];
-  // Re-exportamos os planos e o loading combinado
+  carousels: CarouselResponse[];
+  stats: StatCardResponse[];
   plans: PricingPlan[];
   loading: boolean;
 }
 
 export function useHome(): UseHomeResult {
-  const [steps, setSteps] = useState<HowItWorksStep[]>([]);
-  const [reviews, setReviews] = useState<UserReview[]>([]);
+  const [carousels, setCarousels] = useState<CarouselResponse[]>([]);
+  const [stats, setStats] = useState<StatCardResponse[]>([]);
   const [homeLoading, setHomeLoading] = useState(true);
 
-  // Instanciamos o hook da feature de Planos
   const { plans, loading: plansLoading } = useActivePlans();
 
   const fetchHomeData = useCallback(async () => {
     setHomeLoading(true);
     try {
       const data = await HomeService.getLandingPageData();
-      // O backend deve retornar uma estrutura com 'steps' e 'reviews' ordenadas
-      setSteps(data.steps.sort((a, b) => a.order - b.order));
-      setReviews(data.reviews);
+      // Ordena e armazena os slides e métricas baseados na propriedade 'order'
+      setCarousels(data.carousels.sort((a, b) => a.order - b.order));
+      setStats(data.stats.sort((a, b) => a.order - b.order));
     } catch {
       AlertService.error('Erro', 'Erro ao carregar dados da página inicial.');
-      setSteps([]);
-      setReviews([]);
+      setCarousels([]);
+      setStats([]);
     } finally {
       setHomeLoading(false);
     }
@@ -41,13 +40,10 @@ export function useHome(): UseHomeResult {
     fetchHomeData();
   }, [fetchHomeData]);
 
-  // O loading geral só acaba quando a Home E os Planos terminarem de carregar
-  const combinedLoading = homeLoading || plansLoading;
-
   return { 
-    steps, 
-    reviews, 
+    carousels, 
+    stats, 
     plans, 
-    loading: combinedLoading 
+    loading: homeLoading || plansLoading 
   };
 }

@@ -1,12 +1,23 @@
+// feature/home/hooks/useHomeAdmin.ts
 import { useState, useCallback, useEffect } from 'react';
 import { HomeAdminService } from '../services/HomeAdminService';
 import { AlertService } from '@/core/alert/AlertService';
-import type { CarouselResponse, StatCardResponse, CarouselSaveDto, StatCardSaveDto } from '../types/homeAdmin.types';
+import type { 
+  CarouselResponse, 
+  StatCardResponse, 
+  CarouselSaveDto, 
+  StatCardSaveDto 
+} from '../types/homeAdmin.types';
 
-export function useHomeAdmin() {
+interface UseHomeAdminOptions {
+  autoFetch?: boolean;
+}
+
+export function useHomeAdmin(options: UseHomeAdminOptions = { autoFetch: true }) {
   const [carousels, setCarousels] = useState<CarouselResponse[]>([]);
   const [stats, setStats] = useState<StatCardResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(options.autoFetch ? true : false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
@@ -15,17 +26,40 @@ export function useHomeAdmin() {
       setCarousels(data.carousels);
       setStats(data.stats);
     } catch (err) {
-      AlertService.error('Erro de Carregamento', err  instanceof Error ? err.message : JSON.stringify(err));
+      AlertService.error('Erro de Carregamento', err instanceof Error ? err.message : JSON.stringify(err));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAdminData();
-  }, [fetchAdminData]);
+    if (options.autoFetch) {
+      fetchAdminData();
+    }
+  }, [fetchAdminData, options.autoFetch]);
 
-  // Handler genérico para Deletar com Confirmação
+  // --- Manipulação de Upload de Imagem ---
+  const handleUploadImage = async (file: File): Promise<{ uploadId: string; uploadUrl: string } | null> => {
+    setIsUploading(true);
+    try {
+      const response = await HomeAdminService.uploadImage(file);
+      const uploadId = response.Id || response.id;
+      const uploadUrl = response.Url || response.url;
+      
+      if (!uploadId) {
+        throw new Error('ID de upload não retornado pelo servidor.');
+      }
+
+      return { uploadId, uploadUrl: uploadUrl || '' };
+    } catch (err) {
+      AlertService.error('Erro no upload', 'Não foi possível carregar a imagem. Tente novamente.');
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // --- Handlers de Gestão ---
   const handleDeleteCarousel = async (id: string) => {
     await AlertService.confirm({
       title: 'Remover Slide?',
@@ -34,9 +68,9 @@ export function useHomeAdmin() {
         try {
           await HomeAdminService.deleteCarousel(id);
           AlertService.success('Removido!', 'O slide foi excluído com sucesso.');
-          fetchAdminData(); // Atualiza a lista
+          fetchAdminData();
         } catch (err) {
-          AlertService.error('Falha ao excluir', err  instanceof Error ? err.message : JSON.stringify(err));
+          AlertService.error('Falha ao excluir', err instanceof Error ? err.message : JSON.stringify(err));
         }
       }
     });
@@ -54,7 +88,7 @@ export function useHomeAdmin() {
       }
       fetchAdminData();
     } catch (err) {
-      AlertService.error('Erro ao salvar', err  instanceof Error ? err.message : JSON.stringify(err));
+      AlertService.error('Erro ao salvar', err instanceof Error ? err.message : JSON.stringify(err));
     } finally {
       setLoading(false);
     }
@@ -98,7 +132,9 @@ export function useHomeAdmin() {
     carousels,
     stats,
     loading,
+    isUploading,
     refresh: fetchAdminData,
+    uploadImage: handleUploadImage,
     deleteCarousel: handleDeleteCarousel,
     saveCarousel: handleSaveCarousel,
     deleteStatCard: handleDeleteStatCard,

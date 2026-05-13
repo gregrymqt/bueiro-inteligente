@@ -101,6 +101,10 @@ public static class ConfigurationServiceExtensions
             rawEnv,
             "MercadoPago__WebhookKey"
         );
+        mappedValues[$"{MercadoPagoSettings.SectionName}:PlanBackUrl"] = Resolve(
+            rawEnv,
+            "MercadoPago__PlanBackUrl"
+        );
 
         // Mapeia USE__SUPABASE__STORAGE para UseStorage (normaliza underscores)
         var useSupabaseStorage = Resolve(rawEnv, "USE__SUPABASE__STORAGE");

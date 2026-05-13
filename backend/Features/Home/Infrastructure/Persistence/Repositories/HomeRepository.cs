@@ -1,9 +1,16 @@
+// backend/Features/Home/Infrastructure/Persistence/Repositories/HomeRepository.cs
 using backend.Core;
 using backend.Features.Home.Domain;
 using backend.Features.Home.Domain.Entities;
 using backend.Features.Home.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace backend.Features.Home.Infrastructure.Persistence.Repositories;
 
@@ -97,6 +104,9 @@ public sealed class HomeRepository(
         ArgumentNullException.ThrowIfNull(c);
         try
         {
+            // Proteção estrita: Desassocia a entidade de navegação para impedir que o EF Core
+            // tente efetuar o rastreamento ou o update indevido da tabela de ficheiros associada.
+            c.Upload = null;
             dbContext.HomeCarousels.Update(c);
             await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
 

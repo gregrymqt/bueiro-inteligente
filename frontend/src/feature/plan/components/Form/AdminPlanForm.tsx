@@ -25,9 +25,12 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
 
     // Extraímos 'plans' e 'loading' para poder buscar os dados da edição
     const { plans, addPlan, editPlan, isSubmitting, loading } = useAdminPlans();
-    const isEditing = Boolean(initialData || id);
+    
+    // 🔴 Lógica de obtenção do ID refatorada
+    const planId = initialData?.id || id;
+    const isEditing = Boolean(planId);
 
-    const effectivePlan = initialData ?? plans.find(p => p.id === id);
+    const effectivePlan = initialData ?? plans.find(p => p.id === planId);
 
     const methods = useForm<AdminPlanFormValues>({
         defaultValues: {
@@ -63,8 +66,13 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
             .map(f => f.value.trim())
             .filter(f => f !== '');
 
-        const success = isEditing && id
-            ? await editPlan(id, { name: data.name, amount: Number(data.amount), features, isPopular: data.isPopular })
+        if (isEditing && !planId) {
+            console.error('Erro crítico: Tentativa de edição, mas o ID do plano não foi encontrado.');
+            return;
+        }
+
+        const success = isEditing && planId
+            ? await editPlan(planId, { name: data.name, amount: Number(data.amount), features, isPopular: data.isPopular })
             : await addPlan({ name: data.name, amount: Number(data.amount), features, isPopular: data.isPopular, frequency: data.frequency, frequencyType: data.frequencyType });
 
         if (success) {

@@ -631,6 +631,12 @@ namespace backend.Migrations
                         .HasColumnType("character varying(1024)")
                         .HasColumnName("storage_path");
 
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("url");
+
                     b.HasKey("Id");
 
                     b.ToTable("uploads", (string)null);
@@ -645,7 +651,8 @@ namespace backend.Migrations
                             Extension = ".jpg",
                             FileName = "sample_home_photo.jpg",
                             Size = 102400L,
-                            StoragePath = "/var/www/uploads/11111111-1111-1111-1111-111111111111.jpg"
+                            StoragePath = "/var/www/uploads/11111111-1111-1111-1111-111111111111.jpg",
+                            Url = "https://example.com/uploads/11111111-1111-1111-1111-111111111111.jpg"
                         });
                 });
 

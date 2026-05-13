@@ -27,6 +27,7 @@ public class UploadModelConfiguration : IEntityTypeConfiguration<UploadModel>
         builder.Property(x => x.Extension).HasColumnName("extension").IsRequired().HasMaxLength(50);
         builder.Property(x => x.Checksum).HasColumnName("checksum").IsRequired().HasMaxLength(128);
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.Url).HasColumnName("url").IsRequired().HasMaxLength(1024);
 
         builder.HasData(
             new UploadModel
@@ -39,6 +40,7 @@ public class UploadModelConfiguration : IEntityTypeConfiguration<UploadModel>
                 Extension = ".jpg",
                 Checksum = "A1B2C3D4E5F6",
                 CreatedAt = new System.DateTime(2024, 1, 1, 0, 0, 0, System.DateTimeKind.Utc),
+                Url = "https://example.com/uploads/11111111-1111-1111-1111-111111111111.jpg"
             }
         );
     }

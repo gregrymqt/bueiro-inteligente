@@ -30,9 +30,8 @@ public static class AppPipelineExtensions
 
         app.UseForwardedHeaders();
         app.UseHttpsRedirection();
-        app.UseRouting();
-
         app.UseStaticFiles();
+        app.UseRouting();
 
         // Log de requisições HTTP do Serilog
         app.UseSerilogRequestLogging();

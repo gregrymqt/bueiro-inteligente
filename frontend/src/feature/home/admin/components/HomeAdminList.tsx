@@ -1,11 +1,13 @@
+// feature/home/components/HomeAdminList.tsx
 import React from 'react';
-import { Edit, Trash2, Image as ImageIcon} from 'lucide-react';
+import { Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { CarouselResponse, StatCardResponse } from '../types/homeAdmin.types';
 import styles from './HomeAdminList.module.scss';
-import  { Button } from '@/components/ui/Button/Button';
-import  { StatusBadge } from '@/components/ui/Status/StatusBadge';
-import  { GenericTable } from '@/components/ui/Table/GenericTable';
+import { Button } from '@/components/ui/Button/Button';
+import { StatusBadge } from '@/components/ui/Status/StatusBadge';
+import { GenericTable } from '@/components/ui/Table/GenericTable';
 import type { Column } from '@/components/ui/Table/types/index.types';
+import { ImageResolver } from '@/core/http/ImageResolver';
 
 interface HomeAdminListProps {
   carousels: CarouselResponse[];
@@ -31,22 +33,25 @@ export const HomeAdminList: React.FC<HomeAdminListProps> = ({
   onCreateStat
 }) => {
 
-  // Definição das Colunas para o Carrossel (Slides)
   const carouselColumns: Column<CarouselResponse>[] = [
     {
       key: 'image_url',
       label: 'Preview',
-      render: (url: string) => (
-        <div className={styles.thumbnail}>
-          {url ? <img src={url} alt="Preview" /> : <ImageIcon size={20} />}
-        </div>
-      )
+      render: (url: string) => {
+        // Resolvemos o caminho da imagem de forma segura antes de passar para a tag img
+        const resolvedUrl = ImageResolver.resolve(url);
+        return (
+          <div className={styles.thumbnail}>
+            {url ? <img src={resolvedUrl} alt="Preview" /> : <ImageIcon size={20} />}
+          </div>
+        );
+      }
     },
     { key: 'title', label: 'Título' },
     { 
       key: 'section', 
       label: 'Seção',
-      render: (value: string) => <StatusBadge status={value} /> //
+      render: (value: string) => <StatusBadge status={value} />
     },
     { key: 'order', label: 'Ordem' },
     {
@@ -65,15 +70,11 @@ export const HomeAdminList: React.FC<HomeAdminListProps> = ({
     }
   ];
 
-  // Definição das Colunas para os Cards de Estatísticas
   const statColumns: Column<StatCardResponse>[] = [
     { 
       key: 'icon_name', 
       label: 'Ícone',
-      render: (iconName: string) => {
-        // Mapeamento dinâmico básico para visualização no admin
-        return <div className={styles.iconCircle}>{iconName}</div>;
-      }
+      render: (iconName: string) => <div className={styles.iconCircle}>{iconName}</div>
     },
     { key: 'title', label: 'Título' },
     { key: 'value', label: 'Valor' },
