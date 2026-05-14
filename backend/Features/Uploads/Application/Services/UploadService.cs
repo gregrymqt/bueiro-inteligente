@@ -13,6 +13,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 using Supabase;
 
 namespace backend.Features.Uploads.Application.Services;
@@ -20,6 +23,11 @@ namespace backend.Features.Uploads.Application.Services;
 public class UploadService : IUploadService
 {
     private const string SupabaseBucketName = "bueiro_bucket";
+    private const string WebpContentType = "image/webp";
+    private const string WebpExtension = ".webp";
+    private const int MaxImageWidth = 1920;
+    private const int MaxImageHeight = 1920;
+    private const int WebpQuality = 80;
 
     private readonly IUploadRepository _repository;
     private readonly ILogger<UploadService> _logger;
@@ -83,41 +91,52 @@ public class UploadService : IUploadService
             throw new ArgumentException("File is empty or null.");
         }
 
-        if (!IsValidImage(file))
+        if (
+            string.IsNullOrWhiteSpace(file.ContentType)
+            || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+        )
         {
             throw new ArgumentException("Invalid image file or content type mismatch.");
         }
 
+        var sanitizedFileName = Path.GetFileName(file.FileName);
+        var uploadId = Guid.NewGuid();
+        var storedFileName = BuildStoredFileName(uploadId);
+        var createdAt = DateTime.UtcNow;
+
         _logger.LogInformation(
             "Starting upload processing for file {FileName} using {StorageMode} storage.",
-            file.FileName,
+            sanitizedFileName,
             _supabaseOptions.Value.UseStorage ? "Supabase" : "local"
         );
 
-        // Sanitize file name (Path Traversal protection)
-        var sanitizedFileName = Path.GetFileName(file.FileName);
+        byte[] webpBytes;
 
-        var uploadId = Guid.NewGuid();
-        var extension = Path.GetExtension(sanitizedFileName);
-        var createdAt = DateTime.UtcNow;
+        try
+        {
+            webpBytes = await ConvertToWebpBytesAsync(file).ConfigureAwait(false);
+        }
+        catch (UnknownImageFormatException ex)
+        {
+            _logger.LogWarning(ex, "Invalid image format received for file {FileName}.", sanitizedFileName);
+            throw new ArgumentException("Invalid image file or content type mismatch.", ex);
+        }
 
         if (_supabaseOptions.Value.UseStorage)
         {
             return await ProcessUploadToSupabaseAsync(
-                    file,
+                    webpBytes,
                     uploadId,
-                    sanitizedFileName,
-                    extension,
+                    storedFileName,
                     createdAt
                 )
                 .ConfigureAwait(false);
         }
 
         return await ProcessLocalUploadAsync(
-                file,
+                webpBytes,
                 uploadId,
-                sanitizedFileName,
-                extension,
+                storedFileName,
                 createdAt
             )
             .ConfigureAwait(false);
@@ -148,29 +167,26 @@ public class UploadService : IUploadService
     }
 
     private async Task<UploadModel> ProcessLocalUploadAsync(
-        IFormFile file,
+        byte[] webpBytes,
         Guid uploadId,
-        string sanitizedFileName,
-        string extension,
+        string storedFileName,
         DateTime createdAt
     )
     {
-        var storedFileName = $"{uploadId}{extension}";
         var filePath = Path.Combine(_storagePath, storedFileName);
 
         // Check disk space
         var driveInfo = new DriveInfo(
             Path.GetPathRoot(Path.GetFullPath(_storagePath)) ?? string.Empty
         );
-        if (driveInfo.IsReady && driveInfo.AvailableFreeSpace < file.Length)
+        if (driveInfo.IsReady && driveInfo.AvailableFreeSpace < webpBytes.LongLength)
         {
             throw new IOException("Not enough disk space to save the file.");
         }
 
         try
         {
-            // Optimize FileStream with larger buffer and asynchronous flag
-            const int bufferSize = 81920; // 80 KB
+            const int bufferSize = 81920;
             await using var stream = new FileStream(
                 filePath,
                 FileMode.Create,
@@ -180,27 +196,19 @@ public class UploadService : IUploadService
                 FileOptions.Asynchronous
             );
 
-            // Compute Checksum while saving
-            using var sha256 = SHA256.Create();
-            await using var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Write);
+            await stream.WriteAsync(webpBytes).ConfigureAwait(false);
+            await stream.FlushAsync().ConfigureAwait(false);
 
-            await file.CopyToAsync(cryptoStream);
-
-            // Ensure all data is written and hashes computed
-            await cryptoStream.FlushFinalBlockAsync();
-            var checksumBytes =
-                sha256.Hash
-                ?? throw new InvalidOperationException("Unable to compute file checksum.");
-            var checksumHex = Convert.ToHexString(checksumBytes).ToLowerInvariant();
+            var checksumHex = Convert.ToHexString(SHA256.HashData(webpBytes)).ToLowerInvariant();
 
             var uploadModel = new UploadModel
             {
                 Id = uploadId,
-                FileName = sanitizedFileName,
-                ContentType = file.ContentType,
-                Size = file.Length,
+                FileName = storedFileName,
+                ContentType = WebpContentType,
+                Size = webpBytes.LongLength,
                 StoragePath = filePath,
-                Extension = extension,
+                Extension = WebpExtension,
                 Checksum = checksumHex,
                 Url = BuildLocalUploadUrl(storedFileName),
                 CreatedAt = createdAt,
@@ -225,10 +233,9 @@ public class UploadService : IUploadService
     }
 
     private async Task<UploadModel> ProcessUploadToSupabaseAsync(
-        IFormFile file,
+        byte[] webpBytes,
         Guid uploadId,
-        string sanitizedFileName,
-        string extension,
+        string storedFileName,
         DateTime createdAt
     )
     {
@@ -237,25 +244,24 @@ public class UploadService : IUploadService
             throw new InvalidOperationException("Supabase client is not configured.");
         }
 
-        var fileBytes = await ReadFileBytesAsync(file);
-        var checksumHex = Convert.ToHexString(SHA256.HashData(fileBytes)).ToLowerInvariant();
-        var storagePath = BuildSupabaseStoragePath(createdAt, uploadId, extension);
+        var checksumHex = Convert.ToHexString(SHA256.HashData(webpBytes)).ToLowerInvariant();
+        var storagePath = BuildSupabaseStoragePath(createdAt, storedFileName);
 
         try
         {
             var bucket = _supabaseClient.Storage.From(SupabaseBucketName);
-            await bucket.Upload(fileBytes, storagePath).ConfigureAwait(false);
+            await bucket.Upload(webpBytes, storagePath).ConfigureAwait(false);
 
             var publicUrl = bucket.GetPublicUrl(storagePath);
 
             var uploadModel = new UploadModel
             {
                 Id = uploadId,
-                FileName = sanitizedFileName,
-                ContentType = file.ContentType,
-                Size = file.Length,
+                FileName = storedFileName,
+                ContentType = WebpContentType,
+                Size = webpBytes.LongLength,
                 StoragePath = storagePath,
-                Extension = extension,
+                Extension = WebpExtension,
                 Checksum = checksumHex,
                 Url = publicUrl,
                 CreatedAt = createdAt,
@@ -268,7 +274,7 @@ public class UploadService : IUploadService
             _logger.LogError(
                 ex,
                 "Unauthorized access while attempting to upload file {FileName} to Supabase path {StoragePath}",
-                sanitizedFileName,
+                storedFileName,
                 storagePath
             );
             throw new IOException("Access to Supabase Storage is denied.", ex);
@@ -278,7 +284,7 @@ public class UploadService : IUploadService
             _logger.LogError(
                 ex,
                 "Error occurred while uploading file {FileName} to Supabase path {StoragePath}",
-                sanitizedFileName,
+                storedFileName,
                 storagePath
             );
             throw new IOException(
@@ -288,41 +294,40 @@ public class UploadService : IUploadService
         }
     }
 
-    private bool IsValidImage(IFormFile file)
+    private static async Task<byte[]> ConvertToWebpBytesAsync(IFormFile file)
     {
-        if (file.Length < 4)
+        using var inputStream = file.OpenReadStream();
+        using var image = await Image.LoadAsync(inputStream).ConfigureAwait(false);
+
+        ResizeImageIfNeeded(image);
+
+        using var outputStream = new MemoryStream();
+        var encoder = new WebpEncoder
         {
-            return false;
-        }
+            FileFormat = WebpFileFormatType.Lossy,
+            Quality = WebpQuality,
+        };
 
-        var headerBytes = new byte[4];
-        using (var stream = file.OpenReadStream())
-        {
-            stream.ReadExactly(headerBytes, 0, 4);
-        }
-
-        var headerHex = BitConverter.ToString(headerBytes).Replace("-", "").ToUpperInvariant();
-        var contentType = file.ContentType.ToLowerInvariant();
-
-        if (
-            headerHex.StartsWith("FFD8FF")
-            && (contentType == "image/jpeg" || contentType == "image/jpg")
-        )
-            return true;
-        if (headerHex.StartsWith("89504E47") && contentType == "image/png")
-            return true;
-        if (headerHex.StartsWith("47494638") && contentType == "image/gif")
-            return true;
-        if (headerHex.StartsWith("424D") && contentType == "image/bmp")
-            return true;
-        return headerHex.StartsWith("52494646") && contentType == "image/webp";
+        await image.SaveAsWebpAsync(outputStream, encoder).ConfigureAwait(false);
+        return outputStream.ToArray();
     }
 
-    private static async Task<byte[]> ReadFileBytesAsync(IFormFile file)
+    private static void ResizeImageIfNeeded(Image image)
     {
-        await using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
-        return memoryStream.ToArray();
+        if (image.Width <= MaxImageWidth && image.Height <= MaxImageHeight)
+        {
+            return;
+        }
+
+        image.Mutate(context =>
+            context.Resize(
+                new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(MaxImageWidth, MaxImageHeight),
+                }
+            )
+        );
     }
 
     private static string BuildLocalUploadUrl(string fileName)
@@ -330,14 +335,15 @@ public class UploadService : IUploadService
         return $"/uploads/{fileName}";
     }
 
-    private static string BuildSupabaseStoragePath(
-        DateTime createdAt,
-        Guid uploadId,
-        string extension
-    )
+    private static string BuildStoredFileName(Guid uploadId)
+    {
+        return $"{uploadId}{WebpExtension}";
+    }
+
+    private static string BuildSupabaseStoragePath(DateTime createdAt, string storedFileName)
     {
         var year = createdAt.ToString("yyyy", CultureInfo.InvariantCulture);
         var month = createdAt.ToString("MM", CultureInfo.InvariantCulture);
-        return $"uploads/{year}/{month}/{uploadId}{extension}";
+        return $"uploads/{year}/{month}/{storedFileName}";
     }
 }
