@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { FeedbackService } from '../services/FeedbackService';
 import { AlertService } from '@/core/alert/AlertService';
 import type { Feedback } from '../types';
@@ -20,7 +20,12 @@ export function useFeedbacks() {
     }
   }, []);
 
- const removeFeedback = async (id: string) => {
+  // Adicione o useEffect logo após o fetchFeedbacks
+  useEffect(() => {
+    void fetchFeedbacks();
+  }, [fetchFeedbacks]);
+
+  const removeFeedback = async (id: string) => {
     await AlertService.confirm({
       title: 'Tem certeza?',
       text: 'Esta ação não pode ser desfeita.',

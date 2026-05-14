@@ -55,7 +55,7 @@ public sealed class CachedMonitoringRepository(
     public Task MarkAsSyncedAsync(IReadOnlyCollection<string> drainIds, CancellationToken ct = default) =>
         decorated.MarkAsSyncedAsync(drainIds, ct);
 
-    public Task<BueiroConfiguration> GetConfigByIdAsync(string id, CancellationToken ct = default) =>
+    public Task<BueiroConfiguration?> GetConfigByIdAsync(string id, CancellationToken ct = default) =>
         decorated.GetConfigByIdAsync(id, ct);
 
     private static DrainStatusDTO MapToDto(DrainStatus entity) =>

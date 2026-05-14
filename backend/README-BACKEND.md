@@ -46,7 +46,7 @@ backend/
 │   ├── Drain/
 │   |── Drains/
 |   |──MercadoPago/
-|   └──Payment
+|   └──Payment/
 |
 ├── Infrastructure/
 │   ├── Cache/

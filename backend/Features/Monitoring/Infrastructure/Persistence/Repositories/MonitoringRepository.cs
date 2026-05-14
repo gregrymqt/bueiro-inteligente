@@ -84,11 +84,14 @@ public sealed class MonitoringRepository(
         }
     }
 
-    public async Task<BueiroConfiguration> GetConfigByIdAsync(
+    public async Task<BueiroConfiguration?> GetConfigByIdAsync(
         string id,
         CancellationToken ct = default
     )
     {
+        if (string.IsNullOrWhiteSpace(id))
+            throw LogicException.InvalidValue(nameof(id), id);
+
         var drainConfig = await dbContext
             .Drains.AsNoTracking()
             .Where(d => d.HardwareId == id)
@@ -102,14 +105,7 @@ public sealed class MonitoringRepository(
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        return drainConfig
-            ?? new BueiroConfiguration
-            {
-                IdBueiro = id,
-                MaxHeight = 120.0,
-                CriticalThreshold = 80.0,
-                AlertThreshold = 50.0,
-            };
+        return drainConfig;
     }
 
     public async Task MarkAsSyncedAsync(

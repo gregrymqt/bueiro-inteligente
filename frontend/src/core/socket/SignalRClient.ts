@@ -7,6 +7,7 @@ import {
 } from '@microsoft/signalr';
 import { AlertService } from '../alert/AlertService';
 import { resolveAppId, resolveSignalRHubUrl } from '../http/environment';
+import { tokenService } from '../http/TokenService';
 
 export type SignalRMessageHandler<TPayload> = (payload: TPayload) => void;
 export const SIGNALR_CONNECTION_ERROR_TITLE = 'Erro de Conexão';
@@ -50,15 +51,16 @@ export class SignalRClient {
     }
 
     this.connection = new HubConnectionBuilder()
-      .withUrl(resolveSignalRHubUrl(), {
-        headers: {
-          'X-App-Id': resolveAppId(),
-        },
-        transport: HttpTransportType.LongPolling,
-      })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
-      .build();
+    .withUrl(resolveSignalRHubUrl(), {
+      headers: {
+        'X-App-Id': resolveAppId(),
+      },
+      accessTokenFactory: () => tokenService.getToken() ?? '',
+      transport: HttpTransportType.LongPolling,
+    })
+    .withAutomaticReconnect()
+    .configureLogging(LogLevel.Information)
+    .build();
 
     this.connection.onclose((error: unknown) => {
       if (error) {

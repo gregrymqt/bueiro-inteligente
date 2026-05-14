@@ -11,10 +11,10 @@
 // adaptador de rede principal (Wi-Fi) (ex: 192.168.x.x) e coloque-o na sua API_URL.
 // Garanta que o PC e o ESP32 estejam conectados rigorosamente na mesma rede.
 
-const char* ssid = WIFI_SSID;
-const char* senha = WIFI_PASS;
-const char* hardwareToken = HARDWARE_TOKEN;
-const char* urlApi = API_URL;
+const char *ssid = WIFI_SSID;
+const char *senha = WIFI_PASS;
+const char *hardwareToken = HARDWARE_TOKEN;
+const char *urlApi = API_URL;
 
 const String ID_BUEIRO = "B-01-CENTRO";
 
@@ -31,8 +31,9 @@ unsigned long ultimoEnvioMillis = 0;
 bool jaEnviouLeitura = false;
 
 // medição da distância
-float medirDistancia() {
-  //controla o disparo do sensor
+float medirDistancia()
+{
+  // controla o disparo do sensor
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
@@ -40,27 +41,32 @@ float medirDistancia() {
   digitalWrite(trig, LOW);
   // mede quanto tempo o echo ficou ativo, esse é o tempo de ida e volta do som
   long duracao = pulseIn(echo, HIGH);
-  //multiplica a duração pelo pela velocidade do som em cm por microsegundo assim tendo a distância
+  // multiplica a duração pelo pela velocidade do som em cm por microsegundo assim tendo a distância
   float distancia = (duracao * 0.0343) / 2;
 
   return distancia;
 }
 
 // filtra as medições afim de eliminar falsos positivos vindos de ruidos
-float distanciaFiltrada() {
+float distanciaFiltrada()
+{
   const int quantidadeAmostras = 5;
   float leitura[quantidadeAmostras];
 
   // preenche o vetor com os valores do sensor
-  for (int i = 0; i < quantidadeAmostras; i++) {
+  for (int i = 0; i < quantidadeAmostras; i++)
+  {
     leitura[i] = medirDistancia();
     delay(30);
   }
 
   // bubble sort ordenando os dados de forma crescente
-  for (int i = 0; i < quantidadeAmostras - 1; i++) {
-    for (int j = 0; j < quantidadeAmostras - i - 1; j++) {
-      if (leitura[j] > leitura[j + 1]) {
+  for (int i = 0; i < quantidadeAmostras - 1; i++)
+  {
+    for (int j = 0; j < quantidadeAmostras - i - 1; j++)
+    {
+      if (leitura[j] > leitura[j + 1])
+      {
         float temp = leitura[j];
         leitura[j] = leitura[j + 1];
         leitura[j + 1] = temp;
@@ -70,17 +76,20 @@ float distanciaFiltrada() {
 
   // media dos valores ignorando o menor e maior valor
   float soma = 0;
-  for (int i = 1; i < quantidadeAmostras - 1; i++) {
+  for (int i = 1; i < quantidadeAmostras - 1; i++)
+  {
     soma += leitura[i];
   }
 
   return soma / 3;
 }
 
-bool bueiroJson(float distancia, float nivel) {
+bool bueiroJson(float distancia, float nivel)
+{
   (void)nivel;
 
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED)
+  {
     HTTPClient http;
     String urlFinal = String(urlApi) + "?token=" + String(hardwareToken);
     http.begin(urlFinal);
@@ -106,17 +115,27 @@ bool bueiroJson(float distancia, float nivel) {
     bool sucesso = false;
 
     // A API enfileira o processamento no Hangfire, retornando 202 Accepted
-    if (httpResponseCode == 202) {
+    if (httpResponseCode == 202)
+    {
       Serial.print("Código HTTP: ");
       Serial.println(httpResponseCode);
 
       String response = http.getString();
       Serial.println("Resposta: " + response);
       sucesso = true;
-    } else {
+    }
+    else if (httpResponseCode == 404 || httpResponseCode == 400)
+    {
+      Serial.print("ERRO CRÍTICO: Este bueiro (");
+      Serial.print(ID_BUEIRO);
+      Serial.println(") não está cadastrado no sistema!");
+    }
+    else
+    {
       Serial.print("Erro HTTP: ");
       Serial.println(httpResponseCode);
-      if (httpResponseCode > 0) {
+      if (httpResponseCode > 0)
+      {
         String response = http.getString();
         Serial.println("Resposta: " + response);
       }
@@ -130,7 +149,8 @@ bool bueiroJson(float distancia, float nivel) {
   return false;
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
@@ -138,7 +158,8 @@ void setup() {
   WiFi.begin(ssid, senha);
   Serial.print("Conectando");
 
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -146,34 +167,46 @@ void setup() {
   Serial.println("\nWiFi conectado!");
 }
 
-void loop() {
+void loop()
+{
   float distancia = distanciaFiltrada();
   float nivel = ((alturaTotal - distancia) / alturaTotal) * 100;
 
-  if (nivel >= 60) {
+  if (nivel >= 60)
+  {
     Serial.println("Nivel Critico!");
-  } else if (nivel >= 40) {
+  }
+  else if (nivel >= 40)
+  {
     Serial.println("Alerta! acima de 40%!");
-  } else if (nivel >= 15) {
+  }
+  else if (nivel >= 15)
+  {
     Serial.println("Nivel normal! abaixo de 40% e acima de 15%!");
-  } else {
+  }
+  else
+  {
     Serial.println("Nivel baixo, possível falha no sensor ou bueiro vazio");
   }
 
   float delta = jaEnviouLeitura
-                  ? (distancia >= ultimaDistancia ? distancia - ultimaDistancia : ultimaDistancia - distancia)
-                  : DELTA_MINIMO + 1.0;
+                    ? (distancia >= ultimaDistancia ? distancia - ultimaDistancia : ultimaDistancia - distancia)
+                    : DELTA_MINIMO + 1.0;
   unsigned long agora = millis();
   bool heartbeatVencido = jaEnviouLeitura && (agora - ultimoEnvioMillis >= HEARTBEAT_MS);
   bool deveEnviar = !jaEnviouLeitura || delta > DELTA_MINIMO || heartbeatVencido;
 
-  if (deveEnviar) {
-    if (bueiroJson(distancia, nivel)) {
+  if (deveEnviar)
+  {
+    if (bueiroJson(distancia, nivel))
+    {
       ultimaDistancia = distancia;
       ultimoEnvioMillis = agora;
       jaEnviouLeitura = true;
     }
-  } else {
+  }
+  else
+  {
     Serial.println("Envio bloqueado por delta mínimo.");
   }
 

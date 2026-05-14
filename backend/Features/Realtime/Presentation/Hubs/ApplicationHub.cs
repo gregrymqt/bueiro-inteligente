@@ -1,9 +1,11 @@
 using backend.extensions.Services.Security.Exceptions;
 using backend.extensions.Services.Security.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Features.Realtime.Presentation.Hubs;
 
+[Authorize]
 public sealed class ApplicationHub(WebSocketRateLimiter rateLimiter, ILogger<ApplicationHub> logger)
     : Hub
 {

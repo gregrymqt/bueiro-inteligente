@@ -5,6 +5,7 @@ using backend.Core;
 using backend.extensions.Services.Realtime.Abstractions;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;
+using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -34,9 +35,12 @@ public sealed class MonitoringService(
             if (string.IsNullOrWhiteSpace(payload.IdBueiro))
                 throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
 
-            var config = await monitoringRepository
+            BueiroConfiguration? config = await monitoringRepository
                 .GetConfigByIdAsync(payload.IdBueiro, ct)
                 .ConfigureAwait(false);
+
+            if (config is null)
+                throw new NotFoundException("Bueiro", payload.IdBueiro);
 
             ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm, config.MaxHeight);
 
@@ -86,6 +90,16 @@ public sealed class MonitoringService(
             }
 
             return result;
+        }
+        catch (NotFoundException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Tentativa de envio por hardware não cadastrado {IdBueiro} bloqueada. Payload: {@Payload}",
+                payload?.IdBueiro,
+                payload
+            );
+            throw;
         }
         catch (Exception ex)
         {

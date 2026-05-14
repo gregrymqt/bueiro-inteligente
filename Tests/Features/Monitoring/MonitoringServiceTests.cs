@@ -9,12 +9,13 @@ public sealed class MonitoringServiceTests
     private readonly Mock<IMonitoringRepository> _repositoryMock = new();
     private readonly Mock<IMonitoringIngestionService> _ingestionMock = new();
     private readonly Mock<IRealtimeService> _realtimeMock = new();
+    private readonly Mock<ILogger<MonitoringService>> _loggerMock = new();
     private readonly MonitoringService _service;
 
     public MonitoringServiceTests()
     {
         _repositoryMock
-            .Setup(r => r.GetConfigByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetConfigByIdAsync("DRN-01", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BueiroConfiguration
             {
                 IdBueiro = "DRN-01",
@@ -31,14 +32,14 @@ public sealed class MonitoringServiceTests
             _repositoryMock.Object,
             _ingestionMock.Object,
             _realtimeMock.Object,
-            Mock.Of<ILogger<MonitoringService>>()
+            _loggerMock.Object
         );
     }
 
     #region Helpers (O gabarito definitivo)
 
-    private SensorPayloadDTO CreatePayload(double distance) =>
-        new("DRN-01", distance, -23.9, -46.3);
+    private SensorPayloadDTO CreatePayload(double distance, string id = "DRN-01") =>
+        new(id, distance, -23.9, -46.3);
 
     private DrainStatusDTO CreateStatus(string id = "DRN-01", string status = "Normal") =>
         new(id, 90, 25, status, -23.9, -46.3, DateTimeOffset.UtcNow);
@@ -91,9 +92,15 @@ public sealed class MonitoringServiceTests
         );
 
         if (shouldBroadcast)
-            _realtimeMock.Verify(rt => rt.PublishAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
+            _realtimeMock.Verify(
+                rt => rt.PublishToDrainAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()),
+                Times.Once
+            );
         else
-            _realtimeMock.Verify(rt => rt.PublishAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+            _realtimeMock.Verify(
+                rt => rt.PublishToDrainAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()),
+                Times.Never
+            );
     }
 
     [Fact]
@@ -156,7 +163,7 @@ public sealed class MonitoringServiceTests
     public async Task ProcessSensorData_UltimaAtualizacaoNula_DeveNaoLancarErro_E_PreencherDataHashComFallback()
     {
         // Arrange
-        var payload = new SensorPayloadDTO("DRN-NULL-TEST", 50.0); // UltimaAtualizacao is null
+        var payload = CreatePayload(50.0); // UltimaAtualizacao is null
 
         // Act
         var result = await _service.ProcessSensorDataAsync(payload);
@@ -165,5 +172,49 @@ public sealed class MonitoringServiceTests
         result.DataHash.Should().NotBeNullOrWhiteSpace();
         result.DataHash.Length.Should().Be(64);
         result.UltimaAtualizacao.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task ProcessSensorData_HardwareNaoCadastrado_DeveLancarNotFoundException_E_RegistrarTentativa()
+    {
+        // Arrange
+        var payload = CreatePayload(50.0, "DRN-404");
+
+        // Act
+        Func<Task> act = () => _service.ProcessSensorDataAsync(payload);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
+
+        _ingestionMock.Verify(
+            i => i.SaveSensorDataAsync(It.IsAny<DrainStatusDTO>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+
+        _realtimeMock.Verify(
+            rt => rt.PublishToDrainAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()),
+            Times.Never
+        );
+
+        _repositoryMock.Verify(
+            r => r.GetConfigByIdAsync("DRN-404", It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("hardware não cadastrado", StringComparison.OrdinalIgnoreCase)
+                    && state.ToString()!.Contains("DRN-404", StringComparison.OrdinalIgnoreCase)
+                ),
+                It.Is<NotFoundException>(ex =>
+                    ex.ResourceName == "Bueiro" && ex.ResourceKey == "DRN-404"
+                ),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+            ),
+            Times.Once
+        );
     }
 }
