@@ -3,6 +3,7 @@ using backend.Features.Scheduler.Application.Interfaces;
 using backend.Features.Subscription.Application.Interfaces;
 using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Subscription.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
@@ -10,6 +11,7 @@ namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
 public class ProcessSubscriptionPlanJob(
     IMercadoPagoPlanService mpPlanService,
     ISubscriptionPlanRepository planRepository,
+    IUnitOfWork unitOfWork,
     ILogger<ProcessSubscriptionPlanJob> logger
 ) : IJob<PaymentNotificationData>
 {
@@ -51,7 +53,10 @@ public class ProcessSubscriptionPlanJob(
                     InitPoint = mpPlan.InitPoint
                 };
 
-                await planRepository.CreateAsync(newPlan);
+                await unitOfWork.ExecuteTransactionAsync(async ct =>
+                {
+                    await planRepository.CreateAsync(newPlan);
+                }).ConfigureAwait(false);
             }
             else
             {
@@ -65,7 +70,10 @@ public class ProcessSubscriptionPlanJob(
                 localPlan.Frequency = mpPlan.AutoRecurring.Frequency;
                 localPlan.FrequencyType = mpPlan.AutoRecurring.FrequencyType;
 
-                await planRepository.UpdateAsync(localPlan);
+                await unitOfWork.ExecuteTransactionAsync(async ct =>
+                {
+                    await planRepository.UpdateAsync(localPlan);
+                }).ConfigureAwait(false);
             }
 
             logger.LogInformation("✅ Sincronização do plano {Id} concluída com sucesso.", resource.Id);

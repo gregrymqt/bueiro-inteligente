@@ -1,4 +1,5 @@
 using backend.Features.MercadoPago.Application.DTOs;
+using backend.Features.Auth.Domain.Interfaces;
 using backend.Features.Notifications.Application;
 using backend.Features.Notifications.Application.DTOs;
 using backend.Features.Notifications.Application.Interfaces;
@@ -9,17 +10,16 @@ using backend.Features.Subscription.Domain.Enums;
 using backend.Features.Subscription.Domain.Interfaces;
 using backend.Infrastructure.Cache;
 using backend.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore; // <-- ADICIONE ESTE USING IMPORTANTE
 
 namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
 
 public class ProcessPaymentJob(
     ILogger<ProcessPaymentJob> logger,
     IMercadoPagoPaymentService mpPaymentService,
+    IAuthRepository authRepository,
     IPaymentRepository paymentRepository,
     ISubscriptionRepository subscriptionRepository,
     IUnitOfWork unitOfWork,
-    AppDbContext dbContext,
     ICacheService cacheService,
     INotificationService notificationService
 ) : IJob<PaymentNotificationData>
@@ -37,6 +37,11 @@ public class ProcessPaymentJob(
 
         if (!Guid.TryParse(mpPaymentInfo.ExternalReference, out Guid transactionId))
             return;
+
+        Guid? notificationUserId = null;
+        string? notificationTitle = null;
+        string? notificationMessage = null;
+        NotificationType? notificationType = null;
 
         await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
@@ -63,9 +68,9 @@ public class ProcessPaymentJob(
                             localTransaction.UserId
                         );
 
-                        var user = await dbContext
-                            .Users.Include(u => u.Roles)
-                            .FirstOrDefaultAsync(u => u.Id == localTransaction.UserId);
+                        var user = await authRepository.GetUserByIdAsync(
+                            localTransaction.UserId
+                        );
 
                         if (user != null)
                         {
@@ -73,8 +78,8 @@ public class ProcessPaymentJob(
 
                             if (!isManager)
                             {
-                                var managerRole = await dbContext.Roles.FirstOrDefaultAsync(r =>
-                                    r.Name == "Manager"
+                                var managerRole = await authRepository.GetRoleByNameAsync(
+                                    "Manager"
                                 );
 
                                 if (managerRole != null)
@@ -88,12 +93,11 @@ public class ProcessPaymentJob(
                             }
                         }
 
-                        await notificationService.SendNotificationAsync(
-                            localTransaction.UserId,
-                            "Pagamento Aprovado! 🎉",
-                            $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!",
-                            NotificationType.Success
-                        );
+                        notificationUserId = localTransaction.UserId;
+                        notificationTitle = "Pagamento Aprovado! 🎉";
+                        notificationMessage =
+                            $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!";
+                        notificationType = NotificationType.Success;
 
                         var subscription = await subscriptionRepository.GetByUserIdAsync(
                             localTransaction.UserId
@@ -111,12 +115,11 @@ public class ProcessPaymentJob(
                     }
                 case "rejected":
                 case "cancelled":
-                    await notificationService.SendNotificationAsync(
-                        localTransaction.UserId,
-                        "Pagamento Recusado",
-                        "Houve um problema ao processar seu pagamento. Verifique a transação.",
-                        NotificationType.Error
-                    );
+                    notificationUserId = localTransaction.UserId;
+                    notificationTitle = "Pagamento Recusado";
+                    notificationMessage =
+                        "Houve um problema ao processar seu pagamento. Verifique a transação.";
+                    notificationType = NotificationType.Error;
                     break;
             }
 
@@ -125,6 +128,21 @@ public class ProcessPaymentJob(
                 transactionId
             );
         });
+
+        if (
+            notificationUserId.HasValue
+            && notificationTitle is not null
+            && notificationMessage is not null
+            && notificationType.HasValue
+        )
+        {
+            await notificationService.SendNotificationAsync(
+                notificationUserId.Value,
+                notificationTitle,
+                notificationMessage,
+                notificationType.Value
+            );
+        }
 
         await cacheService.RemoveAsync($"payment_status_{transactionId}");
     }

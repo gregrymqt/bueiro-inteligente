@@ -12,6 +12,27 @@ namespace backend.Features.Auth.Infrastructure.Persistence.Repositories;
 public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepository> logger)
     : IAuthRepository
 {
+    public async Task<User?> GetUserByIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await dbContext
+                .Users
+                .Include(u => u.Roles)
+                .FirstOrDefaultAsync(u => u.Id == userId, ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving user by id {UserId}", userId);
+            throw new ConnectionException(
+                "AuthRepository.GetUserByIdAsync",
+                $"Failed to query user by id '{userId}'.",
+                ex
+            );
+        }
+    }
+
     public async Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken ct = default)
     {
         try

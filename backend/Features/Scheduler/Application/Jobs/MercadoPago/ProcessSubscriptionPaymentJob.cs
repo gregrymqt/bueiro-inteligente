@@ -6,6 +6,7 @@ using backend.Features.Subscription.Domain.Interfaces;
 using backend.Features.Notifications.Application;
 using backend.Features.Notifications.Application.DTOs;
 using backend.Features.Notifications.Application.Interfaces; // <-- ADICIONADO
+using backend.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
@@ -13,6 +14,7 @@ namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
 public class ProcessSubscriptionPaymentJob(
     IMercadoPagoPaymentService mpService,
     ISubscriptionRepository repository,
+    IUnitOfWork unitOfWork,
     INotificationService notificationService, // <-- INJEÇÃO DO NOVO SERVIÇO
     ILogger<ProcessSubscriptionPaymentJob> logger
 ) : IJob<PaymentNotificationData>
@@ -51,16 +53,17 @@ public class ProcessSubscriptionPaymentJob(
             subscription.Status = SubscriptionStatus.Authorized;
             subscription.NextPaymentDate = (payment.DateApproved?.UtcDateTime ?? DateTime.UtcNow).AddDays(30);
 
-            await repository.UpdateAsync(subscription);
+            await unitOfWork.ExecuteTransactionAsync(async ct =>
+            {
+                await repository.UpdateAsync(subscription);
+            }).ConfigureAwait(false);
 
-            // --- NOVA ABORDAGEM DE NOTIFICAÇÃO ---
             await notificationService.SendNotificationAsync(
                 subscription.UserId,
                 "Assinatura Renovada",
                 $"Sua assinatura foi renovada com sucesso! O próximo faturamento será em {subscription.NextPaymentDate:dd/MM/yyyy}.",
                 NotificationType.Success
             );
-            // -------------------------------------
 
             logger.LogInformation("✅ Assinatura {SubId} autorizada com sucesso.", subscription.Id);
         }
