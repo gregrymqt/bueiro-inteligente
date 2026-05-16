@@ -4,6 +4,7 @@ using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Subscription.Domain.Enums;
 using backend.Features.Subscription.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Features.Subscription.Application.Services;
 
@@ -14,41 +15,46 @@ public sealed class SubscriptionService(
     ILogger<SubscriptionService> logger
 ) : ISubscriptionService
 {
-    public async Task<SubscriptionResponse> CreateSubscriptionAsync(Guid userId, CreateSubscriptionRequest request)
+    public async Task<SubscriptionResponse> CreateSubscriptionAsync(
+        Guid userId,
+        CreateSubscriptionRequest request
+    )
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+        var mpResult = await mercadoPagoService.CreateSubscriptionAsync(request).ConfigureAwait(false);
 
-        try
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
         {
-            // 1. Chama o Mercado Pago usando a interface separada
-            var mpResult = await mercadoPagoService.CreateSubscriptionAsync(request).ConfigureAwait(false);
-            
-            // 2. Monta a entidade para o banco de dados
-            var newSubscription = new UserSubscription
+            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+
+            try
             {
-                UserId = userId,
-                ExternalId = mpResult.Id,
-                ExternalPlanId = request.PlanId,
-                PayerEmail = request.PayerEmail,
-                TransactionAmount = request.AutoRecurring.TransactionAmount,
-                Status = Enum.Parse<SubscriptionStatus>(mpResult.Status, true), 
-                NextPaymentDate = mpResult.NextPaymentDate
-            };
+                var newSubscription = new UserSubscription
+                {
+                    UserId = userId,
+                    ExternalId = mpResult.Id,
+                    ExternalPlanId = request.PlanId,
+                    PayerEmail = request.PayerEmail,
+                    TransactionAmount = request.AutoRecurring.TransactionAmount,
+                    Status = Enum.Parse<SubscriptionStatus>(mpResult.Status, true),
+                    NextPaymentDate = mpResult.NextPaymentDate
+                };
 
-            // 3. Salva no banco e limpa o cache via repositório
-            await repository.CreateAsync(newSubscription).ConfigureAwait(false);
+                await repository.CreateAsync(newSubscription).ConfigureAwait(false);
 
-            await transaction.CommitAsync().ConfigureAwait(false);
-            
-            logger.LogInformation("Assinatura local criada com sucesso via MP. UserId: {UserId}", userId);
-            return mpResult;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync().ConfigureAwait(false);
-            logger.LogError(ex, "Rollback executado ao criar assinatura para UserId: {UserId}", userId);
-            throw;
-        }
+                await transaction.CommitAsync().ConfigureAwait(false);
+
+                logger.LogInformation("Assinatura local criada com sucesso via MP. UserId: {UserId}", userId);
+                return mpResult;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync().ConfigureAwait(false);
+                logger.LogError(ex, "Rollback executado ao criar assinatura para UserId: {UserId}", userId);
+                throw;
+            }
+        }).ConfigureAwait(false);
     }
 
     public async Task<SubscriptionResponse> UpdateSubscriptionAsync(string externalId, UpdateSubscriptionRequest request)
@@ -57,34 +63,36 @@ public sealed class SubscriptionService(
         if (localSubscription == null)
             throw new Exception($"Assinatura {externalId} não encontrada no banco local.");
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+        var mpResult = await mercadoPagoService.UpdateSubscriptionAsync(externalId, request).ConfigureAwait(false);
 
-        try
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
         {
-            // 1. Atualiza no Mercado Pago usando o serviço separado
-            var mpResult = await mercadoPagoService.UpdateSubscriptionAsync(externalId, request).ConfigureAwait(false);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
 
-            // 2. Atualiza a entidade local
-            localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpResult.Status, true);
-            if (mpResult.NextPaymentDate.HasValue)
+            try
             {
-                localSubscription.NextPaymentDate = mpResult.NextPaymentDate;
-            }
-                
-            // 3. Salva no banco
-            await repository.UpdateAsync(localSubscription).ConfigureAwait(false);
-            
-            await transaction.CommitAsync().ConfigureAwait(false);
-            logger.LogInformation("Assinatura local {ExternalId} atualizada com sucesso.", externalId);
+                localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpResult.Status, true);
+                if (mpResult.NextPaymentDate.HasValue)
+                {
+                    localSubscription.NextPaymentDate = mpResult.NextPaymentDate;
+                }
 
-            return mpResult;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync().ConfigureAwait(false);
-            logger.LogError(ex, "Rollback executado ao atualizar assinatura ExternalId: {ExternalId}", externalId);
-            throw;
-        }
+                await repository.UpdateAsync(localSubscription).ConfigureAwait(false);
+
+                await transaction.CommitAsync().ConfigureAwait(false);
+                logger.LogInformation("Assinatura local {ExternalId} atualizada com sucesso.", externalId);
+
+                return mpResult;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync().ConfigureAwait(false);
+                logger.LogError(ex, "Rollback executado ao atualizar assinatura ExternalId: {ExternalId}", externalId);
+                throw;
+            }
+        }).ConfigureAwait(false);
     }
 
     public async Task<SubscriptionResponse?> GetSubscriptionStatusAsync(Guid userId)

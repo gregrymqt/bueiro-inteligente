@@ -20,37 +20,40 @@ public sealed class PaymentRepository(
         try
         {
             _logger.LogInformation(
-                "Persistindo transação de pagamento no banco: {Id}",
+                "Registrando transação de pagamento no change tracker: {Id}",
                 transaction.Id
             );
             await _context.PaymentTransactions.AddAsync(transaction).ConfigureAwait(false);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao persistir transação {Id} no PostgreSQL.", transaction.Id);
-            throw;
-        }
-    }
-
-    public async Task UpdateAsync(PaymentTransaction transaction)
-    {
-        try
-        {
-            _logger.LogInformation(
-                "Atualizando transação {Id} (Status: {Status})",
-                transaction.Id,
-                transaction.Status
-            );
-
-            _context.PaymentTransactions.Update(transaction);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Falha ao atualizar transação {Id} no banco de dados.",
+                "Erro ao registrar transação {Id} no change tracker.",
+                transaction.Id
+            );
+            throw;
+        }
+    }
+
+    public Task UpdateAsync(PaymentTransaction transaction)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Marcando transação {Id} para atualização (Status: {Status})",
+                transaction.Id,
+                transaction.Status
+            );
+
+            _context.PaymentTransactions.Update(transaction);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Falha ao marcar transação {Id} para atualização.",
                 transaction.Id
             );
             throw;

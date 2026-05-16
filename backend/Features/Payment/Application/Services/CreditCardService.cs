@@ -1,119 +1,99 @@
+using backend.Features.Payment.Application.DTOs;
+using backend.Features.Payment.Application.Interfaces;
 using backend.Features.Payment.Domain.Entities;
+using backend.Features.Payment.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Payment.Application.Services;
 
-
-using backend.Features.Payment.Application.DTOs;
-using backend.Features.Payment.Application.Interfaces;
-using backend.Features.Payment.Domain;
-using backend.Features.Payment.Domain.Interfaces;
-using backend.Infrastructure.Persistence; // Ajuste para o namespace do seu AppDbContext
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using static System.Int64;
-
-
 public class CreditCardService(
-    AppDbContext dbContext,
+    IUnitOfWork unitOfWork,
     IPaymentRepository paymentRepository,
     ILogger<CreditCardService> logger,
     IMercadoPagoOrderService orderService
 ) : ICreditCardService
 {
-    public async Task<CreditCardPaymentResponseDto> CreateCreditCardOrderAsync(CreateCreditCardRequestDto request,
-        Guid userId)
+    public async Task<CreditCardPaymentResponseDto> CreateCreditCardOrderAsync(
+        CreateCreditCardRequestDto request,
+        Guid userId
+    )
     {
-        var srtategy = dbContext.Database.CreateExecutionStrategy();
+        logger.LogInformation(
+            "Iniciando processamento de Cartão de Crédito para o usuário {UserId}.",
+            userId
+        );
 
-        await srtategy.ExecuteAsync(async () =>
+        var response = await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
+            ct.ThrowIfCancellationRequested();
 
-            await using var transaction = await dbContext.Database.BeginTransactionAsync();
+            var paymentTransaction = new PaymentTransaction(
+                userId: userId,
+                amount: request.Amount,
+                paymentMethodType: "credit_card",
+                planId: request.PlanId
+            );
+            await paymentRepository.AddAsync(paymentTransaction);
 
-            try
+            var amount = request.Amount.ToString(
+                "F2",
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+
+            var orderRequest = new
             {
-                logger.LogInformation("Iniciando processamento de Cartão de Crédito para o Usuário: {UserId}", userId);
-
-                var paymentTransaction = new PaymentTransaction(
-                    userId: userId, amount: request.Amount, paymentMethodType: "credit_card", planId: request.PlanId
-                );
-                await paymentRepository.AddAsync(paymentTransaction);
-
-                var orderRequest = new
+                type = "online",
+                external_reference = paymentTransaction.Id.ToString(),
+                total_amount = amount,
+                processing_mode = "automatic",
+                payer = new { email = request.PayerEmail },
+                transactions = new
                 {
-                    type = "online",
-                    external_reference = paymentTransaction.Id.ToString(),
-                    total_amount = request.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
-                    processing_mode = "automatic",
-                    payer = new { email = request.PayerEmail },
-                    transactions = new
+                    payments = new[]
                     {
-                        payments = new[]
-                        {
                         new
                         {
-                            amount = request.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                            amount,
                             payment_method = new
                             {
-                                id = request.PaymentMethodId, type = "credit_card", token = request.Token,
+                                id = request.PaymentMethodId,
+                                type = "credit_card",
+                                token = request.Token,
                                 installments = request.Installments
                             }
                         }
                     }
-                    }
-                };
-
-                // Chamada Limpa para o OrderService!
-                var mpOrder = await orderService.CreateOrderAsync(orderRequest);
-
-                var status = string.IsNullOrEmpty(mpOrder.Status) ? "rejected" : mpOrder.Status;
-                var statusDetail = mpOrder.StatusDetail;
-
-                var paymentElement = mpOrder.Transactions.Payments.FirstOrDefault();
-                var paymentId = paymentElement?.Id ?? "0"; // Fallback para "0" se for nulo
-
-                paymentTransaction.SetCreditCardData(paymentId, "****", request.Installments);
-                paymentTransaction.UpdateStatus(status, statusDetail);
-
-                await paymentRepository.UpdateAsync(paymentTransaction);
-
-                if (status is "rejected" or "cancelled")
-                {
-                    await transaction.CommitAsync().ConfigureAwait(false);
                 }
-                else
-                {
-                    await transaction.CommitAsync();
-                }
+            };
 
-                logger.LogInformation("Pagamento via Cartão processado. Status: {Status}, ID: {Id}", status, paymentId);
+            var mpOrder = await orderService.CreateOrderAsync(orderRequest);
 
-                return new CreditCardPaymentResponseDto(
-                    OrderId: mpOrder.Id,
-                    PaymentId: paymentId,
-                    Status: status,
-                    StatusDetail: statusDetail ?? string.Empty,
-                    ExternalResourceUrl: null, // Para 3DS via DTO, adicionaremos no futuro se necessário.
-                    ExternalReference: paymentTransaction.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Erro crítico no processamento de Cartão de Crédito. Efetuando Rollback.");
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
+            var status = string.IsNullOrEmpty(mpOrder.Status) ? "rejected" : mpOrder.Status;
+            var statusDetail = mpOrder.StatusDetail;
+            var paymentElement = mpOrder.Transactions.Payments.FirstOrDefault();
+            var paymentId = paymentElement?.Id ?? "0";
+
+            paymentTransaction.SetCreditCardData(paymentId, "****", request.Installments);
+            paymentTransaction.UpdateStatus(status, statusDetail);
+
+            return new CreditCardPaymentResponseDto(
+                OrderId: mpOrder.Id,
+                PaymentId: paymentId,
+                Status: status,
+                StatusDetail: statusDetail ?? string.Empty,
+                ExternalResourceUrl: null,
+                ExternalReference: paymentTransaction.Id
+            );
+        });
+
+        logger.LogInformation(
+            "Pagamento via Cartão processado. Status: {Status}, ID: {PaymentId}",
+            response.Status,
+            response.PaymentId
         );
-        
-        return new CreditCardPaymentResponseDto(
-            OrderId: string.Empty,
-            PaymentId: string.Empty,
-            Status: "error",
-            StatusDetail: "Ocorreu um erro ao processar o pagamento. Tente novamente.",
-            ExternalResourceUrl: null,
-            ExternalReference: Guid.Empty
-        ); // Este return é apenas para satisfazer o compilador, o resultado real é retornado dentro do ExecuteAsync.
+
+        return response;
     }
 
     public async Task<bool> RetryCreditCardTransactionAsync(RetryCreditCardRequestDto request, Guid userId)

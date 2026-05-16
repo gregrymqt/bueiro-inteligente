@@ -1,113 +1,101 @@
-using System.Text.Json;
 using backend.Features.Payment.Application.DTOs;
 using backend.Features.Payment.Application.Interfaces;
-using backend.Features.Payment.Domain;
 using backend.Features.Payment.Domain.Entities;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Serilog.Core;
 
 namespace backend.Features.Payment.Application.Services;
 
 public class PixService(
-    AppDbContext dbContext,
+    IUnitOfWork unitOfWork,
     IPaymentRepository paymentRepository,
     IMercadoPagoOrderService orderService,
     ILogger<PixService> logger
 ) : IPixService
 {
     public async Task<PixPaymentResponseDto> CreatePixOrderAsync(
-    CreatePixRequestDto request,
-    Guid userId
-)
+        CreatePixRequestDto request,
+        Guid userId
+    )
     {
-        logger.LogInformation("Gerando Ordem de Pix para o Usuário: {UserId}", userId);
+        logger.LogInformation("Gerando ordem de Pix para o usuário {UserId}.", userId);
 
-        // 1. Cria a estratégia de execução do EF Core
-        var strategy = dbContext.Database.CreateExecutionStrategy();
-
-        // 2. Executa a sua lógica dentro do bloco da estratégia
-        return await strategy.ExecuteAsync(async () =>
+        var response = await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
-            // Agora sim iniciamos a transação!
-            await using var transaction = await dbContext.Database.BeginTransactionAsync();
+            ct.ThrowIfCancellationRequested();
 
-            try
-            {
-                var paymentTransaction = new PaymentTransaction(
-                    userId: userId,
-                    amount: request.Amount,
-                    paymentMethodType: "pix",
-                    planId: request.PlanId
-                );
-                await paymentRepository.AddAsync(paymentTransaction);
+            var paymentTransaction = new PaymentTransaction(
+                userId: userId,
+                amount: request.Amount,
+                paymentMethodType: "pix",
+                planId: request.PlanId
+            );
+            await paymentRepository.AddAsync(paymentTransaction);
 
-                var orderRequest = new MpOrderRequest(
-                    Type: "online",
-                    ExternalReference: paymentTransaction.Id.ToString(),
-                    TotalAmount: request.Amount.ToString(
-                        "F2",
-                        System.Globalization.CultureInfo.InvariantCulture
-                    ),
-                    ProcessingMode: "automatic",
-                    Payer: new MpOrderPayer(request.PayerEmail),
-                    Transactions: new MpOrderTransactions(
-                        new List<MpOrderPaymentRequest>
-                        {
+            var amount = request.Amount.ToString(
+                "F2",
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+
+            var orderRequest = new MpOrderRequest(
+                Type: "online",
+                ExternalReference: paymentTransaction.Id.ToString(),
+                TotalAmount: amount,
+                ProcessingMode: "automatic",
+                Payer: new MpOrderPayer(request.PayerEmail),
+                Transactions: new MpOrderTransactions(
+                    new List<MpOrderPaymentRequest>
+                    {
                         new MpOrderPaymentRequest(
-                            Amount: request.Amount.ToString(
-                                "F2",
-                                System.Globalization.CultureInfo.InvariantCulture
-                            ),
+                            Amount: amount,
                             PaymentMethod: new MpOrderPaymentMethod("pix", "bank_transfer")
-                        ),
-                        }
-                    )
+                        )
+                    }
+                )
+            );
+
+            var mpOrder = await orderService.CreateOrderAsync(orderRequest);
+
+            var mpPayment =
+                mpOrder.Transactions.Payments.FirstOrDefault()
+                ?? throw new InvalidOperationException(
+                    "A ordem foi criada, mas nenhum pagamento foi gerado."
                 );
 
-                var mpOrder = await orderService.CreateOrderAsync(orderRequest);
+            var expirationDate = mpPayment.DateOfExpiration ?? DateTimeOffset.UtcNow.AddHours(24);
 
-                var mpPayment =
-                    mpOrder.Transactions.Payments.FirstOrDefault()
-                    ?? throw new Exception("A ordem foi criada, mas nenhum pagamento foi gerado.");
+            paymentTransaction.SetPixData(
+                orderId: mpOrder.Id,
+                qrCode: mpPayment.PaymentMethod.QrCode,
+                qrCodeBase64: mpPayment.PaymentMethod.QrCodeBase64,
+                ticketUrl: mpPayment.PaymentMethod.TicketUrl,
+                expirationDate: expirationDate
+            );
 
-                var expirationDate = mpPayment.DateOfExpiration ?? DateTimeOffset.UtcNow.AddHours(24);
+            var paymentId = mpPayment.Id;
+            paymentTransaction.UpdateStatus(mpOrder.Status, mpOrder.StatusDetail, paymentId);
 
-                paymentTransaction.SetPixData(
-                    orderId: mpOrder.Id,
-                    qrCode: mpPayment.PaymentMethod.QrCode,
-                    qrCodeBase64: mpPayment.PaymentMethod.QrCodeBase64,
-                    ticketUrl: mpPayment.PaymentMethod.TicketUrl,
-                    expirationDate: expirationDate
-                );
-
-                var paymentIdStr = mpPayment.Id;
-                paymentTransaction.UpdateStatus(mpOrder.Status, mpOrder.StatusDetail, paymentIdStr);
-
-                await paymentRepository.UpdateAsync(paymentTransaction);
-                await transaction.CommitAsync();
-
-                return new PixPaymentResponseDto(
-                    OrderId: mpOrder.Id,
-                    PaymentId: paymentIdStr,
-                    Status: mpOrder.Status,
-                    StatusDetail: mpOrder.StatusDetail,
-                    QrCode: mpPayment.PaymentMethod.QrCode,
-                    QrCodeBase64: mpPayment.PaymentMethod.QrCodeBase64,
-                    TicketUrl: mpPayment.PaymentMethod.TicketUrl,
-                    ExpirationDate: expirationDate,
-                    ExternalReference: paymentTransaction.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Erro ao gerar ordem de Pix. Executando Rollback.");
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return new PixPaymentResponseDto(
+                OrderId: mpOrder.Id,
+                PaymentId: paymentId,
+                Status: mpOrder.Status,
+                StatusDetail: mpOrder.StatusDetail,
+                QrCode: mpPayment.PaymentMethod.QrCode,
+                QrCodeBase64: mpPayment.PaymentMethod.QrCodeBase64,
+                TicketUrl: mpPayment.PaymentMethod.TicketUrl,
+                ExpirationDate: expirationDate,
+                ExternalReference: paymentTransaction.Id
+            );
         });
+
+        logger.LogInformation(
+            "Ordem de Pix processada com sucesso. OrderId: {OrderId}, PaymentId: {PaymentId}",
+            response.OrderId,
+            response.PaymentId
+        );
+
+        return response;
     }
 
     public async Task<bool> RetryPixTransactionAsync(RetryPixRequestDto request, Guid userId)

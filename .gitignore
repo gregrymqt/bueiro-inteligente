@@ -90,3 +90,4 @@ eslint-report*.txt
 eslint-report*.json
 
 */wwwroot
+build_output.txt

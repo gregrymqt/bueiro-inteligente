@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Infrastructure.Persistence;
 
@@ -16,21 +16,26 @@ public sealed class UnitOfWork(AppDbContext dbContext) : IUnitOfWork
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        await using var transaction = await _dbContext
-            .Database.BeginTransactionAsync(ct)
-            .ConfigureAwait(false);
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
 
-        try
+        await strategy.ExecuteAsync(async () =>
         {
-            await operation(ct).ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-            await transaction.CommitAsync(ct).ConfigureAwait(false);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(ct).ConfigureAwait(false);
-            throw;
-        }
+            await using var transaction = await _dbContext
+                .Database.BeginTransactionAsync(ct)
+                .ConfigureAwait(false);
+
+            try
+            {
+                await operation(ct).ConfigureAwait(false);
+                await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+                await transaction.CommitAsync(ct).ConfigureAwait(false);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct).ConfigureAwait(false);
+                throw;
+            }
+        }).ConfigureAwait(false);
     }
 
     public async Task<T> ExecuteTransactionAsync<T>(
@@ -40,21 +45,26 @@ public sealed class UnitOfWork(AppDbContext dbContext) : IUnitOfWork
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        await using var transaction = await _dbContext
-            .Database.BeginTransactionAsync(ct)
-            .ConfigureAwait(false);
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
 
-        try
+        return await strategy.ExecuteAsync(async () =>
         {
-            T result = await operation(ct).ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-            await transaction.CommitAsync(ct).ConfigureAwait(false);
-            return result;
-        }
-        catch
-        {
-            await transaction.RollbackAsync(ct).ConfigureAwait(false);
-            throw;
-        }
+            await using var transaction = await _dbContext
+                .Database.BeginTransactionAsync(ct)
+                .ConfigureAwait(false);
+
+            try
+            {
+                T result = await operation(ct).ConfigureAwait(false);
+                await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+                await transaction.CommitAsync(ct).ConfigureAwait(false);
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct).ConfigureAwait(false);
+                throw;
+            }
+        }).ConfigureAwait(false);
     }
 }

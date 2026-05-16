@@ -4,6 +4,7 @@ using backend.Features.Subscription.Application.Interfaces;
 using backend.Features.Subscription.Domain.Enums;
 using backend.Features.Subscription.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Scheduler.Application.Jobs.MercadoPago;
@@ -36,25 +37,33 @@ public class ProcessSubscriptionPreapprovalJob(
             return;
         }
 
-        // 3. Atualiza os dados dentro de uma transação para garantir atomicidade
-        await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
-        try
-        {
-            localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpSubscription.Status, true);
-            localSubscription.NextPaymentDate = mpSubscription.NextPaymentDate;
-            localSubscription.LastModified = DateTime.UtcNow;
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
-            await subscriptionRepository.UpdateAsync(localSubscription).ConfigureAwait(false);
-            await transaction.CommitAsync().ConfigureAwait(false);
-
-            logger.LogInformation("Assinatura {Id} atualizada para o status: {Status}", resource.Id,
-                localSubscription.Status);
-        }
-        catch (Exception ex)
+        await strategy.ExecuteAsync(async () =>
         {
-            await transaction.RollbackAsync().ConfigureAwait(false);
-            logger.LogError(ex, "Erro ao atualizar assinatura {Id} no banco local.", resource.Id);
-            throw; // Relança para o Hangfire tentar novamente se necessário
-        }
+            // 3. Atualiza os dados dentro de uma transação para garantir atomicidade
+            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpSubscription.Status, true);
+                localSubscription.NextPaymentDate = mpSubscription.NextPaymentDate;
+                localSubscription.LastModified = DateTime.UtcNow;
+
+                await subscriptionRepository.UpdateAsync(localSubscription).ConfigureAwait(false);
+                await transaction.CommitAsync().ConfigureAwait(false);
+
+                logger.LogInformation(
+                    "Assinatura {Id} atualizada para o status: {Status}",
+                    resource.Id,
+                    localSubscription.Status
+                );
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync().ConfigureAwait(false);
+                logger.LogError(ex, "Erro ao atualizar assinatura {Id} no banco local.", resource.Id);
+                throw; // Relança para o Hangfire tentar novamente se necessário
+            }
+        }).ConfigureAwait(false);
     }
 }
