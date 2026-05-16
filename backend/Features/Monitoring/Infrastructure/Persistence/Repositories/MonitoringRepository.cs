@@ -25,7 +25,6 @@ public sealed class MonitoringRepository(
         );
 
         await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
-        await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<DrainStatusDTO?> GetLatestStatusAsync(

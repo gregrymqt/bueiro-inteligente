@@ -31,14 +31,13 @@ public class UploadRepository : IUploadRepository
     public async Task<UploadModel> AddAsync(UploadModel upload)
     {
         await _context.Uploads.AddAsync(upload).ConfigureAwait(false);
-        await _context.SaveChangesAsync().ConfigureAwait(false);
         return upload;
     }
 
-    public async Task UpdateAsync(UploadModel upload)
+    public Task UpdateAsync(UploadModel upload)
     {
         _context.Uploads.Update(upload);
-        await _context.SaveChangesAsync().ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     public async Task DeleteAsync(Guid id)
@@ -47,7 +46,6 @@ public class UploadRepository : IUploadRepository
         if (upload != null)
         {
             _context.Uploads.Remove(upload);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

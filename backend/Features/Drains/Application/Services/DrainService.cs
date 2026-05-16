@@ -4,14 +4,21 @@ using backend.Features.Drains.Application.Interfaces;
 using backend.Features.Drains.Domain;
 using backend.Features.Drains.Domain.Entities;
 using backend.Features.Drains.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
 
 namespace backend.Features.Drains.Application.Services;
 
-public sealed class DrainService(IDrainRepository repository, ILogger<DrainService> logger)
+public sealed class DrainService(
+    IDrainRepository repository,
+    IUnitOfWork unitOfWork,
+    ILogger<DrainService> logger
+)
     : IDrainService
 {
     private readonly IDrainRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
+    private readonly IUnitOfWork _unitOfWork =
+        unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ILogger<DrainService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -86,7 +93,10 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
                 UserId = userId,
             };
 
-            var created = await _repository.CreateAsync(drain, ct).ConfigureAwait(false);
+            var created = await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                return await _repository.CreateAsync(drain, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
             _logger.LogInformation("Drain created: {DrainId}", created.Id);
 
             return MapToResponse(created);
@@ -145,7 +155,10 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
                 drain.HardwareId = request.HardwareId;
             }
 
-            var updated = await _repository.UpdateAsync(drain, ct).ConfigureAwait(false);
+            var updated = await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                return await _repository.UpdateAsync(drain, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
             _logger.LogInformation("Drain updated: {DrainId}", updated.Id);
 
             return MapToResponse(updated);
@@ -172,7 +185,10 @@ public sealed class DrainService(IDrainRepository repository, ILogger<DrainServi
                 await _repository.GetByIdAsync(drainId, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("Drain", drainId);
 
-            await _repository.DeleteAsync(drain, ct).ConfigureAwait(false);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _repository.DeleteAsync(drain, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
             _logger.LogInformation("Drain deleted: {DrainId}", drainId);
         }
         catch (Exception ex)

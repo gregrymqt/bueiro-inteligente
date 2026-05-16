@@ -13,7 +13,7 @@ public class ProcessSubscriptionPreapprovalJob(
     ILogger<ProcessSubscriptionPreapprovalJob> logger,
     IMercadoPagoSubscriptionService mpSubscriptionService,
     ISubscriptionRepository subscriptionRepository,
-    AppDbContext dbContext) : IJob<PaymentNotificationData>
+    IUnitOfWork unitOfWork) : IJob<PaymentNotificationData>
 {
     public async Task ExecuteAsync(PaymentNotificationData resource)
     {
@@ -37,33 +37,19 @@ public class ProcessSubscriptionPreapprovalJob(
             return;
         }
 
-        var strategy = dbContext.Database.CreateExecutionStrategy();
-
-        await strategy.ExecuteAsync(async () =>
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
-            // 3. Atualiza os dados dentro de uma transação para garantir atomicidade
-            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
-            try
-            {
-                localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpSubscription.Status, true);
-                localSubscription.NextPaymentDate = mpSubscription.NextPaymentDate;
-                localSubscription.LastModified = DateTime.UtcNow;
+            localSubscription.Status = Enum.Parse<SubscriptionStatus>(mpSubscription.Status, true);
+            localSubscription.NextPaymentDate = mpSubscription.NextPaymentDate;
+            localSubscription.LastModified = DateTime.UtcNow;
 
-                await subscriptionRepository.UpdateAsync(localSubscription).ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
-
-                logger.LogInformation(
-                    "Assinatura {Id} atualizada para o status: {Status}",
-                    resource.Id,
-                    localSubscription.Status
-                );
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync().ConfigureAwait(false);
-                logger.LogError(ex, "Erro ao atualizar assinatura {Id} no banco local.", resource.Id);
-                throw; // Relança para o Hangfire tentar novamente se necessário
-            }
+            await subscriptionRepository.UpdateAsync(localSubscription).ConfigureAwait(false);
         }).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Assinatura {Id} atualizada para o status: {Status}",
+            resource.Id,
+            localSubscription.Status
+        );
     }
 }

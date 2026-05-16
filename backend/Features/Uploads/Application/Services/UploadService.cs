@@ -9,6 +9,7 @@ using backend.Features.Uploads.Application.Interfaces;
 using backend.Features.Uploads.Domain;
 using backend.Features.Uploads.Domain.Entities;
 using backend.Features.Uploads.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -34,17 +35,20 @@ public class UploadService : IUploadService
     private readonly string _storagePath;
     private readonly IOptions<SupabaseSettings> _supabaseOptions;
     private readonly Client? _supabaseClient;
+    private readonly IUnitOfWork _unitOfWork;
 
     public UploadService(
         IUploadRepository repository,
         IConfiguration configuration,
         ILogger<UploadService> logger,
-        IOptions<SupabaseSettings> supabaseOptions
+        IOptions<SupabaseSettings> supabaseOptions,
+        IUnitOfWork unitOfWork
     )
     {
         _repository = repository;
         _logger = logger;
         _supabaseOptions = supabaseOptions;
+        _unitOfWork = unitOfWork;
 
         _storagePath =
             configuration["UploadSettings:StoragePath"]
@@ -162,7 +166,10 @@ public class UploadService : IUploadService
                 File.Delete(upload.StoragePath);
             }
 
-            await _repository.DeleteAsync(id);
+            await _unitOfWork.ExecuteTransactionAsync(async ct =>
+            {
+                await _repository.DeleteAsync(id).ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
     }
 
@@ -214,7 +221,12 @@ public class UploadService : IUploadService
                 CreatedAt = createdAt,
             };
 
-            return await _repository.AddAsync(uploadModel);
+            await _unitOfWork.ExecuteTransactionAsync(async ct =>
+            {
+                await _repository.AddAsync(uploadModel).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+
+            return uploadModel;
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -267,7 +279,12 @@ public class UploadService : IUploadService
                 CreatedAt = createdAt,
             };
 
-            return await _repository.AddAsync(uploadModel);
+            await _unitOfWork.ExecuteTransactionAsync(async ct =>
+            {
+                await _repository.AddAsync(uploadModel).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+
+            return uploadModel;
         }
         catch (UnauthorizedAccessException ex)
         {

@@ -11,7 +11,7 @@ namespace backend.Features.Feedbacks.Application.Services;
 public class FeedbackService(
     IFeedbackRepository repository,
     INotificationService notificationService, // Injetando a feature genérica
-    AppDbContext dbContext
+    IUnitOfWork unitOfWork
 ) : IFeedbackService
 {
     public async Task<IEnumerable<FeedbackResponseDTO>> GetFeedbacksAsync()
@@ -27,7 +27,10 @@ public class FeedbackService(
     {
         var feedback = new Feedback(userId, dto.Comment, dto.Rating);
 
-        await repository.AddAsync(feedback);
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await repository.AddAsync(feedback);
+        });
 
         // DISPARO DA NOTIFICAÇÃO: Feedback como componente utiliza o serviço de notificação
         await notificationService.SendNotificationAsync(
@@ -46,25 +49,32 @@ public class FeedbackService(
         FeedbackUpdateRequestDTO dto
     )
     {
-        var feedback =
-            await repository.GetByIdAsync(id) ?? throw new Exception("Feedback não encontrado.");
+        var feedback = await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            var currentFeedback =
+                await repository.GetByIdAsync(id) ?? throw new Exception("Feedback não encontrado.");
 
-        if (feedback.UserId != userId)
-            throw new UnauthorizedAccessException("Você não pode editar este feedback.");
+            if (currentFeedback.UserId != userId)
+                throw new UnauthorizedAccessException("Você não pode editar este feedback.");
 
-        feedback.Update(dto.Comment, dto.Rating);
-        await repository.UpdateAsync(feedback);
+            currentFeedback.Update(dto.Comment, dto.Rating);
+            await repository.UpdateAsync(currentFeedback);
+            return currentFeedback;
+        });
 
         return MapToResponse(feedback);
     }
 
     public async Task DeleteFeedbackAsync(Guid id, Guid userId)
     {
-        var feedback = await repository.GetByIdAsync(id);
-        if (feedback != null && feedback.UserId == userId)
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
-            await repository.DeleteAsync(id);
-        }
+            var feedback = await repository.GetByIdAsync(id);
+            if (feedback != null && feedback.UserId == userId)
+            {
+                await repository.DeleteAsync(id);
+            }
+        });
     }
 
     private FeedbackResponseDTO MapToResponse(Feedback f) =>

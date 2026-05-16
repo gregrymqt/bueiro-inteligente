@@ -3,12 +3,14 @@ using backend.Features.Notifications.Application.DTOs;
 using backend.Features.Notifications.Application.Interfaces;
 using backend.Features.Notifications.Domain.Entities;
 using backend.Features.Notifications.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
 
 namespace backend.Features.Notifications.Application.Services;
 
 public class NotificationService(
     INotificationRepository repository,
-    IRealtimeService realtimeService) : INotificationService
+    IRealtimeService realtimeService,
+    IUnitOfWork unitOfWork) : INotificationService
 {
     public async Task<NotificationSummaryDTO> GetUserNotificationsAsync(Guid userId)
     {
@@ -26,8 +28,11 @@ public class NotificationService(
         // 1. Instancia a entidade de domínio
         var notification = new Notification(userId, type, title, message);
 
-        // 2. Persiste no banco de dados e limpa o cache Redis
-        await repository.SaveAsync(notification);
+        // 2. Persiste no banco de dados dentro do UoW
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await repository.SaveAsync(notification);
+        });
 
         // 3. Monta o DTO para enviar via WebSocket
         var dto = new NotificationResponseDTO(
@@ -45,6 +50,9 @@ public class NotificationService(
 
     public async Task MarkAsReadAsync(Guid notificationId, Guid userId)
     {
-        await repository.MarkAsReadAsync(notificationId, userId);
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await repository.MarkAsReadAsync(notificationId, userId);
+        });
     }
 }

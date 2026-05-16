@@ -2,6 +2,7 @@ using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Domain.Entities;
 using backend.Features.Monitoring.Domain.Interfaces;
+using backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -9,6 +10,7 @@ namespace backend.Features.Monitoring.Application.Services;
 
 public sealed class MonitoringIngestionService(
     IMonitoringRepository monitoringRepository,
+    IUnitOfWork unitOfWork,
     ILogger<MonitoringIngestionService> logger
 ) : IMonitoringIngestionService
 {
@@ -23,23 +25,26 @@ public sealed class MonitoringIngestionService(
 
         try
         {
-            var latestRecord = await monitoringRepository
-                .GetLatestStatusAsync(data.IdBueiro, ct)
-                .ConfigureAwait(false);
-
-            if (!ShouldPersist(latestRecord, data))
+            return await unitOfWork.ExecuteTransactionAsync(async transactionCt =>
             {
-                logger.LogInformation(
-                    "Leitura idempotente ignorada para o bueiro {DrainIdentifier}.",
-                    data.IdBueiro
-                );
-                return false;
-            }
+                var latestRecord = await monitoringRepository
+                    .GetLatestStatusAsync(data.IdBueiro, transactionCt)
+                    .ConfigureAwait(false);
 
-            var entity = ToEntity(data);
-            await monitoringRepository.InsertAsync(entity, ct).ConfigureAwait(false);
+                if (!ShouldPersist(latestRecord, data))
+                {
+                    logger.LogInformation(
+                        "Leitura idempotente ignorada para o bueiro {DrainIdentifier}.",
+                        data.IdBueiro
+                    );
+                    return false;
+                }
 
-            return true;
+                var entity = ToEntity(data);
+                await monitoringRepository.InsertAsync(entity, transactionCt).ConfigureAwait(false);
+
+                return true;
+            }, ct).ConfigureAwait(false);
         }
         catch (DbUpdateException ex) when (IsDuplicateReading(ex))
         {

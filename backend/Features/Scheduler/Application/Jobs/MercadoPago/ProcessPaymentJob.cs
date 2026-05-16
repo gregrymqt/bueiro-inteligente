@@ -18,6 +18,7 @@ public class ProcessPaymentJob(
     IMercadoPagoPaymentService mpPaymentService,
     IPaymentRepository paymentRepository,
     ISubscriptionRepository subscriptionRepository,
+    IUnitOfWork unitOfWork,
     AppDbContext dbContext,
     ICacheService cacheService,
     INotificationService notificationService
@@ -37,121 +38,95 @@ public class ProcessPaymentJob(
         if (!Guid.TryParse(mpPaymentInfo.ExternalReference, out Guid transactionId))
             return;
 
-        var strategy = dbContext.Database.CreateExecutionStrategy();
-
-        await strategy.ExecuteAsync(async () =>
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync();
-            try
+            var localTransaction = await paymentRepository.GetByIdAsync(transactionId);
+            if (localTransaction == null)
+                return;
+
+            if (localTransaction.Status == mpPaymentInfo.Status)
+                return;
+
+            localTransaction.UpdateStatus(
+                mpPaymentInfo.Status,
+                mpPaymentInfo.StatusDetail,
+                resource.Id
+            );
+            await paymentRepository.UpdateAsync(localTransaction);
+
+            switch (mpPaymentInfo.Status)
             {
-                var localTransaction = await paymentRepository.GetByIdAsync(transactionId);
-                if (localTransaction == null)
-                    return;
+                case "approved":
+                    {
+                        logger.LogInformation(
+                            "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
+                            localTransaction.UserId
+                        );
 
-                if (localTransaction.Status == mpPaymentInfo.Status)
-                    return;
+                        var user = await dbContext
+                            .Users.Include(u => u.Roles)
+                            .FirstOrDefaultAsync(u => u.Id == localTransaction.UserId);
 
-                localTransaction.UpdateStatus(
-                    mpPaymentInfo.Status,
-                    mpPaymentInfo.StatusDetail,
-                    resource.Id
-                );
-                await paymentRepository.UpdateAsync(localTransaction);
-
-                switch (mpPaymentInfo.Status)
-                {
-                    case "approved":
+                        if (user != null)
                         {
-                            logger.LogInformation(
-                                "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
-                                localTransaction.UserId
-                            );
+                            bool isManager = user.Roles.Any(r => r.Name == "Manager");
 
-                            // 1. Busca o usuário com suas Roles atuais
-                            var user = await dbContext
-                                .Users.Include(u => u.Roles)
-                                .FirstOrDefaultAsync(u => u.Id == localTransaction.UserId);
-
-                            if (user != null)
+                            if (!isManager)
                             {
-                                // 2. Verifica se ele já é Manager
-                                bool isManager = user.Roles.Any(r => r.Name == "Manager");
+                                var managerRole = await dbContext.Roles.FirstOrDefaultAsync(r =>
+                                    r.Name == "Manager"
+                                );
 
-                                if (!isManager)
+                                if (managerRole != null)
                                 {
-                                    // 3. Busca a Role Manager no banco (criada pelo Seed)
-                                    var managerRole = await dbContext.Roles.FirstOrDefaultAsync(r =>
-                                        r.Name == "Manager"
+                                    user.Roles.Add(managerRole);
+                                    logger.LogInformation(
+                                        "👑 Role 'Manager' concedida ao usuário {UserId}.",
+                                        user.Id
                                     );
-
-                                    if (managerRole != null)
-                                    {
-                                        // 4. Adiciona a Role ao usuário
-                                        user.Roles.Add(managerRole);
-                                        logger.LogInformation(
-                                            "👑 Role 'Manager' concedida ao usuário {UserId}.",
-                                            user.Id
-                                        );
-                                    }
                                 }
                             }
-                            // ==========================================
-
-                            await notificationService.SendNotificationAsync(
-                                localTransaction.UserId,
-                                "Pagamento Aprovado! 🎉",
-                                $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!",
-                                NotificationType.Success
-                            );
-
-                            var subscription = await subscriptionRepository.GetByUserIdAsync(
-                                localTransaction.UserId
-                            );
-
-                            if (subscription != null)
-                            {
-                                subscription.Status = SubscriptionStatus.Authorized;
-                                subscription.LastModified = DateTime.UtcNow;
-
-                                await subscriptionRepository.UpdateAsync(subscription);
-                            }
-
-                            break;
                         }
-                    case "rejected":
-                    case "cancelled":
+
                         await notificationService.SendNotificationAsync(
                             localTransaction.UserId,
-                            "Pagamento Recusado",
-                            "Houve um problema ao processar seu pagamento. Verifique a transação.",
-                            NotificationType.Error
+                            "Pagamento Aprovado! 🎉",
+                            $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!",
+                            NotificationType.Success
                         );
+
+                        var subscription = await subscriptionRepository.GetByUserIdAsync(
+                            localTransaction.UserId
+                        );
+
+                        if (subscription != null)
+                        {
+                            subscription.Status = SubscriptionStatus.Authorized;
+                            subscription.LastModified = DateTime.UtcNow;
+
+                            await subscriptionRepository.UpdateAsync(subscription);
+                        }
+
                         break;
-                }
-
-                // O SaveChangesAsync irá persistir a nova Role na tabela de relacionamento UserRoles
-                await dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                await cacheService.RemoveAsync($"payment_status_{localTransaction.Id}");
-
-                logger.LogInformation(
-                    "✅ Job concluído. Transação {TransactionId} e Assinatura processadas.",
-                    transactionId
-                );
+                    }
+                case "rejected":
+                case "cancelled":
+                    await notificationService.SendNotificationAsync(
+                        localTransaction.UserId,
+                        "Pagamento Recusado",
+                        "Houve um problema ao processar seu pagamento. Verifique a transação.",
+                        NotificationType.Error
+                    );
+                    break;
             }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                logger.LogError(
-                    ex,
-                    "❌ Erro ao processar pagamento e liberar assinatura {PaymentId}.",
-                    resource.Id
-                );
-                throw;
-            }
-        }
-        );
+
+            logger.LogInformation(
+                "✅ Job concluído. Transação {TransactionId} e Assinatura processadas.",
+                transactionId
+            );
+        });
+
+        await cacheService.RemoveAsync($"payment_status_{transactionId}");
     }
 
 

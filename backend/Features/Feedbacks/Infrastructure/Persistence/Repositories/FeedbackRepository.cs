@@ -35,13 +35,11 @@ public class FeedbackRepository(AppDbContext dbContext) : IFeedbackRepository
     public async Task AddAsync(Feedback feedback)
     {
         await dbContext.Feedbacks.AddAsync(feedback);
-        await dbContext.SaveChangesAsync(); // Persistência imediata conforme seu padrão
     }
 
     public async Task UpdateAsync(Feedback feedback)
     {
         dbContext.Feedbacks.Update(feedback);
-        await dbContext.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)

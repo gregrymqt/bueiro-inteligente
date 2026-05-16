@@ -67,7 +67,6 @@ public sealed class SubscriptionRepository(
             subscription.LastModified = DateTime.UtcNow;
 
             await context.UserSubscriptions.AddAsync(subscription).ConfigureAwait(false);
-            await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Assinatura {ExternalId} criada para o usuário {UserId}.",
                 subscription.ExternalId, subscription.UserId);
@@ -88,7 +87,6 @@ public sealed class SubscriptionRepository(
             subscription.LastModified = DateTime.UtcNow;
 
             context.UserSubscriptions.Update(subscription);
-            await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Assinatura {ExternalId} atualizada com sucesso.", subscription.ExternalId);
         }

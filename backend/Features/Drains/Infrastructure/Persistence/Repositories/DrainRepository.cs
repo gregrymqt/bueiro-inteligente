@@ -86,7 +86,6 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         try
         {
             await dbContext.Drains.AddAsync(drain, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
             return drain;
         }
         catch (Exception ex)
@@ -106,7 +105,6 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         try
         {
             dbContext.Drains.Update(drain);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
             return drain;
         }
         catch (Exception ex)
@@ -126,7 +124,6 @@ public sealed class DrainRepository(AppDbContext dbContext, ILogger<DrainReposit
         try
         {
             dbContext.Drains.Remove(drain);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

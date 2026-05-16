@@ -29,7 +29,6 @@ public class NotificationRepository(
     public async Task SaveAsync(Notification notification)
     {
         await dbContext.Notifications.AddAsync(notification);
-        await dbContext.SaveChangesAsync();
     }
 
     public async Task MarkAsReadAsync(Guid notificationId, Guid userId)

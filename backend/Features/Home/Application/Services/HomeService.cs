@@ -3,6 +3,7 @@ using backend.Core;
 using backend.Features.Home.Application.Interfaces;
 using backend.Features.Home.Domain.Interfaces;
 using backend.Features.Uploads.Domain.Entities;
+using backend.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
@@ -18,7 +19,8 @@ namespace backend.Features.Home.Application.Services;
 public sealed class HomeService(
     IHomeRepository homeRepository,
     ILogger<HomeService> logger,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IUnitOfWork unitOfWork
 )
     : IHomeService
 {
@@ -28,6 +30,8 @@ public sealed class HomeService(
         logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IHttpContextAccessor _httpContextAccessor =
         httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+    private readonly IUnitOfWork _unitOfWork =
+        unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
 
     public async Task<HomeDtos.HomeResponseDto> GetHomeContentAsync(CancellationToken ct = default)
     {
@@ -100,13 +104,18 @@ public sealed class HomeService(
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var created = await _homeRepository
-                .CreateCarouselAsync(MapToCarouselModel(request), ct)
-                .ConfigureAwait(false);
+            var createdModel = MapToCarouselModel(request);
+
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.CreateCarouselAsync(createdModel, transactionCt)
+                    .ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
 
             // Recarrega para obter a entidade Upload associada via .Include
-            created = await _homeRepository.GetCarouselByIdAsync(created.Id, ct).ConfigureAwait(false)
-                ?? created;
+            var created =
+                await _homeRepository.GetCarouselByIdAsync(createdModel.Id, ct).ConfigureAwait(false)
+                ?? createdModel;
 
             _logger.LogInformation("Carousel created: {CarouselId}", created.Id);
             return MapToCarouselResponse(created);
@@ -152,11 +161,14 @@ public sealed class HomeService(
             c.Subtitle = req.Subtitle?.Trim();
             c.ActionUrl = req.ActionUrl?.Trim();
 
-            var updated = await _homeRepository.UpdateCarouselAsync(c, ct).ConfigureAwait(false);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.UpdateCarouselAsync(c, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
 
             // Recarrega para garantir o mapeamento correto da imagem de navegação
-            updated = await _homeRepository.GetCarouselByIdAsync(updated.Id, ct).ConfigureAwait(false)
-                ?? updated;
+            var updated = await _homeRepository.GetCarouselByIdAsync(c.Id, ct).ConfigureAwait(false)
+                ?? c;
 
             return MapToCarouselResponse(updated);
         }
@@ -181,7 +193,10 @@ public sealed class HomeService(
             var c =
                 await _homeRepository.GetCarouselByIdAsync(id, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("Carousel", id);
-            await _homeRepository.DeleteCarouselAsync(c, ct).ConfigureAwait(false);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.DeleteCarouselAsync(c, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -244,11 +259,15 @@ public sealed class HomeService(
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var created = await _homeRepository
-                .CreateStatCardAsync(MapToStatCardModel(request), ct)
-                .ConfigureAwait(false);
+            var createdModel = MapToStatCardModel(request);
 
-            return MapToStatCardResponse(created);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.CreateStatCardAsync(createdModel, transactionCt)
+                    .ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+
+            return MapToStatCardResponse(createdModel);
         }
         catch (Exception ex)
         {
@@ -289,7 +308,12 @@ public sealed class HomeService(
             if (req.IconName is not null)
                 s.IconName = Normalize(req.IconName, nameof(req.IconName));
 
-            var updated = await _homeRepository.UpdateStatCardAsync(s, ct).ConfigureAwait(false);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.UpdateStatCardAsync(s, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+
+            var updated = s;
             return MapToStatCardResponse(updated);
         }
         catch (Exception ex)
@@ -313,7 +337,10 @@ public sealed class HomeService(
             var s =
                 await _homeRepository.GetStatCardByIdAsync(id, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("StatCard", id);
-            await _homeRepository.DeleteStatCardAsync(s, ct).ConfigureAwait(false);
+            await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>
+            {
+                await _homeRepository.DeleteStatCardAsync(s, transactionCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

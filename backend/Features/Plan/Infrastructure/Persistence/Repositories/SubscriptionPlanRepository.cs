@@ -122,7 +122,6 @@ public sealed class SubscriptionPlanRepository(
             plan.LastModified = DateTime.UtcNow;
 
             await context.SubscriptionPlans.AddAsync(plan).ConfigureAwait(false);
-            await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Plano de assinatura '{PlanName}' ({ExternalId}) criado com sucesso.", plan.Name, plan.ExternalId);
 
@@ -146,7 +145,6 @@ public sealed class SubscriptionPlanRepository(
             plan.LastModified = DateTime.UtcNow;
 
             context.SubscriptionPlans.Update(plan);
-            await context.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LogInformation("Plano de assinatura '{PlanName}' ({ExternalId}) atualizado.", plan.Name, plan.ExternalId);
 

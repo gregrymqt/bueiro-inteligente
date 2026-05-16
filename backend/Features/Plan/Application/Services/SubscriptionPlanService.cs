@@ -3,6 +3,7 @@ using backend.Features.Plan.Application.Interfaces;
 using backend.Features.Subscription.Application.Interfaces; // Interface do MP Plan Service
 using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Subscription.Domain.Interfaces; // Repository
+using backend.Infrastructure.Persistence;
 using backend.core.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,6 +13,7 @@ namespace backend.Features.Plan.Application.Services;
 public class SubscriptionPlanService(
     IMercadoPagoPlanService mercadoPagoPlanService,
     ISubscriptionPlanRepository planRepository,
+    IUnitOfWork unitOfWork,
     ILogger<SubscriptionPlanService> logger,
     IOptions<MercadoPagoSettings> mpOptions
 ) : ISubscriptionPlanService
@@ -66,8 +68,11 @@ public class SubscriptionPlanService(
             Features = request.Features, // Usa a propriedade NotMapped para serializar automaticamente
         };
 
-        // 4. Persiste no PostgreSQL (já limpando o cache ativo)[cite: 27]
-        await planRepository.CreateAsync(newPlan);
+        // 4. Persiste no PostgreSQL via UoW
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await planRepository.CreateAsync(newPlan).ConfigureAwait(false);
+        });
 
         return MapToResponseDto(newPlan);
     }
@@ -140,7 +145,10 @@ public class SubscriptionPlanService(
         plan.IsPopular = request.IsPopular;
         plan.Features = request.Features;
 
-        await planRepository.UpdateAsync(plan);
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await planRepository.UpdateAsync(plan).ConfigureAwait(false);
+        });
 
         return MapToResponseDto(plan);
     }
@@ -165,7 +173,10 @@ public class SubscriptionPlanService(
 
         // Persiste a mudança no PostgreSQL e limpa o cache.
         // O Mercado Pago não é notificado dessa mudança de status.
-        await planRepository.UpdateAsync(plan);
+        await unitOfWork.ExecuteTransactionAsync(async ct =>
+        {
+            await planRepository.UpdateAsync(plan).ConfigureAwait(false);
+        });
 
         logger.LogInformation(
             "Status do plano {PlanName} ({Id}) alterado para {Status} pelo Admin.",

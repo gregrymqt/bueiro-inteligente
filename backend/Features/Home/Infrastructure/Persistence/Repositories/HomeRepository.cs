@@ -81,7 +81,6 @@ public sealed class HomeRepository(
         try
         {
             await dbContext.HomeCarousels.AddAsync(c, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
 
             return c;
         }
@@ -108,7 +107,6 @@ public sealed class HomeRepository(
             // tente efetuar o rastreamento ou o update indevido da tabela de ficheiros associada.
             c.Upload = null;
             dbContext.HomeCarousels.Update(c);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
 
             return c;
         }
@@ -129,7 +127,6 @@ public sealed class HomeRepository(
         try
         {
             dbContext.HomeCarousels.Remove(c);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -197,7 +194,6 @@ public sealed class HomeRepository(
         try
         {
             await dbContext.HomeStats.AddAsync(s, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
 
             return s;
         }
@@ -221,7 +217,6 @@ public sealed class HomeRepository(
         try
         {
             dbContext.HomeStats.Update(s);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
 
             return s;
         }
@@ -242,7 +237,6 @@ public sealed class HomeRepository(
         try
         {
             dbContext.HomeStats.Remove(s);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
