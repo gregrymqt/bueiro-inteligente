@@ -12,7 +12,7 @@ public record CreateCreditCardRequestDto(
 
 public record CreditCardPaymentResponseDto(
     string OrderId,
-    long PaymentId,
+    string PaymentId,
     string Status, // ex: 'processed'
     string StatusDetail, // ex: 'accredited'
     string? ExternalResourceUrl, // URL para validações extras (3DS/Remedies)

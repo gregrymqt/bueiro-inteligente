@@ -37,116 +37,122 @@ public class ProcessPaymentJob(
         if (!Guid.TryParse(mpPaymentInfo.ExternalReference, out Guid transactionId))
             return;
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
-        try
+        await strategy.ExecuteAsync(async () =>
         {
-            var localTransaction = await paymentRepository.GetByIdAsync(transactionId);
-            if (localTransaction == null)
-                return;
-
-            if (localTransaction.Status == mpPaymentInfo.Status)
-                return;
-
-            long.TryParse(resource.Id, out long paymentIdLong);
-            localTransaction.UpdateStatus(
-                mpPaymentInfo.Status,
-                mpPaymentInfo.StatusDetail,
-                paymentIdLong
-            );
-            await paymentRepository.UpdateAsync(localTransaction);
-
-            switch (mpPaymentInfo.Status)
+            await using var transaction = await dbContext.Database.BeginTransactionAsync();
+            try
             {
-                case "approved":
+                var localTransaction = await paymentRepository.GetByIdAsync(transactionId);
+                if (localTransaction == null)
+                    return;
+
+                if (localTransaction.Status == mpPaymentInfo.Status)
+                    return;
+
+                localTransaction.UpdateStatus(
+                    mpPaymentInfo.Status,
+                    mpPaymentInfo.StatusDetail,
+                    resource.Id
+                );
+                await paymentRepository.UpdateAsync(localTransaction);
+
+                switch (mpPaymentInfo.Status)
                 {
-                    logger.LogInformation(
-                        "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
-                        localTransaction.UserId
-                    );
-
-                    // 1. Busca o usuário com suas Roles atuais
-                    var user = await dbContext
-                        .Users.Include(u => u.Roles)
-                        .FirstOrDefaultAsync(u => u.Id == localTransaction.UserId);
-
-                    if (user != null)
-                    {
-                        // 2. Verifica se ele já é Manager
-                        bool isManager = user.Roles.Any(r => r.Name == "Manager");
-
-                        if (!isManager)
+                    case "approved":
                         {
-                            // 3. Busca a Role Manager no banco (criada pelo Seed)
-                            var managerRole = await dbContext.Roles.FirstOrDefaultAsync(r =>
-                                r.Name == "Manager"
+                            logger.LogInformation(
+                                "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
+                                localTransaction.UserId
                             );
 
-                            if (managerRole != null)
+                            // 1. Busca o usuário com suas Roles atuais
+                            var user = await dbContext
+                                .Users.Include(u => u.Roles)
+                                .FirstOrDefaultAsync(u => u.Id == localTransaction.UserId);
+
+                            if (user != null)
                             {
-                                // 4. Adiciona a Role ao usuário
-                                user.Roles.Add(managerRole);
-                                logger.LogInformation(
-                                    "👑 Role 'Manager' concedida ao usuário {UserId}.",
-                                    user.Id
-                                );
+                                // 2. Verifica se ele já é Manager
+                                bool isManager = user.Roles.Any(r => r.Name == "Manager");
+
+                                if (!isManager)
+                                {
+                                    // 3. Busca a Role Manager no banco (criada pelo Seed)
+                                    var managerRole = await dbContext.Roles.FirstOrDefaultAsync(r =>
+                                        r.Name == "Manager"
+                                    );
+
+                                    if (managerRole != null)
+                                    {
+                                        // 4. Adiciona a Role ao usuário
+                                        user.Roles.Add(managerRole);
+                                        logger.LogInformation(
+                                            "👑 Role 'Manager' concedida ao usuário {UserId}.",
+                                            user.Id
+                                        );
+                                    }
+                                }
                             }
+                            // ==========================================
+
+                            await notificationService.SendNotificationAsync(
+                                localTransaction.UserId,
+                                "Pagamento Aprovado! 🎉",
+                                $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!",
+                                NotificationType.Success
+                            );
+
+                            var subscription = await subscriptionRepository.GetByUserIdAsync(
+                                localTransaction.UserId
+                            );
+
+                            if (subscription != null)
+                            {
+                                subscription.Status = SubscriptionStatus.Authorized;
+                                subscription.LastModified = DateTime.UtcNow;
+
+                                await subscriptionRepository.UpdateAsync(subscription);
+                            }
+
+                            break;
                         }
-                    }
-                    // ==========================================
-
-                    await notificationService.SendNotificationAsync(
-                        localTransaction.UserId,
-                        "Pagamento Aprovado! 🎉",
-                        $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!",
-                        NotificationType.Success
-                    );
-
-                    var subscription = await subscriptionRepository.GetByUserIdAsync(
-                        localTransaction.UserId
-                    );
-
-                    if (subscription != null)
-                    {
-                        subscription.Status = SubscriptionStatus.Authorized;
-                        subscription.LastModified = DateTime.UtcNow;
-
-                        await subscriptionRepository.UpdateAsync(subscription);
-                    }
-
-                    break;
+                    case "rejected":
+                    case "cancelled":
+                        await notificationService.SendNotificationAsync(
+                            localTransaction.UserId,
+                            "Pagamento Recusado",
+                            "Houve um problema ao processar seu pagamento. Verifique a transação.",
+                            NotificationType.Error
+                        );
+                        break;
                 }
-                case "rejected":
-                case "cancelled":
-                    await notificationService.SendNotificationAsync(
-                        localTransaction.UserId,
-                        "Pagamento Recusado",
-                        "Houve um problema ao processar seu pagamento. Verifique a transação.",
-                        NotificationType.Error
-                    );
-                    break;
+
+                // O SaveChangesAsync irá persistir a nova Role na tabela de relacionamento UserRoles
+                await dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                await cacheService.RemoveAsync($"payment_status_{localTransaction.Id}");
+
+                logger.LogInformation(
+                    "✅ Job concluído. Transação {TransactionId} e Assinatura processadas.",
+                    transactionId
+                );
             }
-
-            // O SaveChangesAsync irá persistir a nova Role na tabela de relacionamento UserRoles
-            await dbContext.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            await cacheService.RemoveAsync($"payment_status_{localTransaction.Id}");
-
-            logger.LogInformation(
-                "✅ Job concluído. Transação {TransactionId} e Assinatura processadas.",
-                transactionId
-            );
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                logger.LogError(
+                    ex,
+                    "❌ Erro ao processar pagamento e liberar assinatura {PaymentId}.",
+                    resource.Id
+                );
+                throw;
+            }
         }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            logger.LogError(
-                ex,
-                "❌ Erro ao processar pagamento e liberar assinatura {PaymentId}.",
-                resource.Id
-            );
-            throw;
-        }
+        );
     }
+
+
 }

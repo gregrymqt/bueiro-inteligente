@@ -13,7 +13,7 @@ public record CreatePixRequestDto(
 
 public record PixPaymentResponseDto(
     string OrderId,
-    long PaymentId,
+    string PaymentId,
     string Status,
     string StatusDetail,
     string QrCode, // Pix Copia e Cola

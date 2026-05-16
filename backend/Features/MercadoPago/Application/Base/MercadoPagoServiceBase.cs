@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 // using backend.Core.Exceptions; // Descomente e ajuste para o namespace correto das suas exceções personalizadas
 
@@ -12,10 +13,10 @@ public abstract class MercadoPagoServiceBase
 
     // Adicionado JsonSerializerOptions para garantir que o envio siga o padrão camelCase do Mercado Pago
     private readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
+{
+    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, // ✅ Formato correto para o MP
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+};
 
     protected MercadoPagoServiceBase(
         IHttpClientFactory httpClientFactory,

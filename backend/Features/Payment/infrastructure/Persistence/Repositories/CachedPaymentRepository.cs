@@ -1,6 +1,7 @@
 using backend.Features.Payment.Domain.Entities;
 using backend.Features.Payment.Domain.Interfaces;
 using backend.Infrastructure.Cache;
+using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Features.Payment.infrastructure.Persistence.Repositories;
 
@@ -9,10 +10,10 @@ public sealed class CachedPaymentRepository(
     ICacheService cache,
     ILogger<CachedPaymentRepository> logger) : IPaymentRepository
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(15); 
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(15);
 
     private static string GetCacheKeyId(Guid id) => $"payment:id:{id}";
-    private static string GetCacheKeyPaymentId(long paymentId) => $"payment:mp_id:{paymentId}";
+    private static string GetCacheKeyPaymentId(string paymentId) => $"payment:mp_id:{paymentId}";
     private static string GetCacheKeyOrderId(string orderId) => $"payment:order_id:{orderId}";
 
     public async Task AddAsync(PaymentTransaction transaction)
@@ -45,7 +46,7 @@ public sealed class CachedPaymentRepository(
         }
     }
 
-    public async Task<PaymentTransaction?> GetByPaymentIdAsync(long paymentId)
+    public async Task<PaymentTransaction?> GetByPaymentIdAsync(string paymentId)
     {
         try
         {
@@ -86,10 +87,10 @@ public sealed class CachedPaymentRepository(
         try
         {
             await cache.RemoveAsync(GetCacheKeyId(transaction.Id));
-            
-            if (transaction.MercadoPagoPaymentId.HasValue)
+
+            if (!string.IsNullOrEmpty(transaction.MercadoPagoPaymentId))
             {
-                await cache.RemoveAsync(GetCacheKeyPaymentId(transaction.MercadoPagoPaymentId.Value));
+                await cache.RemoveAsync(GetCacheKeyPaymentId(transaction.MercadoPagoPaymentId));
             }
 
             if (!string.IsNullOrEmpty(transaction.MercadoPagoOrderId))

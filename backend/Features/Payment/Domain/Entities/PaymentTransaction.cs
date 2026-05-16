@@ -1,3 +1,5 @@
+using Microsoft.IdentityModel.Tokens;
+
 namespace backend.Features.Payment.Domain.Entities;
 
 public class PaymentTransaction
@@ -26,7 +28,7 @@ public class PaymentTransaction
     // ==========================================
 
     // ID retornado em pagamentos diretos (Pix/Cartão)
-    public long? MercadoPagoPaymentId { get; private set; }
+    public string? MercadoPagoPaymentId { get; private set; }
 
     // ID retornado no endpoint /v1/orders (usado na geração do Pix)
     public string? MercadoPagoOrderId { get; private set; }
@@ -99,7 +101,7 @@ public class PaymentTransaction
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void SetCreditCardData(long paymentId, string lastFourDigits, int installments)
+    public void SetCreditCardData(string paymentId, string lastFourDigits, int installments)
     {
         MercadoPagoPaymentId = paymentId;
         CardLastFourDigits = lastFourDigits;
@@ -107,13 +109,13 @@ public class PaymentTransaction
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void UpdateStatus(string status, string? statusDetail, long? paymentId = null)
+    public void UpdateStatus(string status, string? statusDetail, string? paymentId = null)
     {
         Status = status;
         StatusDetail = statusDetail;
 
-        if (paymentId.HasValue)
-            MercadoPagoPaymentId = paymentId.Value;
+        if (!string.IsNullOrEmpty(paymentId))
+            MercadoPagoPaymentId = paymentId;
 
         UpdatedAt = DateTimeOffset.UtcNow;
     }

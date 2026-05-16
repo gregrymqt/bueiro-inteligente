@@ -7,7 +7,7 @@ namespace backend.Features.Payment.Application.DTOs
     {
         // O ID de pagamento no MP é um número longo[cite: 16]
         [JsonPropertyName("id")]
-        public long Id { get; set; }
+        public string Id { get; set; } =string.Empty;
 
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;

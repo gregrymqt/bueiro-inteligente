@@ -74,7 +74,7 @@ public sealed class PaymentRepository(
         }
     }
 
-    public async Task<PaymentTransaction?> GetByPaymentIdAsync(long paymentId)
+    public async Task<PaymentTransaction?> GetByPaymentIdAsync(string paymentId)
     {
         try
         {
