@@ -1,5 +1,5 @@
-using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.Auth.Domain.Interfaces;
+using backend.Features.MercadoPago.Application.DTOs;
 using backend.Features.Notifications.Application;
 using backend.Features.Notifications.Application.DTOs;
 using backend.Features.Notifications.Application.Interfaces;
@@ -62,57 +62,53 @@ public class ProcessPaymentJob(
             switch (mpPaymentInfo.Status)
             {
                 case "approved":
+                {
+                    logger.LogInformation(
+                        "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
+                        localTransaction.UserId
+                    );
+
+                    var user = await authRepository.GetUserByIdAsync(localTransaction.UserId);
+
+                    if (user != null)
                     {
-                        logger.LogInformation(
-                            "✅ Pagamento aprovado. Ativando assinatura do usuário {UserId}...",
-                            localTransaction.UserId
-                        );
+                        bool isManager = user.Roles.Any(r => r.Name == "Manager");
 
-                        var user = await authRepository.GetUserByIdAsync(
-                            localTransaction.UserId
-                        );
-
-                        if (user != null)
+                        if (!isManager)
                         {
-                            bool isManager = user.Roles.Any(r => r.Name == "Manager");
+                            var managerRole = await authRepository.GetRoleByNameAsync("Manager");
 
-                            if (!isManager)
+                            if (managerRole != null)
                             {
-                                var managerRole = await authRepository.GetRoleByNameAsync(
-                                    "Manager"
+                                user.Roles.Add(managerRole);
+                                logger.LogInformation(
+                                    "👑 Role 'Manager' concedida ao usuário {UserId}.",
+                                    user.Id
                                 );
-
-                                if (managerRole != null)
-                                {
-                                    user.Roles.Add(managerRole);
-                                    logger.LogInformation(
-                                        "👑 Role 'Manager' concedida ao usuário {UserId}.",
-                                        user.Id
-                                    );
-                                }
                             }
                         }
-
-                        notificationUserId = localTransaction.UserId;
-                        notificationTitle = "Pagamento Aprovado! 🎉";
-                        notificationMessage =
-                            $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!";
-                        notificationType = NotificationType.Success;
-
-                        var subscription = await subscriptionRepository.GetByUserIdAsync(
-                            localTransaction.UserId
-                        );
-
-                        if (subscription != null)
-                        {
-                            subscription.Status = SubscriptionStatus.Authorized;
-                            subscription.LastModified = DateTime.UtcNow;
-
-                            await subscriptionRepository.UpdateAsync(subscription);
-                        }
-
-                        break;
                     }
+
+                    notificationUserId = localTransaction.UserId;
+                    notificationTitle = "Pagamento Aprovado! 🎉";
+                    notificationMessage =
+                        $"Seu pagamento referente à transação {localTransaction.Id.ToString()[..8]} foi aprovado com sucesso. Você agora tem acesso de Manutenção!";
+                    notificationType = NotificationType.Success;
+
+                    var subscription = await subscriptionRepository.GetByUserIdAsync(
+                        localTransaction.UserId
+                    );
+
+                    if (subscription != null)
+                    {
+                        subscription.Status = SubscriptionStatus.Authorized;
+                        subscription.LastModified = DateTime.UtcNow;
+
+                        await subscriptionRepository.UpdateAsync(subscription);
+                    }
+
+                    break;
+                }
                 case "rejected":
                 case "cancelled":
                     notificationUserId = localTransaction.UserId;
@@ -146,6 +142,4 @@ public class ProcessPaymentJob(
 
         await cacheService.RemoveAsync($"payment_status_{transactionId}");
     }
-
-
 }

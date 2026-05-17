@@ -50,7 +50,7 @@ public class PixService(
                         new MpOrderPaymentRequest(
                             Amount: amount,
                             PaymentMethod: new MpOrderPaymentMethod("pix", "bank_transfer")
-                        )
+                        ),
                     }
                 )
             );
