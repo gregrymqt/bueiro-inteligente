@@ -5,7 +5,11 @@ import { AlertService } from '@/core/alert/AlertService';
 import type { NotificationPayload } from '@/feature/notifications/hooks/useNotifications';
 import type { CreatePixRequest, PixPaymentResponse } from '../types/pix.type';
 
-export function usePixPayment(planId: string, onPaymentComplete: (paymentId: string) => void) {
+export function usePixPayment(
+  planId: string, 
+  amount: number, // Recebe o valor dinâmico
+  onPaymentComplete: (paymentId: string) => void
+) {
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<PixPaymentResponse | null>(null);
   const [status, setStatus] = useState<'idle' | 'pending' | 'approved' | 'rejected'>('idle');
@@ -16,7 +20,7 @@ export function usePixPayment(planId: string, onPaymentComplete: (paymentId: str
       const request: CreatePixRequest = {
         ...payerInfo,
         planId,
-        amount: 0, 
+        amount: amount, // Usa o valor real do plano
         description: `Assinatura de Plano - ID: ${planId.substring(0, 8)}`,
       };
 

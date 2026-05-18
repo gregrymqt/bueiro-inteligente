@@ -12,22 +12,22 @@ interface PixFormData {
 }
 
 interface PixPaymentProps {
-    planId: string;
-    onPaymentComplete: (paymentId: string) => void; // NOVO
+  planId: string;
+  amount: number; // NOVO: Recebendo o valor
+  onPaymentComplete: (paymentId: string) => void;
 }
 
-export const PixPayment: React.FC<PixPaymentProps> = ({ planId, onPaymentComplete }) => {
+export const PixPayment: React.FC<PixPaymentProps> = ({ planId, amount, onPaymentComplete }) => {
   const methods = useForm<PixFormData>({
     defaultValues: { identificationNumber: '', firstName: '', lastName: '', payerEmail: '' }
   });
 
-  // Passamos onPaymentComplete para o hook
-  const { loading, pixData, status, generatePix, copyToClipboard } = usePixPayment(planId, onPaymentComplete);
+  const { loading, pixData, status, generatePix, copyToClipboard } = usePixPayment(planId, amount, onPaymentComplete);
 
   const onSubmit = async (data: PixFormData) => {
     await generatePix({
       ...data,
-      identificationType: 'CPF' 
+      identificationType: 'CPF'
     });
   };
 

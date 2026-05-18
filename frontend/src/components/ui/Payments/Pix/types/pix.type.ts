@@ -17,7 +17,7 @@ export interface CreatePixRequest {
  */
 export interface PixPaymentResponse {
   orderId: string;
-  paymentId: number;
+  paymentId: string;
   status: string;
   statusDetail: string;
   qrCode: string; // Pix Copia e Cola[cite: 13]
