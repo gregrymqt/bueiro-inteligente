@@ -32,7 +32,7 @@ public sealed class BueiroInteligenteAuthenticationHandler(
         {
             return AuthenticateResult.NoResult();
         }
-        
+
         // Simplificação da busca do token usando expressões de atribuição
         string? token = AuthExtension.NormalizeBearerToken(
             Request.Headers.Authorization.ToString()

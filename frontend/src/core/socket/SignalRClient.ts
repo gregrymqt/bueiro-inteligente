@@ -54,6 +54,7 @@ export class SignalRClient {
     .withUrl(resolveSignalRHubUrl(), {
       headers: {
         'X-App-Id': resolveAppId(),
+        'ngrok-skip-browser-warning': 'true'
       },
       accessTokenFactory: () => tokenService.getToken() ?? '',
       transport: HttpTransportType.LongPolling,

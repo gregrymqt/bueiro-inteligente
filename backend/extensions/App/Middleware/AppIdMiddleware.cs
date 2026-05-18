@@ -16,7 +16,8 @@ public sealed class AppIdMiddleware
         "/api/v1/auth/google-login",
         "/api/v1/auth/google-callback",
         "/api/v1/monitoring/medicoes",
-        "/uploads" 
+        "/uploads",
+        "/api/v1/webhooks",
     ];
 
     private readonly RequestDelegate _next;

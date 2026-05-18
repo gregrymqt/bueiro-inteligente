@@ -38,12 +38,23 @@ public class PixService(
                 System.Globalization.CultureInfo.InvariantCulture
             );
 
+            // DENTRO DE PixService.cs -> CreatePixOrderAsync
             var orderRequest = new MpOrderRequest(
                 Type: "online",
                 ExternalReference: paymentTransaction.Id.ToString(),
                 TotalAmount: amount,
                 ProcessingMode: "automatic",
-                Payer: new MpOrderPayer(request.PayerEmail),
+                Payer: new MpOrderPayer(
+                    Email: request.PayerEmail,
+                    FirstName: request.FirstName,
+                    LastName: request.LastName,
+                    Identification: string.IsNullOrWhiteSpace(request.IdentificationNumber)
+                        ? null
+                        : new MpOrderIdentification(
+                            Type: request.IdentificationType ?? "CPF",
+                            Number: request.IdentificationNumber
+                        )
+                ),
                 Transactions: new MpOrderTransactions(
                     new List<MpOrderPaymentRequest>
                     {

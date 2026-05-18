@@ -77,7 +77,9 @@ public static class DatabaseServiceCollectionExtensions
 
         using var scope = sp.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var generalSettings = scope.ServiceProvider.GetRequiredService<IOptions<GeneralSettings>>().Value;
+        var generalSettings = scope
+            .ServiceProvider.GetRequiredService<IOptions<GeneralSettings>>()
+            .Value;
         var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var logger = scope
             .ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -126,9 +128,7 @@ public static class DatabaseServiceCollectionExtensions
                     nuclearResetExecuted = true;
                 }
 
-                logger.LogInformation(
-                    "Aplicando migraÃ§Ãµes pendentes..."
-                );
+                logger.LogInformation("Aplicando migraÃ§Ãµes pendentes...");
                 await migrationContext.Database.MigrateAsync(ct).ConfigureAwait(false);
 
                 await SeedRolesAsync(migrationContext, ct);

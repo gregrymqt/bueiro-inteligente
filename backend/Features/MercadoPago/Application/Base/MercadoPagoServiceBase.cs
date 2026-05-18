@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using backend.Core;
 
 // using backend.Core.Exceptions; // Descomente e ajuste para o namespace correto das suas exceções personalizadas
 
@@ -13,10 +14,10 @@ public abstract class MercadoPagoServiceBase
 
     // Adicionado JsonSerializerOptions para garantir que o envio siga o padrão camelCase do Mercado Pago
     private readonly JsonSerializerOptions _jsonOptions = new()
-{
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, // ✅ Formato correto para o MP
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-};
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, // ✅ Formato correto para o MP
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     protected MercadoPagoServiceBase(
         IHttpClientFactory httpClientFactory,
@@ -94,7 +95,7 @@ public abstract class MercadoPagoServiceBase
                 $"Erro na API do Mercado Pago. Status: {response.StatusCode}. Detalhes: {content}";
 
             // Substitua 'ExternalApiException' pela sua classe base de exceção de domínio, se necessário
-            throw new Exception(errorMessage);
+            throw new ExternalApiException(errorMessage);
         }
         catch (HttpRequestException ex)
         {

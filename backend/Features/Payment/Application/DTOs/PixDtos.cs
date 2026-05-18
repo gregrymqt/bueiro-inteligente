@@ -6,9 +6,9 @@ public record CreatePixRequestDto(
     string PayerEmail,
     string FirstName,
     string LastName,
-    string IdentificationType, // CPF ou CNPJ
-    string IdentificationNumber,
-    Guid? PlanId // Caso o Pix seja para assinar um plano específico
+    string? IdentificationType,   // 👈 Modificado para Nullable
+    string? IdentificationNumber, // 👈 Modificado para Nullable
+    Guid? PlanId 
 );
 
 public record PixPaymentResponseDto(

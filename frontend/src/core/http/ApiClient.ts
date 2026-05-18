@@ -41,6 +41,7 @@ export class ApiClient implements IApiClient {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
       'X-App-Id': resolveAppId(),
+      'ngrok-skip-browser-warning': 'true', 
     };
 
     if (!isFormData) {

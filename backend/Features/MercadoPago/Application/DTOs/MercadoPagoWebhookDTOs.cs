@@ -5,7 +5,7 @@ namespace backend.Features.MercadoPago.Application.DTOs
     public class MercadoPagoWebhookNotification
     {
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public long? Id { get; set; } // Alterado para long? para suportar o ID numérico do evento
 
         [JsonPropertyName("type")]
         public string? Type { get; set; }

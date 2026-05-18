@@ -17,8 +17,7 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
         try
         {
             return await dbContext
-                .Users
-                .Include(u => u.Roles)
+                .Users.Include(u => u.Roles)
                 .FirstOrDefaultAsync(u => u.Id == userId, ct)
                 .ConfigureAwait(false);
         }
@@ -79,9 +78,9 @@ public sealed class AuthRepository(AppDbContext dbContext, ILogger<AuthRepositor
     {
         try
         {
+            // Alteração: .AsNoTracking() removido para permitir o vínculo no EF Core
             return await dbContext
-                .Roles.AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Name == roleName, ct)
+                .Roles.FirstOrDefaultAsync(r => r.Name == roleName, ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

@@ -27,9 +27,13 @@ public class SubscriptionPlan
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public List<string> Features
     {
-        get => string.IsNullOrEmpty(FeaturesJson) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(FeaturesJson)!;
+        get =>
+            string.IsNullOrEmpty(FeaturesJson)
+                ? new List<string>()
+                : JsonSerializer.Deserialize<List<string>>(FeaturesJson)!;
         set => FeaturesJson = JsonSerializer.Serialize(value);
     }
+
     // ----------------------------------------------
 
     public DateTime DateCreated { get; set; }

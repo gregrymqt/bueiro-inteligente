@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.MercadoPago.Presentation.Controllers;
 
-[Route("webhooks")]
-[AllowAnonymous] // Webhooks devem ser acessíveis externamente (sem token JWT)
+[Route("api/v1/webhooks")]
+[AllowAnonymous]
 public class MercadoPagoWebhookController : ApiControllerBase
 {
     private readonly ILogger<MercadoPagoWebhookController> _logger;
