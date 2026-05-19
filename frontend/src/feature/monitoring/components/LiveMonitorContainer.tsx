@@ -7,7 +7,8 @@ export const LiveMonitorContainer: React.FC = () => {
     const { data: drains, loading, error, refetch } = useDrainsList();
     const [explicitDrainId, setExplicitDrainId] = useState<string | null>(null);
 
-    const selectedDrainId = explicitDrainId || (drains.length > 0 ? drains[0].id : '');
+    // ✅ CORREÇÃO 1: Usando hardware_id exatamente como definido na interface
+    const selectedDrainId = explicitDrainId || (drains.length > 0 ? drains[0].hardware_id : '');
 
     if (loading) {
         return (
@@ -37,7 +38,8 @@ export const LiveMonitorContainer: React.FC = () => {
         );
     }
 
-    const selectedDrain = drains.find(d => d.id === selectedDrainId);
+    // ✅ CORREÇÃO 2: Verificação do find também usando hardware_id
+    const selectedDrain = drains.find(d => d.hardware_id === selectedDrainId);
 
     return (
         <div className="live-monitor-container">
@@ -49,9 +51,10 @@ export const LiveMonitorContainer: React.FC = () => {
                     onChange={(e) => setExplicitDrainId(e.target.value)}
                     className="drain-select-dropdown"
                 >
+                    {/* ✅ CORREÇÃO 3: Sintaxe JSX limpa para o loop funcionar perfeitamente */}
                     {drains.map(drain => (
-                        <option key={drain.id} value={drain.id}>
-                            {drain.name} - {drain.id}
+                        <option key={drain.id} value={drain.hardware_id}>
+                            {drain.name} - {drain.hardware_id}
                         </option>
                     ))}
                 </select>
@@ -59,8 +62,8 @@ export const LiveMonitorContainer: React.FC = () => {
 
             {selectedDrainId && (
                 <RealTimeMonitor
-                    key={selectedDrainId} // <--- ISSO garante a limpeza total do componente anterior
-                    bueiroId={selectedDrainId}
+                    key={selectedDrainId} 
+                    bueiroId={selectedDrainId} 
                     locationName={selectedDrain?.name || 'Local Desconhecido'}
                 />
             )}

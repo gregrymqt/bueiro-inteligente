@@ -1,6 +1,6 @@
-
 .dashboardLayout {
   display: flex;
+  width: 100%; // 🔥 A CORREÇÃO CRÍTICA AQUI: Força o layout a expandir em 100% da largura do monitor
   min-height: 100vh;
   background-color: $color-bg-light;
 }

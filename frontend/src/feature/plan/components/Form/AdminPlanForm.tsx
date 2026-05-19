@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom'; // 1. Hooks do Router
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Form } from '@/components/layout/Form';
 import { useAdminPlans } from '../../hooks/useAdminPlans';
@@ -20,16 +20,12 @@ interface AdminPlanFormProps {
 }
 
 export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuccess }) => {
-    const { id } = useParams<{ id: string }>(); // Pega o ID da URL se estiver editando
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-
-    // Extraímos 'plans' e 'loading' para poder buscar os dados da edição
     const { plans, addPlan, editPlan, isSubmitting, loading } = useAdminPlans();
-    
-    // 🔴 Lógica de obtenção do ID refatorada
+
     const planId = initialData?.id || id;
     const isEditing = Boolean(planId);
-
     const effectivePlan = initialData ?? plans.find(p => p.id === planId);
 
     const methods = useForm<AdminPlanFormValues>({
@@ -40,19 +36,18 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
         }
     });
 
-    // 3. Preenche o formulário assim que a lista de planos carregar
     useEffect(() => {
         if (isEditing && effectivePlan) {
-                methods.reset({
-                    name: effectivePlan.name,
-                    amount: effectivePlan.price,
-                    isPopular: effectivePlan.isPopular ?? false,
-                    frequency: 1, // Valores fixos assumidos ou vindos do backend
-                    frequencyType: 'months',
-                    features: effectivePlan.features?.length
-                        ? effectivePlan.features.map(f => ({ value: f }))
-                        : [{ value: '' }]
-                });
+            methods.reset({
+                name: effectivePlan.name,
+                amount: effectivePlan.price,
+                isPopular: effectivePlan.isPopular ?? false,
+                frequency: 1,
+                frequencyType: 'months',
+                features: effectivePlan.features?.length
+                    ? effectivePlan.features.map(f => ({ value: f }))
+                    : [{ value: '' }]
+            });
         }
     }, [effectivePlan, methods, isEditing]);
 
@@ -67,7 +62,7 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
             .filter(f => f !== '');
 
         if (isEditing && !planId) {
-            console.error('Erro crítico: Tentativa de edição, mas o ID do plano não foi encontrado.');
+            console.error('Erro crítico: ID do plano não encontrado.');
             return;
         }
 
@@ -79,7 +74,7 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
             if (onSuccess) {
                 onSuccess();
             } else {
-                navigate('/admin/plans'); // 4. Voltar para a lista em caso de sucesso
+                navigate('/admin/plans');
             }
         }
     };
@@ -91,42 +86,48 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
     return (
         <div className={styles.formWrapper}>
             <Form methods={methods} onSubmit={onSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1rem' }}>
+                <div className={styles.formGrid}>
 
-                    <Form.Input
-                        name="name"
-                        label="Nome do Plano"
-                        colSpan={6}
-                        validation={{ required: 'O nome é obrigatório' }}
-                    />
+                    {/* Linha 1: Nome (8) + Preço (4) = 12 */}
+                    <div className={styles.col8}>
+                        <Form.Input
+                            name="name"
+                            label="Nome do Plano"
+                            validation={{ required: 'O nome é obrigatório' }}
+                        />
+                    </div>
 
-                    <Form.Input
-                        name="amount"
-                        label="Preço (BRL)"
-                        type="number"
-                        colSpan={4}
-                        step="0.01"
-                        validation={{ required: 'Defina um valor' }}
-                    />
+                    <div className={styles.col4}>
+                        <Form.Input
+                            name="amount"
+                            label="Preço (BRL)"
+                            type="number"
+                            step="0.01"
+                            validation={{ required: 'Defina um valor' }}
+                        />
+                    </div>
 
-                    <Form.Select
-                        name="frequencyType"
-                        label="Ciclo de Cobrança"
-                        colSpan={6}
-                        options={[
-                            { label: 'Mensal', value: 'months' },
-                            { label: 'Anual', value: 'years' }
-                        ]}
-                    />
+                    {/* Linha 2: Ciclo (6) + Checkbox (6) = 12 */}
+                    <div className={styles.col6}>
+                        <Form.Select
+                            name="frequencyType"
+                            label="Ciclo de Cobrança"
+                            options={[
+                                { label: 'Mensal', value: 'months' },
+                                { label: 'Anual', value: 'years' }
+                            ]}
+                        />
+                    </div>
 
-                    <Form.Checkbox
-                        name="isPopular"
-                        label="Destacar como Popular"
-                        colSpan={6}
-                    />
+                    <div className={`${styles.col6} ${styles.checkboxContainer}`}>
+                        <Form.Checkbox
+                            name="isPopular"
+                            label="Destacar como Popular"
+                        />
+                    </div>
 
-                    {/* Gerenciamento de Benefícios (Features) */}
-                    <div style={{ gridColumn: 'span 12' }}>
+                    {/* Linha 3: Benefícios (12) */}
+                    <div className={styles.col12}>
                         <label className={styles.label}>Benefícios do Plano</label>
                         <div className={styles.featureList}>
                             {fields.map((field, index) => (
@@ -134,12 +135,12 @@ export const AdminPlanForm: React.FC<AdminPlanFormProps> = ({ initialData, onSuc
                                     <Form.Input
                                         name={`features.${index}.value`}
                                         placeholder="Ex: Suporte 24h"
-                                        colSpan={12}
                                     />
                                     <button
                                         type="button"
                                         className={styles.removeBtn}
                                         onClick={() => remove(index)}
+                                        aria-label="Remover benefício"
                                     >
                                         <Trash2 size={18} />
                                     </button>

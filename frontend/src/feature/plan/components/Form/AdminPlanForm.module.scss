@@ -1,9 +1,73 @@
+@use "sass:color";
 
 .formWrapper {
   background: $color-background;
   padding: $spacing-lg;
   border-radius: $border-radius-lg;
   border: 1px solid $color-border;
+
+  // 🔥 Solução UI/UX para centralizar e limitar o tamanho do formulário no Desktop
+  max-width: 768px;
+  margin: 0 auto;
+  width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+// Grid Responsivo Mobile-First
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr; // Mobile: tudo empilhado em 1 coluna
+  gap: $spacing-md;
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(12, 1fr); // Desktop: grid tradicional de 12 colunas
+  }
+}
+
+// Modificadores de Colunas para Desktop
+.col4 {
+  @include respond-to('md') {
+    grid-column: span 4;
+  }
+}
+
+.col6 {
+  @include respond-to('md') {
+    grid-column: span 6;
+  }
+}
+
+.col8 {
+  @include respond-to('md') {
+    grid-column: span 8;
+  }
+}
+
+.col12 {
+  grid-column: span 1;
+
+  @include respond-to('md') {
+    grid-column: span 12;
+  }
+}
+
+// Alinhamento óptico para o Checkbox ficar na mesma linha do Select
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+  padding-top: $spacing-sm;
+
+  @include respond-to('md') {
+    padding-top: 1.8rem; // Compensa a altura do label do Select vizinho
+  }
+}
+
+// Estilos dos Benefícios
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: $spacing-xs;
+  color: $color-text-main;
 }
 
 .featureList {
@@ -17,9 +81,12 @@
   display: flex;
   gap: $spacing-sm;
   align-items: center;
+  width: 100%;
 
-  input {
+  // Garante que o input ocupe o espaço correto descartando a lixeira
+  :global(.form-group) {
     flex: 1;
+    margin: 0;
   }
 }
 
@@ -33,6 +100,9 @@
   cursor: pointer;
   width: 100%;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background $transition-speed;
 
   &:hover {
@@ -46,4 +116,12 @@
   background: none;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
 }

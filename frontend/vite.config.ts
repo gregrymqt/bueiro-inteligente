@@ -54,23 +54,26 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
     },
 
-    // 4. Configuração do Proxy de Desenvolvimento (para evitar erros de CORS)
     server: {
       proxy: {
-        // Qualquer requisição que comece com /api será redirecionada
         "/api/v1/": {
           target: env.VITE_BACKEND_URL || "http://localhost:5045",
           changeOrigin: true,
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
         },
         "/realtime/ws": {
           target: env.VITE_BACKEND_URL || "http://localhost:5045",
           changeOrigin: true,
-          ws: true, // <- MUITO IMPORTANTE: Diz ao Vite para habilitar o upgrade para WebSocket
+          ws: true, 
         },
-        // NOVA REGRA: Roteia requisições de imagens locais diretamente para o wwwroot do backend
         "/uploads": {
           target: env.VITE_BACKEND_URL || "http://localhost:5045",
           changeOrigin: true,
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
         },
       },
     },

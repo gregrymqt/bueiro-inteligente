@@ -1,3 +1,4 @@
+@use "sass:color";
 
 .listContainer {
   width: 100%;
@@ -6,14 +7,14 @@
 .feedbackGrid {
   display: grid;
   gap: $spacing-lg;
-  grid-template-columns: 1fr; // Mobile-first: 1 coluna
+  grid-template-columns: 1fr; // Mobile-first
 
   @include respond-to('md') {
-    grid-template-columns: repeat(2, 1fr); // Tablets: 2 colunas[cite: 13]
+    grid-template-columns: repeat(2, 1fr); // Tablets
   }
 
   @include respond-to('lg') {
-    grid-template-columns: repeat(3, 1fr); // Desktop: 3 colunas[cite: 13]
+    grid-template-columns: repeat(3, 1fr); // Desktop
   }
 }
 
@@ -21,18 +22,32 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
   padding: $spacing-lg;
-  transition: transform $transition-speed ease, box-shadow $transition-speed ease;
+  background-color: $color-background;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba($color-text, 0.08);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
   }
+}
+
+// 🔥 Novo Cabeçalho do Card
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; // Estrelas na esquerda, ações na direita
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  width: 100%;
+  flex-wrap: wrap; // Garante que quebre linha se a tela for minúscula (ex: iPhone SE)
 }
 
 .rating {
   display: flex;
-  gap: 2px;
-  margin-bottom: $spacing-md;
+  gap: 3px;
+  align-items: center;
 
   .starFilled {
     fill: $color-warning;
@@ -40,54 +55,132 @@
   }
 
   .starEmpty {
-    color: $color-border;
+    color: color.adjust($color-border, $lightness: -5%);
   }
 }
 
-.comment {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: $color-text-main;
-  font-style: italic;
-  margin-bottom: $spacing-lg;
-  flex-grow: 1;
+// 🔥 Grupo de ações minimalista e flutuante
+.cardActions {
+  display: flex;
+  gap: $spacing-xs;
+  align-items: center;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid $color-border;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: $color-bg-light;
+      svg { transform: scale(1.05); }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
+.editBtn { 
+  color: $color-text-main;
+  &:hover:not(:disabled) { border-color: $color-primary !important; color: $color-primary !important; }
+}
+
+.deleteBtn { 
+  color: $color-danger;
+  &:hover:not(:disabled) { border-color: $color-danger !important; background-color: rgba($color-danger, 0.05) !important; }
+}
+
+// Modernização do texto de depoimento
+.comment {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: color.adjust($color-text-main, $lightness: 5%);
+  margin-bottom: $spacing-lg;
+  flex-grow: 1;
+  position: relative;
+  font-weight: 400;
+  padding: 0 $spacing-xs;
+  
+  // Aspas elegantes e controladas via CSS
+  &::before, &::after {
+    color: rgba($color-primary, 0.15);
+    font-size: 2rem;
+    font-family: Georgia, serif;
+    line-height: 0;
+    position: absolute;
+  }
+  
+  &::before {
+    content: "“";
+    left: -8px;
+    top: 8px;
+  }
+  
+  &::after {
+    content: "”";
+    display: inline-block;
+    margin-left: 2px;
+    bottom: -4px;
+  }
+}
+
+// Alinhamento do rodapé do card (Autor)
 .author {
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  width: 100%; // Garante que a info do autor fique alinhada à esquerda no flex-end padrão do footer
+  width: 100%;
+  border-top: 1px solid rgba($color-border, 0.5);
+  padding-top: $spacing-md;
 }
 
 .avatar, .avatarPlaceholder {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba($color-primary, 0.1);
 }
 
 .avatarPlaceholder {
-  background-color: $color-primary;
+  background: linear-gradient(135deg, $color-primary 0%, color.adjust($color-primary, $lightness: -10%) 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .info {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 
   .name {
     font-size: 0.9rem;
+    font-weight: 600;
     color: $color-text-main;
   }
 
   .role {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: $color-text-light;
+    text-transform: capitalize;
   }
 }
 

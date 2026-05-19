@@ -37,13 +37,31 @@ public sealed class MonitoringRepository(
 
         try
         {
-            var record = await dbContext
-                .DrainStatuses.AsNoTracking()
-                .Where(s => s.DrainIdentifier == drainId)
-                .OrderByDescending(s => s.LastUpdate)
-                .ThenByDescending(s => s.Id)
-                .FirstOrDefaultAsync(ct)
-                .ConfigureAwait(false);
+            DrainStatus? record = null;
+
+            // Verifica se o ID recebido é um GUID (vindo do front-end referente à tabela 'drains')
+            if (Guid.TryParse(drainId, out var parsedGuid))
+            {
+                // Faz o JOIN entre as tabelas usando o HardwareId = DrainIdentifier
+                record = await (from d in dbContext.Drains.AsNoTracking()
+                                join s in dbContext.DrainStatuses.AsNoTracking()
+                                  on d.HardwareId equals s.DrainIdentifier
+                                where d.Id == parsedGuid
+                                orderby s.LastUpdate descending, s.Id descending
+                                select s)
+                               .FirstOrDefaultAsync(ct)
+                               .ConfigureAwait(false);
+            }
+            else
+            {
+                record = await dbContext
+                    .DrainStatuses.AsNoTracking()
+                    .Where(s => s.DrainIdentifier == drainId)
+                    .OrderByDescending(s => s.LastUpdate)
+                    .ThenByDescending(s => s.Id)
+                    .FirstOrDefaultAsync(ct)
+                    .ConfigureAwait(false);
+            }
 
             return record is null ? null : MapToDto(record);
         }

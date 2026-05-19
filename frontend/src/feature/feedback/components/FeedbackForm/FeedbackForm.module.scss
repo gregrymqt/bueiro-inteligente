@@ -1,22 +1,24 @@
-
 .feedbackContainer {
   background-color: $color-background;
   border-radius: $border-radius-lg;
   border: 1px solid $color-border;
   padding: $spacing-lg;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+  // 🔥 Solução de UI/UX: Centraliza o formulário e define a largura ideal de leitura
+  width: 100%;
+  max-width: 600px;         // Impede que o formulário estique ou fique desproporcional
+  margin: $spacing-xl auto; // O 'auto' nas laterais faz a mágica de centralizar no desktop
 }
 
 .title {
   color: $color-text-main;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
   margin-bottom: $spacing-lg;
-  text-align: center;
   
-  @include respond-to('md') {
-    text-align: left;
-  }
+  // 🔥 Centralizado em todas as telas para acompanhar a simetria do card focado
+  text-align: center; 
 }
 
 .form {
@@ -24,11 +26,13 @@
   gap: $spacing-md;
 }
 
+// Melhoria visual no alinhamento do botão de envio
 .submitBtn {
   width: 100%; // Mobile-first: botão ocupa toda a largura
 
   @include respond-to('md') {
-    width: auto; // Desktop: botão assume largura do conteúdo
-    min-width: 200px;
+    width: auto; // Desktop: assume o tamanho do texto
+    min-width: 180px;
+    margin-left: auto; // Se houver um container flex, empurra o botão para a direita (opcional)
   }
 }

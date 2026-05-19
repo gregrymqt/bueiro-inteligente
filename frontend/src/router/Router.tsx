@@ -7,7 +7,6 @@ import { RoleMiddleware } from './middleware/RoleMiddleware';
 import Home from '@/pages/Home/Home';
 import About from '@/pages/About/About';
 import { Login } from '@/pages/Auth/Login';
-
 import { RegisterForm } from '@/feature/auth/components/RegisterForm';
 
 // Importando o novo MainLayout e outros layouts
@@ -22,45 +21,52 @@ import { AdminDashboard, DashboardHome } from '@/pages/Admin/AdminDashboard';
 import { CheckoutPage } from '@/pages/Checkout/CheckoutPage';
 
 export const router = createBrowserRouter([
+  // ==========================================
+  // 1. ROTAS PÚBLICAS (Acessíveis sem Login)
+  // ==========================================
+  {
+    path: '/',
+    element: (
+      <AuthProvider>
+        <MainLayout />
+      </AuthProvider>
+    ),
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'sobre', element: <About /> },
+    ],
+  },
+  {
+    path: '/login',
+    element: (
+      <AuthProvider>
+        <Login />
+      </AuthProvider>
+    ),
+  },
+  {
+    path: '/register',
+    element: (
+      <AuthProvider>
+        <RegisterForm />
+      </AuthProvider>
+    ),
+  },
+
+  // ==========================================
+  // 2. ROTAS PROTEGIDAS (Necessitam de Interceptor e Token)
+  // ==========================================
   {
     element: (
       <AuthProvider>
-        <AuthInterceptor />
+        <AuthInterceptor /> 
       </AuthProvider>
-    ), // Ouve o evento de Unauthorized (Token expirado/inválido)
+    ),
     children: [
-      // ==========================================
-      // 1. ROTAS PÚBLICAS (Sem verificação de JWT)
-      // ==========================================
-      {
-        path: '/login',
-        element: <Login />,
-      },
-      {
-        path: '/register',
-        element: <RegisterForm />,
-      },
-      {
-        path: '/',
-        element: <MainLayout />, // Coloca a Navbar, Sidebar e Footer
-        children: [
-          {
-            index: true, // Isso torna a rota '/' exata e renderiza a Home
-            element: <Home />,
-          },
-          {
-            path: 'sobre',
-            element: <About />,
-          },
-        ],
-      },
-      
-      // ==========================================
-      // ROTAS PROTEGIDAS (Sem Main Layout)
-      // ==========================================
       {
         element: <ProtectedLayout />,
         children: [
+          // ROTA: Checkout (Qualquer utilizador autenticado)
           {
             path: 'checkout',
             element: <CheckoutLayout />,
@@ -69,8 +75,9 @@ export const router = createBrowserRouter([
                 index: true,
                 element: <CheckoutPage />,
               },
-            ]
+            ],
           },
+          // ROTAS: Dashboard (Apenas Admin e Manutenção)
           {
             element: <RoleMiddleware allowedRoles={['admin', 'manutencao']} />,
             children: [
@@ -80,49 +87,41 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <Dashboard />, 
-                  }
-                ]
+                    element: <Dashboard />,
+                  },
+                ],
               },
             ],
           },
-        ],
-      },
-
-      // ==========================================
-      // 2. ROTAS PROTEGIDAS (A mágica acontece aqui)
-      // ==========================================
-      {
-        element: <ProtectedLayout />, // Verifica login
-        children: [
+          // ROTAS: Admin (Exclusivo para Administradores)
           {
-            element: <RoleMiddleware allowedRoles={['admin']} />, // Apenas Admin[cite: 45]
+            element: <RoleMiddleware allowedRoles={['admin']} />,
             children: [
               {
                 path: 'admin',
-                element: <AdminDashboard />, // O Dashboard com Sidebar e Outlet[cite: 45]
+                element: <AdminDashboard />, 
                 children: [
                   {
                     index: true,
-                    element: <Navigate to="home" replace />, // Redireciona /admin para /admin/home[cite: 45]
+                    element: <Navigate to="home" replace />, 
                   },
                   {
                     path: 'home',
-                    element: <DashboardHome />, // Aquela aba Home provisória
+                    element: <DashboardHome />, 
                   },
                   {
                     path: 'plans',
                     children: [
                       {
-                        index: true, // Rota: /admin/plans
+                        index: true, 
                         element: <AdminPlanList />,
                       },
                       {
-                        path: 'new', // Rota: /admin/plans/new
+                        path: 'new', 
                         element: <AdminPlanForm />,
                       },
                       {
-                        path: 'edit/:id', // Rota: /admin/plans/edit/123
+                        path: 'edit/:id', 
                         element: <AdminPlanForm />,
                       },
                     ],
@@ -137,10 +136,10 @@ export const router = createBrowserRouter([
   },
 
   // ==========================================
-  // ROTA DE FALLBACK (Página não encontrada)
+  // 3. ROTA DE FALLBACK (Página não encontrada)
   // ==========================================
   {
     path: '*',
-    element: <Navigate to="/dashboard" replace />,
-  }
+    element: <Navigate to="/" replace />,
+  },
 ]);

@@ -14,7 +14,7 @@ interface FeedbackFormProps {
 export const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialData, onSuccess, onCancel }) => {
   const isEditing = Boolean(initialData?.id);
   const { sendFeedback, updateFeedback, isSubmitting } = useFeedbackForm(); // Hook com CRUD[cite: 37]
-  
+
   const methods = useForm<FeedbackCreatePayload>({
     defaultValues: {
       rating: initialData?.rating ?? 5,
@@ -48,47 +48,55 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialData, onSucce
   };
 
   return (
-    <section className={styles.feedbackContainer}>
-      <h3 className={styles.title}>
-        {isEditing ? 'Editar sua avaliação' : 'Avalie sua experiência'}
-      </h3>
-      
-      <Form methods={methods} onSubmit={onSubmit} className={styles.form}>
-        <Form.Select
-          name="rating"
-          label="Sua Nota"
-          validation={{ required: 'Por favor, selecione uma nota' }}
-          options={[
-            { label: '5 Estrelas - Excelente', value: 5 },
-            { label: '4 Estrelas - Muito Bom', value: 4 },
-            { label: '3 Estrelas - Bom', value: 3 },
-            { label: '2 Estrelas - Regular', value: 2 },
-            { label: '1 Estrela - Ruim', value: 1 },
-          ]}
-        />
+    /* 🔥 OBRIGATÓRIO: Transforma o wrapper num container flexível que centraliza o conteúdo horizontalmente */
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      width: '100%',
+      padding: '0 1rem'
+    }}>
+      <section className={styles.feedbackContainer}>
+        <h3 className={styles.title}>
+          {isEditing ? 'Editar sua avaliação' : 'Avalie sua experiência'} {/* */}
+        </h3>
 
-        <Form.Textarea
-          name="comment"
-          label="Seu Comentário"
-          placeholder="Conte-nos como o sistema está ajudando você..."
-          rows={4}
-          validation={{ 
-            required: 'O comentário é obrigatório',
-            minLength: { value: 10, message: 'Mínimo de 10 caracteres' }
-          }}
-        />
+        <Form methods={methods} onSubmit={onSubmit} className={styles.form}>
+          <Form.Select
+            name="rating"
+            label="Sua Nota"
+            validation={{ required: 'Por favor, selecione uma nota' }}
+            options={[
+              { label: '5 Estrelas - Excelente', value: 5 },
+              { label: '4 Estrelas - Muito Bom', value: 4 },
+              { label: '3 Estrelas - Bom', value: 3 },
+              { label: '2 Estrelas - Regular', value: 2 },
+              { label: '1 Estrela - Ruim', value: 1 },
+            ]}
+          />
 
-        <Form.Actions>
-          {onCancel && (
-            <button type="button" onClick={onCancel} className={styles.cancelBtn}>
-              Cancelar
-            </button>
-          )}
-          <Form.Submit isLoading={isSubmitting} className={styles.submitBtn}>
-            {isEditing ? 'Salvar Alterações' : 'Enviar Avaliação'}
-          </Form.Submit>
-        </Form.Actions>
-      </Form>
-    </section>
+          <Form.Textarea
+            name="comment"
+            label="Seu Comentário"
+            placeholder="Conte-nos como o sistema está ajudando você..."
+            rows={4}
+            validation={{
+              required: 'O comentário é obrigatório',
+              minLength: { value: 10, message: 'Mínimo de 10 caracteres' }
+            }}
+          />
+
+          <Form.Actions>
+            {onCancel && (
+              <button type="button" onClick={onCancel} className={styles.cancelBtn}>
+                Cancelar
+              </button>
+            )}
+            <Form.Submit isLoading={isSubmitting} className={styles.submitBtn}>
+              {isEditing ? 'Salvar Alterações' : 'Enviar Avaliação'} {/* */}
+            </Form.Submit>
+          </Form.Actions>
+        </Form>
+      </section>
+    </div>
   );
 };

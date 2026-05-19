@@ -3,7 +3,6 @@ import type { Feedback } from '../../types';
 import styles from './FeedbackList.module.scss';
 import { PencilLine, Star, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card/Card';
-import { Button } from '@/components/ui/Button/Button';
 
 interface FeedbackCardProps {
   feedback: Feedback;
@@ -15,7 +14,6 @@ interface FeedbackCardProps {
 export const FeedbackCard: React.FC<FeedbackCardProps> = ({ 
   feedback, onEdit, onDelete, isActionLoading 
 }) => {
-  // 1. Fallback seguro para as iniciais (Evita TypeError)
   const initial = feedback.userName?.charAt(0)?.toUpperCase() || '?';
 
   const renderStars = (rating: number) => {
@@ -33,7 +31,7 @@ export const FeedbackCard: React.FC<FeedbackCardProps> = ({
       {feedback.avatarUrl ? (
         <img 
           src={feedback.avatarUrl} 
-          alt={feedback.userName || 'Usuário'} // Fallback no alt text
+          alt={feedback.userName || 'Usuário'} 
           className={styles.avatar} 
         />
       ) : (
@@ -48,34 +46,46 @@ export const FeedbackCard: React.FC<FeedbackCardProps> = ({
     </div>
   );  
 
+  // 🔥 Botões transformados em ações iconográficas polidas e discretas
   const actionsContent = (onEdit || onDelete) && (
     <div className={styles.cardActions}>
       {onEdit && (
-        <Button
-          variant="secondary" size="sm"
-          leftIcon={<PencilLine size={14} />}
+        <button
+          type="button"
+          className={styles.editBtn}
           onClick={() => onEdit(feedback)}
           disabled={isActionLoading}
-        >Editar</Button>
+          title="Editar Avaliação"
+        >
+          <PencilLine size={15} />
+        </button>
       )}
       {onDelete && (
-        <Button
-          variant="danger" size="sm"
-          leftIcon={<Trash2 size={14} />}
+        <button
+          type="button"
+          className={styles.deleteBtn}
           onClick={() => onDelete(feedback.id)}
           disabled={isActionLoading}
-        >Excluir</Button>
+          title="Excluir Avaliação"
+        >
+          <Trash2 size={15} />
+        </button>
       )}
     </div>
   );
 
   return (
     <Card className={styles.card} footer={authorContent}>
-      <div className={styles.rating}>
-        {renderStars(feedback.rating)}
-        {actionsContent} {/* Renderiza botões se estiver na Dashboard[cite: 41] */}
+      {/* 🔥 Divisor espacial estratégico criado aqui */}
+      <div className={styles.cardHeader}>
+        <div className={styles.rating}>
+          {renderStars(feedback.rating)}
+        </div>
+        {actionsContent}
       </div>
-      <p className={styles.comment}>"{feedback.comment}"</p>
+      
+      {/* Removemos as aspas estáticas do texto, deixando o CSS tratar a semântica */}
+      <p className={styles.comment}>{feedback.comment}</p>
     </Card>
   );
 };

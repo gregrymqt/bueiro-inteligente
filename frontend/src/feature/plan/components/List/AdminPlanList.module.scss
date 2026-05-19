@@ -1,6 +1,11 @@
-
 .listContainer {
   margin-top: $spacing-lg;
+  
+  // 🔥 Limita o tamanho e centraliza na tela de forma responsiva
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 
 .header {
@@ -8,8 +13,13 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-md;
+  padding: 0 $spacing-xs; // Margem sutil para alinhar com a borda da tabela
 
-  h3 { color: $color-text-main; }
+  h3 { 
+    color: $color-text-main; 
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
 }
 
 .actionButtons {
