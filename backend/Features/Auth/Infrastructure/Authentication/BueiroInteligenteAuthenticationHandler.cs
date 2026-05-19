@@ -33,11 +33,12 @@ public sealed class BueiroInteligenteAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
-        // Simplificação da busca do token usando expressões de atribuição
+        // ✅ Corrigido: Pegando e normalizando diretamente do header em uma única declaração
         string? token = AuthExtension.NormalizeBearerToken(
             Request.Headers.Authorization.ToString()
         );
 
+        // Se não achar no header, tenta buscar nos Cookies do Google
         if (
             string.IsNullOrWhiteSpace(token)
             && Request.Cookies.TryGetValue(
@@ -49,6 +50,7 @@ public sealed class BueiroInteligenteAuthenticationHandler(
             token = AuthExtension.NormalizeBearerToken(cookieToken);
         }
 
+        // Se não achar, tenta buscar na Query String (Onde o SignalR injeta)
         if (
             string.IsNullOrWhiteSpace(token)
             && Request.Query.TryGetValue("access_token", out var queryToken)
@@ -57,6 +59,7 @@ public sealed class BueiroInteligenteAuthenticationHandler(
             token = AuthExtension.NormalizeBearerToken(queryToken.ToString());
         }
 
+        // Se mesmo após todas as tentativas o token for nulo ou vazio, barra
         if (string.IsNullOrWhiteSpace(token))
             return AuthenticateResult.NoResult();
 

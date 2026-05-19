@@ -1,7 +1,10 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
-// Importa o teu hook seguro de autenticação (Resolve o TS 2339) 👇
+// 1. IMPORTAÇÃO E INICIALIZAÇÃO DO SDK DO MERCADO PAGO (Resolve o erro de PUBLIC_KEY) 👇
+import { initMercadoPago, StatusScreen } from '@mercadopago/sdk-react';
+
+// Importa o teu hook seguro de autenticação
 import { useAuth } from '@/feature/auth/hooks/useAuth';
 
 // Componentes de Pagamento
@@ -9,11 +12,13 @@ import { PixPayment } from '@/components/ui/Payments/Pix/components/PixPayment';
 import { PreferencePayment } from '@/components/ui/Payments/Preferences/components/PreferencePayment';
 import { CardPayment } from '@/components/ui/Payments/Card/components/CardPayment';
 
-import { StatusScreen } from '@mercadopago/sdk-react';
 import styles from './CheckoutPage.module.scss';
 import { useCheckout } from '@/feature/checkout/hooks/useCheckout';
 import { PaymentMethodType } from '@/feature/checkout/types/checkout.type';
 import { usePlanDetails } from '@/feature/plan/hooks/usePlanDetails';
+
+// Inicializa o SDK globalmente usando a variável injetada pelo Vite
+initMercadoPago(import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY);
 
 export const CheckoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -29,10 +34,9 @@ export const CheckoutPage: React.FC = () => {
     handlePaymentComplete
   } = useCheckout(planId);
 
-  // 1. Usa o useAuth em vez de useContext(AuthContext)
+  // Usa o useAuth em vez de useContext(AuthContext)
   const { user } = useAuth();
 
-  // 2. Define os valores fixos por enquanto (Resolve o TS 2304)
   // Como o user do AuthContext pode ser null se o AuthProvider ainda estiver a carregar, usamos o optional chaining
   const payerEmail = user?.email || "email@fallback.com";
 
@@ -63,12 +67,12 @@ export const CheckoutPage: React.FC = () => {
               visual: {
                 showExternalReference: true,
                 style: {
-                  theme: 'default', // Puxa do MP, mas você pode usar 'dark' se quiser
+                  theme: 'default', 
                 }
               },
               backUrls: {
                 error: `${window.location.origin}/checkout?plan=${planId}`, // Tentar de novo
-                return: `${window.location.origin}/dashboard` // Ir pra home/dashboard
+                return: `${window.location.origin}/dashboard` // Redireciona para o painel de monitoramento
               }
             }}
             onReady={() => console.log('Status Screen carregado')}
@@ -142,6 +146,7 @@ export const CheckoutPage: React.FC = () => {
           {selectedMethod === PaymentMethodType.PIX && (
             <PixPayment
               planId={planId}
+              amount={planAmount} // 2. NOVO: Passando o valor real para o formulário de Pix
               onPaymentComplete={handlePaymentComplete}
             />
           )}
@@ -159,9 +164,6 @@ export const CheckoutPage: React.FC = () => {
             <PreferencePayment
               planId={planId}
               payerEmail={payerEmail}
-            // Preferences geralmente redireciona (redirectMode: 'self'),
-            // então pode não precisar da callback de complete aqui,
-            // mas a mantemos caso mude o redirectMode no futuro.
             />
           )}
 

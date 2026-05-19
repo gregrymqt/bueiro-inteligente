@@ -21,7 +21,7 @@ public class PreferenceService(
     )
     {
         logger.LogInformation(
-            "Iniciando criação de Preferência (Checkout Pro) para o usuário {UserId}.",
+            "Iniciando criação de Preferência (Checkout Pro) para o utilizador {UserId}.",
             userId
         );
 
@@ -63,13 +63,28 @@ public class PreferenceService(
                 BinaryMode = true,
             };
 
-            var client = new PreferenceClient();
-            Preference preference = await client.CreateAsync(preferenceRequest);
-
-            if (string.IsNullOrEmpty(preference.Id))
+            // 🛡️ NOVO CÓDIGO: Bloco Try-Catch para a criação da Preferência
+            Preference? preference = null;
+            try
             {
-                throw new InvalidOperationException(
-                    "O Mercado Pago falhou ao gerar o ID da Preferência."
+                var client = new PreferenceClient();
+                preference = await client.CreateAsync(preferenceRequest);
+
+                if (preference == null || string.IsNullOrEmpty(preference.Id))
+                {
+                    throw new InvalidOperationException("O Mercado Pago falhou ao gerar o ID da Preferência.");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Falha ao gerar a Preferência no Mercado Pago. Marcando transação como rejeitada localmente.");
+
+                paymentTransaction.UpdateStatus("rejected", "preference_creation_failed");
+
+                return new PreferenceResponseDto(
+                    PreferenceId: string.Empty,
+                    InitPoint: string.Empty,
+                    ExternalReference: paymentTransaction.Id
                 );
             }
 

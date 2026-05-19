@@ -1,29 +1,31 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Features.Payment.Application.DTOs;
 
 public record CreatePixRequestDto(
-    decimal Amount,
-    string Description,
-    string PayerEmail,
-    string FirstName,
-    string LastName,
-    string? IdentificationType,   // 👈 Modificado para Nullable
-    string? IdentificationNumber, // 👈 Modificado para Nullable
-    Guid? PlanId 
+    [property: JsonPropertyName("amount")] decimal Amount,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("payerEmail")] string PayerEmail,
+    [property: JsonPropertyName("firstName")] string FirstName,
+    [property: JsonPropertyName("lastName")] string LastName,
+    [property: JsonPropertyName("identificationType")] string? IdentificationType,
+    [property: JsonPropertyName("identificationNumber")] string? IdentificationNumber,
+    [property: JsonPropertyName("planId")] Guid? PlanId 
 );
 
 public record PixPaymentResponseDto(
-    string OrderId,
-    string PaymentId,
-    string Status,
-    string StatusDetail,
-    string QrCode, // Pix Copia e Cola
-    string QrCodeBase64, // Imagem do QR Code
-    string TicketUrl, // Link externo para instruções
-    DateTimeOffset ExpirationDate,
-    Guid ExternalReference // O ID da transação no nosso banco de dados
+    [property: JsonPropertyName("orderId")] string OrderId,
+    [property: JsonPropertyName("paymentId")] string PaymentId,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("statusDetail")] string StatusDetail,
+    [property: JsonPropertyName("qrCode")] string QrCode,
+    [property: JsonPropertyName("qrCodeBase64")] string QrCodeBase64,
+    [property: JsonPropertyName("ticketUrl")] string TicketUrl,
+    [property: JsonPropertyName("expirationDate")] DateTimeOffset ExpirationDate,
+    [property: JsonPropertyName("externalReference")] Guid ExternalReference
 );
 
 public record RetryPixRequestDto(
-    string OrderId,
-    string TransactionId // ID da transação que falhou (ex: PAY123...)
+    [property: JsonPropertyName("orderId")] string OrderId,
+    [property: JsonPropertyName("transactionId")] string TransactionId
 );

@@ -1,29 +1,34 @@
-import React from 'react';
+import React, { useMemo, useCallback, useRef } from 'react';
 import { CardPayment as MPCardPayment } from '@mercadopago/sdk-react';
 import styles from './CardPayment.module.scss';
 import { useCardPayment } from '../hooks/useCardPayment';
-// Tipos nativos do SDK[cite: 34, 38]
 import type { ICardPaymentBrickPayer, ICardPaymentFormData } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type';
 
 interface CardPaymentProps {
   planId: string;
   amount: number;
   payerEmail?: string;
-  onPaymentComplete: (paymentId: string) => void; // NOVO
+  onPaymentComplete: (paymentId: string) => void;
 }
 
 export const CardPayment: React.FC<CardPaymentProps> = ({ planId, amount, payerEmail, onPaymentComplete }) => {
-  // Passamos onPaymentComplete para o hook
-  const { handleCardSubmit, status } = useCardPayment(planId, onPaymentComplete);
+  const { handleCardSubmit, status } = useCardPayment(planId, amount, onPaymentComplete);
+  
+  // 🛡️ SOLUÇÃO DEFINITIVA: Remoção do useState de e-mail.
+  // Usamos um useRef apontando direto para o elemento do DOM. 
+  // Digitar aqui gera ZERO re-renders na árvore de componentes.
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
-  const initialization = {
+  // ✅ Estabiliza o objeto de inicialização
+  const initialization = useMemo(() => ({
     amount: amount,
     payer: {
       email: payerEmail || '',
     },
-  };
+  }), [amount, payerEmail]);
 
-  const customization = {
+  // ✅ Estabiliza o objeto de customização
+  const customization = useMemo(() => ({
     visual: {
       style: {
         theme: 'default' as const,
@@ -37,39 +42,83 @@ export const CardPayment: React.FC<CardPaymentProps> = ({ planId, amount, payerE
     texts: {
       formSubmit: 'Confirmar Assinatura',
     },
-  };
+  }), []);
 
-  const onSubmit = async (
+  // ✅ Memoriza o callback de envio extraindo o valor sincronamente do Ref no submit
+  const onSubmit = useCallback(async (
     formData: ICardPaymentFormData<ICardPaymentBrickPayer>
   ): Promise<void> => {
+    if (formData.payer && emailInputRef.current) {
+      formData.payer.email = emailInputRef.current.value.trim();
+    }
     await handleCardSubmit(formData);
-  };
+  }, [handleCardSubmit]);
 
-  const onError = (error: unknown): void => {
-    console.error('Erro no Card Brick:', error);
-  };
+  // 🛡️ Estabiliza as funções de ciclo de vida do SDK para evitar quebras por novas referências de memória
+  const handleReady = useCallback(() => {
+    console.log('Mercado Pago Brick pronto e estável.');
+  }, []);
+
+  const handleError = useCallback((error: any) => {
+    console.error('Erro detectado no Mercado Pago Brick:', error);
+  }, []);
 
   return (
     <div className={styles.cardBrickContainer}>
       <header className={styles.header}>
         <h3>Pagamento com Cartão</h3>
-        <p>Insira os dados do seu cartão para ativar o plano.</p>
+        <p>Complete as etapas abaixo para ativar seu plano.</p>
       </header>
 
-      <div className={styles.brickWrapper}>
-        <MPCardPayment
-          initialization={initialization}
-          customization={customization}
-          onSubmit={onSubmit}
-          onReady={() => { }}
-          onError={onError}
-        />
+      <div className={styles.formSteps}>
+
+        {/* PASSO 1: DADOS DE CONTATO */}
+        <section className={styles.stepSection}>
+          <div className={styles.stepHeader}>
+            <span className={styles.stepBadge}>1</span>
+            <h4>Dados de Contato</h4>
+          </div>
+          <div className={styles.stepContent}>
+            <label className={styles.inputLabel} htmlFor="billing-email">
+              E-mail para recebimento da nota/recibo
+            </label>
+            <input
+              id="billing-email"
+              ref={emailInputRef}
+              className={styles.customInput}
+              type="email"
+              defaultValue={payerEmail ?? ''} // Inicializa o valor sem controlar o estado do ciclo de digitação
+              placeholder="seuemail@dominio.com"
+              required
+            />
+          </div>
+        </section>
+
+        <hr className={styles.divider} />
+
+        {/* PASSO 2: DADOS DO CARTÃO (MERCADO PAGO BRICK) */}
+        <section className={styles.stepSection}>
+          <div className={styles.stepHeader}>
+            <span className={styles.stepBadge}>2</span>
+            <h4>Dados do Cartão</h4>
+          </div>
+          <div className={`${styles.stepContent} ${styles.brickWrapper}`}>
+            <MPCardPayment
+              initialization={initialization}
+              customization={customization}
+              onSubmit={onSubmit}
+              onReady={handleReady} // Referência imutável garantida
+              onError={handleError} // Referência imutável garantida
+            />
+          </div>
+        </section>
+
       </div>
 
       {status === 'processing' && (
         <div className={styles.processingOverlay}>
           <div className={styles.spinner}></div>
-          <span>Validando transação...</span>
+          <p>Processando seu pagamento com segurança...</p>
         </div>
       )}
     </div>

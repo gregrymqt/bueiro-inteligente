@@ -20,8 +20,7 @@ export function HeroSlide({ slide }: HeroSlideProps) {
           src={resolvedImageUrl} 
           alt={slide.title}
           loading="eager" 
-          // @ts-expect-error fetchpriority
-          fetchpriority="high" 
+          fetchPriority="high" 
           decoding="async" 
         />
       </div>

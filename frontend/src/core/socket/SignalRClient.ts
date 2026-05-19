@@ -51,17 +51,17 @@ export class SignalRClient {
     }
 
     this.connection = new HubConnectionBuilder()
-    .withUrl(resolveSignalRHubUrl(), {
-      headers: {
-        'X-App-Id': resolveAppId(),
-        'ngrok-skip-browser-warning': 'true'
-      },
-      accessTokenFactory: () => tokenService.getToken() ?? '',
-      transport: HttpTransportType.LongPolling,
-    })
-    .withAutomaticReconnect()
-    .configureLogging(LogLevel.Information)
-    .build();
+      .withUrl(resolveSignalRHubUrl(), {
+        headers: {
+          'X-App-Id': resolveAppId(),
+          'ngrok-skip-browser-warning': 'true'
+        },
+        accessTokenFactory: () => tokenService.getToken() ?? '',
+        transport: HttpTransportType.LongPolling,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
+      .build();
 
     this.connection.onclose((error: unknown) => {
       if (error) {
@@ -73,6 +73,14 @@ export class SignalRClient {
   }
 
   private ensureStarted(): Promise<void> {
+    const token = tokenService.getToken();
+
+    // 🛡️ ESCUDO: Se o token for nulo ou string vazia, aborta a conexão antes de disparar o 401
+    if (!token || token.trim() === '') {
+      console.warn('SignalR: Tentativa de conexão pulada. Aguardando token válido...');
+      return Promise.resolve();
+    }
+
     const connection = this.getConnection();
 
     if (this.startPromise !== null || connection.state !== HubConnectionState.Disconnected) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // 🆕 Importado o useCallback
 import { CardService } from '../services/CardService';
 import { signalRClient } from '@/core/socket/SignalRClient';
 import { AlertService } from '@/core/alert/AlertService';
@@ -6,24 +6,35 @@ import type { CreditCardRequest, CreditCardResponse } from '../types/card.types'
 import type { NotificationPayload } from '@/feature/notifications/hooks/useNotifications';
 import type { ICardPaymentBrickPayer, ICardPaymentFormData } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type';
 
-// NOVO: Adicionado onPaymentComplete como parâmetro
-export function useCardPayment(planId: string, onPaymentComplete: (paymentId: string) => void) {
+export function useCardPayment(planId: string, amount: number, onPaymentComplete: (paymentId: string) => void) {
   const [loading, setLoading] = useState(false);
   const [paymentResult, setPaymentResult] = useState<CreditCardResponse | null>(null);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'failure' | '3ds_required'>('idle');
 
-  const handleCardSubmit = async (formData: ICardPaymentFormData<ICardPaymentBrickPayer>) => {
+  // Altere apenas o bloco correspondente dentro do método handleCardSubmit:
+
+  const handleCardSubmit = useCallback(async (formData: ICardPaymentFormData<ICardPaymentBrickPayer>) => {
     setLoading(true);
     setStatus('processing');
 
     try {
+      // 🛡️ Mapeamento seguro extraindo os dados reais do formulário do Brick
       const request: CreditCardRequest = {
         token: formData.token,
         paymentMethodId: formData.payment_method_id,
         installments: formData.installments,
         payerEmail: formData.payer.email || '',
+
+        // O SDK do MP divide o nome completo do titular nestas duas propriedades internas
+        first_name: (formData.payer as any).first_name || '',
+        last_name: (formData.payer as any).last_name || '',
+
+        // Captura o tipo de documento (CPF) e o número preenchidos na UI
+        identificationType: formData.payer.identification?.type,
+        identificationNumber: formData.payer.identification?.number,
+
         description: `Assinatura de Plano - ID: ${planId.substring(0, 8)}`,
-        amount: 0,
+        amount: amount,
         planId: planId
       };
 
@@ -36,13 +47,12 @@ export function useCardPayment(planId: string, onPaymentComplete: (paymentId: st
         return;
       }
 
-      // Se já vier aprovado/processado direto do backend
       if (response.status === 'approved' || response.status === 'processed') {
         setStatus('success');
-        onPaymentComplete(response.paymentId.toString()); // NOVO
+        onPaymentComplete(response.paymentId.toString());
       } else {
         setStatus('failure');
-        onPaymentComplete(response.paymentId.toString()); // NOVO (para exibir erro no StatusScreen)
+        onPaymentComplete(response.paymentId.toString());
         AlertService.error('Pagamento Recusado', response.statusDetail || 'Verifique os dados do cartão.');
       }
     } catch (err) {
@@ -52,7 +62,7 @@ export function useCardPayment(planId: string, onPaymentComplete: (paymentId: st
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId, amount, onPaymentComplete]);
 
   // Escuta WebSocket
   useEffect(() => {
@@ -64,10 +74,10 @@ export function useCardPayment(planId: string, onPaymentComplete: (paymentId: st
       if (isMyTransaction) {
         if (payload.type === 'Success') {
           setStatus('success');
-          onPaymentComplete(paymentResult.paymentId.toString()); // NOVO
+          onPaymentComplete(paymentResult.paymentId.toString());
         } else if (payload.type === 'Error') {
           setStatus('failure');
-          onPaymentComplete(paymentResult.paymentId.toString()); // NOVO
+          onPaymentComplete(paymentResult.paymentId.toString());
         }
       }
     });

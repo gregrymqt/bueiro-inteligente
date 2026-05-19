@@ -71,6 +71,7 @@ public static class AuthServiceCollectionExtensions
                     options.ClaimActions.MapJsonKey("picture", "picture");
                 });
         }
+        
 
         services.AddAuthorization();
         return services;

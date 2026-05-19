@@ -33,12 +33,21 @@ namespace backend.Features.Payment.Application.DTOs
     public record MpOrderPaymentRequest(
         [property: JsonPropertyName("amount")] string Amount,
         [property: JsonPropertyName("payment_method")] MpOrderPaymentMethod PaymentMethod,
-        [property: JsonPropertyName("expiration_time")] string? ExpirationTime = "P1D"
+        // 🛡️ Ignora no JSON se for nulo (essencial para Cartão de Crédito)
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [property: JsonPropertyName("expiration_time")] string? ExpirationTime = null
     );
 
     public record MpOrderPaymentMethod(
         [property: JsonPropertyName("id")] string Id,
-        [property: JsonPropertyName("type")] string Type
+        [property: JsonPropertyName("type")] string Type,
+        
+        // 🆕 Adicionados com condição de ignorar se nulo para não quebrar o fluxo do Pix
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [property: JsonPropertyName("token")] string? Token = null,
+        
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [property: JsonPropertyName("installments")] int? Installments = null
     );
 
     public class MpOrderResponse

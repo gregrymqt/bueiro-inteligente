@@ -1,28 +1,34 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Features.Payment.Application.DTOs;
 
 public record CreateCreditCardRequestDto(
-    decimal Amount,
-    string Description,
-    string PayerEmail,
-    string Token, // Gerado pelo frontend
-    string PaymentMethodId, // ex: 'visa', 'master'
-    int Installments,
-    Guid? PlanId
+    [property: JsonPropertyName("amount")] decimal Amount,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("payerEmail")] string PayerEmail,
+    [property: JsonPropertyName("first_name")] string FirstName, // 🆕 Adicionado
+    [property: JsonPropertyName("last_name")] string LastName,   // 🆕 Adicionado
+    [property: JsonPropertyName("identificationType")] string? IdentificationType, // 🆕 Adicionado
+    [property: JsonPropertyName("identificationNumber")] string? IdentificationNumber, // 🆕 Adicionado
+    [property: JsonPropertyName("token")] string Token, 
+    [property: JsonPropertyName("paymentMethodId")] string PaymentMethodId, 
+    [property: JsonPropertyName("installments")] int Installments,
+    [property: JsonPropertyName("planId")] Guid? PlanId
 );
 
 public record CreditCardPaymentResponseDto(
-    string OrderId,
-    string PaymentId,
-    string Status, // ex: 'processed'
-    string StatusDetail, // ex: 'accredited'
-    string? ExternalResourceUrl, // URL para validações extras (3DS/Remedies)
-    Guid ExternalReference
+    [property: JsonPropertyName("orderId")] string OrderId,
+    [property: JsonPropertyName("paymentId")] string PaymentId,
+    [property: JsonPropertyName("status")] string Status, 
+    [property: JsonPropertyName("statusDetail")] string StatusDetail, 
+    [property: JsonPropertyName("externalResourceUrl")] string? ExternalResourceUrl, 
+    [property: JsonPropertyName("externalReference")] Guid ExternalReference
 );
 
 public record RetryCreditCardRequestDto(
-    string OrderId,
-    string TransactionId, // ID da transação que falhou (ex: PAY123...)
-    string Token,
-    string PaymentMethodId,
-    int Installments
+    [property: JsonPropertyName("orderId")] string OrderId,
+    [property: JsonPropertyName("transactionId")] string TransactionId, 
+    [property: JsonPropertyName("token")] string Token,
+    [property: JsonPropertyName("paymentMethodId")] string PaymentMethodId,
+    [property: JsonPropertyName("installments")] int Installments
 );

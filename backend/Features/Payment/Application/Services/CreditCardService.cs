@@ -41,34 +41,63 @@ public class CreditCardService(
                 System.Globalization.CultureInfo.InvariantCulture
             );
 
-            var orderRequest = new
-            {
-                type = "online",
-                external_reference = paymentTransaction.Id.ToString(),
-                total_amount = amount,
-                processing_mode = "automatic",
-                payer = new { email = request.PayerEmail },
-                transactions = new
-                {
-                    payments = new[]
+            // ✅ Fortemente Tipado: Monta o payload completo utilizando os DTOs do ecossistema
+            var mpOrderPayload = new MpOrderRequest(
+                Type: "online",
+                ExternalReference: paymentTransaction.Id.ToString(), // ID do nosso banco para idempotência
+                TotalAmount: request.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                ProcessingMode: "automatic",
+                Payer: new MpOrderPayer(
+                    Email: request.PayerEmail,
+                    FirstName: !string.IsNullOrWhiteSpace(request.FirstName) ? request.FirstName : "Titular", // Evita string vazia
+                    LastName: !string.IsNullOrWhiteSpace(request.LastName) ? request.LastName : "Cartao",    // Evita string vazia
+                    Identification: new MpOrderIdentification(
+                        Type: request.IdentificationType ?? "CPF",
+                        Number: request.IdentificationNumber?.Replace(".", "").Replace("-", "") ?? "" // Limpa o CPF
+                    )
+                ),
+                Transactions: new MpOrderTransactions(
+                    Payments: new List<MpOrderPaymentRequest>
                     {
-                        new
-                        {
-                            amount,
-                            payment_method = new
-                            {
-                                id = request.PaymentMethodId,
-                                type = "credit_card",
-                                token = request.Token,
-                                installments = request.Installments
-                            }
-                        }
+                        new MpOrderPaymentRequest(
+                            Amount: request.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                            PaymentMethod: new MpOrderPaymentMethod(
+                                Id: request.PaymentMethodId,
+                                Type: "credit_card",
+                                Token: request.Token,             // 🔥 Injetando o token do SDK do Front
+                                Installments: request.Installments // 🔥 Injetando as parcelas escolhidas
+                            ),
+                            ExpirationTime: null // 🔥 Forçando NULL para o Mercado Pago aceitar o Cartão
+                        )
                     }
-                }
-            };
+                )
+            );
 
-            var mpOrder = await orderService.CreateOrderAsync(orderRequest);
+            MpOrderResponse? mpOrder = null;
+            try
+            {
+                mpOrder = await orderService.CreateOrderAsync(mpOrderPayload);
+            }
+            catch (Exception ex)
+            {   
+                logger.LogWarning(ex, "O gateway de pagamento recusou a transação (ex: high_risk) ou falhou. Marcando como rejeitado localmente.");
 
+                // Atualizamos a entidade local impedindo o rollback do UnitOfWork!
+                paymentTransaction.SetCreditCardData("0", "****", request.Installments);
+                paymentTransaction.UpdateStatus("rejected", "cc_rejected_high_risk");
+
+                // Retornamos um DTO indicando falha de negócio, sem estourar Erro 500
+                return new CreditCardPaymentResponseDto(
+                    OrderId: string.Empty,
+                    PaymentId: "0",
+                    Status: "rejected",
+                    StatusDetail: "high_risk",
+                    ExternalResourceUrl: null,
+                    ExternalReference: paymentTransaction.Id
+                );
+            }
+
+            // Fluxo de sucesso: Se não estourou exceção, o gateway processou normalmente
             var status = string.IsNullOrEmpty(mpOrder.Status) ? "rejected" : mpOrder.Status;
             var statusDetail = mpOrder.StatusDetail;
             var paymentElement = mpOrder.Transactions.Payments.FirstOrDefault();
@@ -101,7 +130,6 @@ public class CreditCardService(
         logger.LogInformation("Iniciando retry de Cartão de Crédito para Ordem {OrderId}, Transação {TransactionId}",
             request.OrderId, request.TransactionId);
 
-        // 1. Monta o request esperado pelo PUT v1/orders/{id}/transactions/{id}
         var updateRequest = new MpUpdateTransactionRequest(
             new MpUpdatePaymentMethod(
                 Id: request.PaymentMethodId,
@@ -111,13 +139,10 @@ public class CreditCardService(
             )
         );
 
-        // 2. Chama a API do Mercado Pago
         var success = await orderService.UpdateTransactionAsync(request.OrderId, request.TransactionId, updateRequest);
 
         if (success)
         {
-            // Opcional: Você pode atualizar o status no banco local para "pending" 
-            // enquanto aguarda o webhook do Hangfire com o resultado do processamento.
             logger.LogInformation("Retry enviado com sucesso para a API. Aguardando Webhook.");
         }
         else

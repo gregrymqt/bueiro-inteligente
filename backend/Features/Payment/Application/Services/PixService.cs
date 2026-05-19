@@ -19,7 +19,7 @@ public class PixService(
         Guid userId
     )
     {
-        logger.LogInformation("Gerando ordem de Pix para o usuário {UserId}.", userId);
+        logger.LogInformation("Gerando ordem de Pix para o utilizador {UserId}.", userId);
 
         var response = await unitOfWork.ExecuteTransactionAsync(async ct =>
         {
@@ -38,7 +38,6 @@ public class PixService(
                 System.Globalization.CultureInfo.InvariantCulture
             );
 
-            // DENTRO DE PixService.cs -> CreatePixOrderAsync
             var orderRequest = new MpOrderRequest(
                 Type: "online",
                 ExternalReference: paymentTransaction.Id.ToString(),
@@ -66,7 +65,32 @@ public class PixService(
                 )
             );
 
-            var mpOrder = await orderService.CreateOrderAsync(orderRequest);
+            // 🛡️ NOVO CÓDIGO: Bloco Try-Catch para lidar com falhas de criação do Pix
+            MpOrderResponse? mpOrder = null;
+            try
+            {
+                mpOrder = await orderService.CreateOrderAsync(orderRequest);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "O gateway falhou ao gerar a ordem de Pix. Marcando como rejeitado localmente.");
+
+                // Atualiza a entidade local impedindo o rollback
+                paymentTransaction.UpdateStatus("rejected", "pix_creation_failed", "0");
+
+                // Retorna um DTO indicando falha
+                return new PixPaymentResponseDto(
+                    OrderId: string.Empty,
+                    PaymentId: "0",
+                    Status: "rejected",
+                    StatusDetail: "pix_creation_failed",
+                    QrCode: string.Empty,
+                    QrCodeBase64: string.Empty,
+                    TicketUrl: string.Empty,
+                    ExpirationDate: DateTimeOffset.UtcNow,
+                    ExternalReference: paymentTransaction.Id
+                );
+            }
 
             var mpPayment =
                 mpOrder.Transactions.Payments.FirstOrDefault()

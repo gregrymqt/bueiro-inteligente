@@ -23,13 +23,16 @@ export interface AdditionalData {
   paymentTypeId: string;
 }
 
-/** 
- * Payload para o backend .NET 8[cite: 25, 32]
+/** * Payload para o backend .NET 8
  */
 export interface CreditCardRequest {
   amount: number;
   description: string;
   payerEmail: string;
+  first_name: string;             // 🆕 Adicionado para bater com o C#
+  last_name: string;              // 🆕 Adicionado para bater com o C#
+  identificationType?: string;    // 🆕 Adicionado para bater com o C#
+  identificationNumber?: string;  // 🆕 Adicionado para bater com o C#
   token: string;
   paymentMethodId: string;
   installments: number;
