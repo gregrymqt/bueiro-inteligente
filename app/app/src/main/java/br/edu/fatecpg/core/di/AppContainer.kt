@@ -20,8 +20,6 @@ import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
-import br.edu.fatecpg.feature.profile.repository.ProfileRepository
-import br.edu.fatecpg.feature.profile.services.ProfileService
 import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModelFactory
 import br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
@@ -101,10 +99,6 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
         MonitoringRepository(monitoringService, localCacheService)
     }
 
-    // --- Profile Feature ---
-    private val profileService: ProfileService by lazy { ApiClient.createService(ProfileService::class.java) }
-    private val profileRepository: ProfileRepository by lazy { ProfileRepository(profileService) }
-
     // --- Realtime/Home Feature ---
     private val realtimeWebSocketClient: RealtimeWebSocketClient by lazy {
         try {
@@ -151,7 +145,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     val profileViewModelFactory by lazy {
         ProfileViewModelFactory(
-            repository = profileRepository,
+            repository = authRepository, // Reaproveita a mesma instância local!
             locationHandler = locationHandler,
             dashboardWebUrl = dashboardWebUrl
         )

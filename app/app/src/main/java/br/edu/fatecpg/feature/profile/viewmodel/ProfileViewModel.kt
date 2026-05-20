@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.core.navigation.LocationHandler
-import br.edu.fatecpg.feature.profile.dto.UserDTO
-import br.edu.fatecpg.feature.profile.repository.ProfileRepository
+import br.edu.fatecpg.feature.auth.dto.UserDTO
+import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,9 +18,8 @@ sealed class ProfileUiState {
     data class Error(val message: String) : ProfileUiState()
 }
 
-
 class ProfileViewModel(
-    private val repository: ProfileRepository,
+    private val repository: AuthRepository, // Alterado para usar o repositório central de autenticação
     private val locationHandler: LocationHandler,
     private val dashboardWebUrl: String
 ) : ViewModel() {
@@ -38,17 +37,18 @@ class ProfileViewModel(
         }
     }
 
-    fun loadProfile() {
-        Log.d("ProfileViewModel", "Iniciando carregamento do perfil via coroutineScope")
+    private fun loadProfile() {
+        Log.d("ProfileViewModel", "Iniciando carregamento do perfil de usuário através da API de Auth")
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
-            repository.getUserProfile()
+            // Bate na rota correta: api/v1/auth/users/me
+            repository.getCurrentUser()
                 .onSuccess { user ->
-                    Log.i("ProfileViewModel", "Perfil renderizavel carregado! Trocando state para Success.")
+                    Log.i("ProfileViewModel", "Perfil do usuário carregado com sucesso!")
                     _uiState.value = ProfileUiState.Success(user)
                 }
                 .onFailure { error ->
-                    Log.w("ProfileViewModel", "Estado de falha disparado no repositorio de viewmodel. Rastreio:", error)
+                    Log.w("ProfileViewModel", "Falha ao obter dados do perfil logado:", error)
                     _uiState.value = ProfileUiState.Error(error.message ?: "Erro desconhecido ao carregar perfil")
                 }
         }

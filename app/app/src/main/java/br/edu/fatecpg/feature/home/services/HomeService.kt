@@ -7,6 +7,6 @@ interface HomeService {
     /**
      * Consome os dados públicos/administrativos da Home configurados no painel Web.
      */
-    @GET("api/v1/home")
+    @GET("home")
     suspend fun getHomeContent(): Result<HomeResponseDTO>
 }

@@ -32,17 +32,21 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "APP_ID_SECRET", "\"jZ3frultyGb5G84zX4en0naZDwIal2HuJi83fqgyPmAWjyXtoI5WzywycGvepQew7aEDtLCwZ0MBZy07tuvY8zcRif8iA5M5CcUTCrHgRMx8Hde8oATev72TGmNO0mnR\"")
-            buildConfigField("String", "BASE_URL", "\"https://bueiro-inteligente.onrender.com\"")
+            buildConfigField("String", "APP_ID_SECRET", "\"\"")
+            buildConfigField("String", "BASE_URL", "\"\"")
             buildConfigField("String", "DASHBOARD_WEB_URL", "\"\"")
         }
         debug {
-            buildConfigField("String", "APP_ID_SECRET", "\"bueiro-inteligente-app-id\"")
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
+            // 1. Verifique se este valor é exatamente igual ao do seu .env do backend!
+            buildConfigField("String", "APP_ID_SECRET", "\"jZ3frultyGb5G84zX4en0naZDwIal2HuJi83fqgyPmAWjyXtoI5WzywycGvepQew7aEDtLCwZ0MBZy07tuvY8zcRif8iA5M5CcUTCrHgRMx8Hde8oATev72TGmNO0mnR\"")
+
+            // 2. Trocamos o IP do emulador pela sua URL ativa do ngrok com o sufixo da API
+            buildConfigField("String", "BASE_URL", "\"https://181a-2804-14d-8e90-5783-f8e8-7707-66e8-b763.ngrok-free.app/\"")
+
             buildConfigField("String", "DASHBOARD_WEB_URL", "\"http://10.0.2.2:5173/\"")
         }
     }
-    
+
     buildFeatures {
         compose = true
         buildConfig = true
