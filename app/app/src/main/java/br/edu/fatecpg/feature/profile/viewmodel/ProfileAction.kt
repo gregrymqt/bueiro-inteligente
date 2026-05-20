@@ -1,6 +1,6 @@
 package br.edu.fatecpg.feature.profile.viewmodel
 
 sealed class ProfileAction {
-    object LoadProfile : ProfileAction()
-    object OpenDashboardWeb : ProfileAction()
+    data object LoadProfile : ProfileAction()
+    data object OpenDashboardWeb : ProfileAction()
 }

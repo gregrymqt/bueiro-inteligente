@@ -7,7 +7,6 @@ import br.edu.fatecpg.feature.auth.dto.UserDTO
 import br.edu.fatecpg.feature.auth.services.AuthService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import android.util.Log
 
 class AuthRepository(
     private val authService: AuthService,

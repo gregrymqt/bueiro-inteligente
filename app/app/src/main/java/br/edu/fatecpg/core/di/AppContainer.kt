@@ -179,7 +179,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
                     AppDatabase::class.java,
                     "bueiro_inteligente_cache.db"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                     .build()
                     .also { roomDatabase = it }
             } catch (e: Exception) {

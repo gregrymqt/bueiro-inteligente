@@ -33,6 +33,14 @@ fun HomeScreen(
     val connectionError by viewModel.connectionError.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val sortedStats = androidx.compose.runtime.remember(uiState) {
+        if (uiState is HomeUiState.Success) {
+            (uiState as HomeUiState.Success).data.stats.sortedBy { it.order }
+        } else {
+            emptyList()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -153,11 +161,6 @@ fun HomeScreen(
                         }
                     }
                     is HomeUiState.Success -> {
-                        // Ordena os stats baseados na propriedade 'order' do backend
-                        val sortedStats = androidx.compose.runtime.remember(state.data.stats) {
-                            state.data.stats.sortedBy { it.order }
-                        }
-
                         if (sortedStats.isEmpty()) {
                             item {
                                 Text(

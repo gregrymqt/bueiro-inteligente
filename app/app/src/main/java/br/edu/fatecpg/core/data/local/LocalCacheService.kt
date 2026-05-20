@@ -95,7 +95,7 @@ class LocalCacheService(
             val cachedEntity = getCachedEntity(key)
 
             if (cachedEntity != null && !cachedEntity.isExpired()) {
-                val cachedValue = deserialize(cachedEntity, type)
+                val cachedValue: T? = deserialize(cachedEntity, type)
                 if (cachedValue != null) {
                     Log.d("LocalCacheService", "Cache hit para chave $key")
                     return@withLock cachedValue
@@ -108,7 +108,7 @@ class LocalCacheService(
                 freshValue
             } catch (exception: Exception) {
                 if (cachedEntity != null) {
-                    val staleValue = deserialize(cachedEntity, type)
+                    val staleValue: T? = deserialize(cachedEntity, type)
                     if (staleValue != null) {
                         Log.w(
                             "LocalCacheService",
