@@ -25,7 +25,8 @@ import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
 fun HomeScreen(
     viewModel: HomeViewModel,
     isLoggedIn: Boolean,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onOpenMapClick: (Double, Double, String) -> Unit
 ) {
     // Consumo seguro dos fluxos reativos
     val activeAlert by viewModel.activeAlert.collectAsStateWithLifecycle()
@@ -121,7 +122,8 @@ fun HomeScreen(
                     item {
                         AlertCard(
                             alert = alert,
-                            onDismiss = { viewModel.dismissAlert() }
+                            onDismiss = { viewModel.dismissAlert() },
+                            onOpenMapClick = onOpenMapClick
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }

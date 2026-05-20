@@ -3,7 +3,6 @@ package br.edu.fatecpg.feature.monitoring.services
 import android.util.Log
 import br.edu.fatecpg.core.network.ApiClient
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
-import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 
@@ -12,10 +11,10 @@ interface MonitoringService {
     @GET("monitoring/{bueiro_id}/status")
     suspend fun getDrainStatus(
         @Path("bueiro_id") id: String
-    ): Response<DrainStatusDTO>
+    ): Result<DrainStatusDTO>
 
     @GET("drains")
-    suspend fun getAllDrains(): Response<List<DrainStatusDTO>>
+    suspend fun getAllDrains(): Result<List<DrainStatusDTO>>
 
     companion object {
         fun create(): MonitoringService {

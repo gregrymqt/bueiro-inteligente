@@ -5,6 +5,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import br.edu.fatecpg.core.network.adapter.ResultCallAdapterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
@@ -47,6 +48,7 @@ object ApiClient {
                     .baseUrl(baseUrl)
                     .client(okHttpClient)
                     .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(ResultCallAdapterFactory())
                     .build()
                 
                 Log.i("ApiClient", "ApiClient inicializado com sucesso.")

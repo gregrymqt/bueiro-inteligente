@@ -128,6 +128,9 @@ fun AppNavigation(appContainer: AppContainer) {
                     isLoggedIn = isLoggedIn,
                     onNavigateToLogin = {
                         navController.navigate("login")
+                    },
+                    onOpenMapClick = { lat, lng, bueiroId ->
+                        appContainer.locationHandler.openLocation(lat, lng, "Bueiro $bueiroId")
                     }
                 )
             }

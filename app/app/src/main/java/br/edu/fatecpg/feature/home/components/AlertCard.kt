@@ -1,8 +1,5 @@
 package br.edu.fatecpg.feature.home.components
 
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -12,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
@@ -20,10 +16,9 @@ import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 @Composable
 fun AlertCard(
     alert: DrainStatusDTO,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onOpenMapClick: (Double, Double, String) -> Unit
 ) {
-    val context = LocalContext.current
-    
     val statusLower = alert.status.lowercase()
     val cardColor = when (statusLower) {
         "crнtico", "critico" -> Color(0xFFFFCDD2) // Vermelho suave
@@ -98,13 +93,9 @@ fun AlertCard(
 
                 Button(
                     onClick = {
-                        Log.d("AlertCard", "Iniciando intent para Google Maps")
                         val lat = alert.latitude ?: 0.0
                         val lng = alert.longitude ?: 0.0
-                        val uri = "geo:$lat,$lng?q=$lat,$lng(Bueiro+${alert.idBueiro})"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-                        intent.setPackage("com.google.android.apps.maps")
-                        context.startActivity(intent)
+                        onOpenMapClick(lat, lng, alert.idBueiro)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
