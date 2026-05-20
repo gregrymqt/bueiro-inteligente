@@ -28,4 +28,22 @@ class RealtimeService(
             Log.e("RealtimeService", "Falha severa ao repassar comando de fechar socket via RealtimeService", e)
         }
     }
+
+    fun joinDrain(bueiroId: String) {
+        try {
+            Log.d("RealtimeService", "Inscricao no bueiro $bueiroId via SignalR solicitada")
+            client.joinDrain(bueiroId)
+        } catch (e: Exception) {
+            Log.e("RealtimeService", "Erro ao assinar bueiro $bueiroId", e)
+        }
+    }
+
+    fun leaveDrain(bueiroId: String) {
+        try {
+            Log.d("RealtimeService", "Cancelamento de inscricao no bueiro $bueiroId via SignalR solicitado")
+            client.leaveDrain(bueiroId)
+        } catch (e: Exception) {
+            Log.e("RealtimeService", "Erro ao desassinar bueiro $bueiroId", e)
+        }
+    }
 }

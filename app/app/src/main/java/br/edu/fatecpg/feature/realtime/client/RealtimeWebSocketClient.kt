@@ -18,6 +18,10 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
+/**
+ * Cliente WebSocket customizado para o protocolo SignalR (Hub do ASP.NET Core).
+ * Gerencia o handshake inicial, heartbeats (type: 6) e roteamento de invocao (type: 1).
+ */
 class RealtimeWebSocketClient(
     private val okHttpClient: OkHttpClient,
     private val gson: Gson,
@@ -25,6 +29,7 @@ class RealtimeWebSocketClient(
 ) {
     private var webSocket: WebSocket? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val RECORD_SEPARATOR = "\u001e"
 
     private val _drainStatusFlow = MutableSharedFlow<DrainStatusDTO>()
     val drainStatusFlow: SharedFlow<DrainStatusDTO> = _drainStatusFlow.asSharedFlow()
@@ -40,81 +45,145 @@ class RealtimeWebSocketClient(
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
 
-            Log.i("RealtimeWebSocketClient", "Construindo conexao OkHttp socket para (WSS/WS) url final: $baseUrl")
+            Log.i("RealtimeWebSocketClient", "Iniciando conexao SignalR WebSocket: $baseUrl")
             webSocket = okHttpClient.newWebSocket(requestBuilder.build(), DrainWebSocketListener())
         } catch (e: Exception) {
-            Log.e("RealtimeWebSocketClient", "Nao foi possivel estabelecer fabrica conexao com backend WebSocket na URL: $baseUrl", e)
+            Log.e("RealtimeWebSocketClient", "Erro ao tentar conectar ao WebSocket", e)
         }
     }
 
     fun disconnect() {
         try {
-            Log.d("RealtimeWebSocketClient", "Encerrando conexao WebSocket ativamente 1000/App closed")
+            Log.d("RealtimeWebSocketClient", "Encerrando conexao WebSocket (1000/Normal)")
             webSocket?.close(1000, "App closed")
             webSocket = null
         } catch (e: Exception) {
-            Log.e("RealtimeWebSocketClient", "P�nico ao fechar fluxo nativo socket okhttp", e)
+            Log.e("RealtimeWebSocketClient", "Erro ao fechar WebSocket", e)
         }
+    }
+
+    /**
+     * Invocao do mtodo JoinDrain no Hub do SignalR.
+     */
+    fun joinDrain(bueiroId: String) {
+        val message = SignalRInvocation(
+            type = 1,
+            target = "JoinDrain",
+            arguments = listOf(bueiroId)
+        )
+        sendMessage(message)
+    }
+
+    /**
+     * Invocao do mtodo LeaveDrain no Hub do SignalR.
+     */
+    fun leaveDrain(bueiroId: String) {
+        val message = SignalRInvocation(
+            type = 1,
+            target = "LeaveDrain",
+            arguments = listOf(bueiroId)
+        )
+        sendMessage(message)
+    }
+
+    private fun sendMessage(message: Any) {
+        val json = gson.toJson(message) + RECORD_SEPARATOR
+        Log.d("RealtimeWebSocketClient", "Enviando mensagem SignalR: $json")
+        webSocket?.send(json)
     }
 
     private inner class DrainWebSocketListener : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            Log.i("DrainWebSocketListener", "Conex�o aberta de Realtime ativa com servidor")            
-            // Inicia o Ping para o Render Free (evitar idle timeout de 30-55s)
+            Log.i("DrainWebSocketListener", "Conexao aberta. Realizando handshake SignalR...")
+            
+            // Handshake obrigatorio do SignalR para negociar o protocolo JSON
+            val handshake = "{\"protocol\":\"json\",\"version\":1}$RECORD_SEPARATOR"
+            webSocket.send(handshake)
+
+            // Heartbeat manual para evitar idle timeout em conexes via ngrok/tneis
             coroutineScope.launch {
                 while (isActive) {
                     delay(15000)
                     try {
-                        webSocket.send("ping")
+                        val ping = "{\"type\":6}$RECORD_SEPARATOR"
+                        webSocket.send(ping)
                     } catch (e: Exception) {
-                        Log.e("RealtimeWebSocketClient", "Erro ao enviar ping", e)
+                        Log.e("RealtimeWebSocketClient", "Erro ao enviar SignalR Heartbeat", e)
                         break
                     }
                 }
             }
+
             coroutineScope.launch {
                 try {
                     _connectionErrorFlow.emit(null)
                 } catch (e: Exception) {
-                    Log.e("DrainWebSocketListener", "Falha interna ao limpar erros antigos p�s reconexao no coroutine flow", e)
+                    Log.e("DrainWebSocketListener", "Erro ao limpar fluxo de erro", e)
                 }
             }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            try {
-                // Log.d("DrainWebSocketListener", "Frame WebSocket de mensagem chegado: (omitindo para n travar IO)")
-                val message = gson.fromJson(text, RealtimeMessage::class.java)  
-                if (message.eventoTipo == "BUEIRO_STATUS_MUDOU" && message.dados != null) {
-                    Log.i("DrainWebSocketListener", "Frame recebido � update de bueiro! Realizando binding via GSON")
-                    val status = gson.fromJson(gson.toJson(message.dados), DrainStatusDTO::class.java)
-                    coroutineScope.launch {
-                        try {
-                            _drainStatusFlow.emit(status)
-                        } catch (e: Exception) {
-                            Log.e("DrainWebSocketListener", "Erro de emissao do SharedFlow de novo bueiro", e)
-                        }
+            // O SignalR pode agrupar mensagens terminadas por \u001e
+            val messages = text.split(RECORD_SEPARATOR)
+            for (rawMessage in messages) {
+                if (rawMessage.isBlank()) continue
+                
+                try {
+                    val signalRMessage = gson.fromJson(rawMessage, SignalRMessage::class.java)
+                    
+                    when (signalRMessage.type) {
+                        1 -> handleInvocation(signalRMessage)
+                        6 -> Log.d("DrainWebSocketListener", "Heartbeat (Type 6) recebido do Servidor")
+                        else -> { /* Outros tipos ignorados: handshake ack (vazio), completion, etc */ }
                     }
+                } catch (e: Exception) {
+                    Log.w("DrainWebSocketListener", "Falha ao processar frame SignalR: $rawMessage", e)
                 }
-            } catch (e: Exception) {
-                Log.w("DrainWebSocketListener", "Falha ao desserializar formato da mensagem provida via WebSocket", e)
+            }
+        }
+
+        private fun handleInvocation(message: SignalRMessage) {
+            // Mapeia o evento de broadcast do Hub para o fluxo do aplicativo
+            if (message.target == "BUEIRO_STATUS_MUDOU" && !message.arguments.isNullOrEmpty()) {
+                try {
+                    Log.i("DrainWebSocketListener", "Broadcast 'BUEIRO_STATUS_MUDOU' capturado. Fazendo parsing...")
+                    // O SignalR empacota argumentos em um array JSON
+                    val dataJson = gson.toJson(message.arguments[0])
+                    val status = gson.fromJson(dataJson, DrainStatusDTO::class.java)
+                    
+                    coroutineScope.launch {
+                        _drainStatusFlow.emit(status)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DrainWebSocketListener", "Falha catastrfica no parse do DrainStatusDTO vindo do SignalR", e)
+                }
             }
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            Log.e("DrainWebSocketListener", "Nativo OkHttp WebSocket despencou (falha). Socket code: ${response?.code ?: "N/A"}", t)
+            Log.e("DrainWebSocketListener", "Queda de conexao WebSocket detectada. Code: ${response?.code}", t)
             coroutineScope.launch {
                 try {
-                    _connectionErrorFlow.emit("Falha na conex�o de tempo real. Tentando novamente...")
+                    _connectionErrorFlow.emit("Falha na conexao de tempo real. Tentando reconectar...")
                 } catch (e: Exception) {
-                    Log.e("DrainWebSocketListener", "Falha ao emitir mensagem de aviso visual para usuario na falha de WS", e)
+                    Log.e("DrainWebSocketListener", "Erro ao notificar erro de conexao", e)
                 }
             }
         }
     }
 
-    private data class RealtimeMessage(
-        @SerializedName("evento_tipo") val eventoTipo: String,
-        @SerializedName("dados") val dados: Any?
+    // Estrutura base de mensagens do SignalR
+    private data class SignalRMessage(
+        @SerializedName("type") val type: Int,
+        @SerializedName("target") val target: String? = null,
+        @SerializedName("arguments") val arguments: List<Any>? = null
+    )
+
+    // Estrutura para envio de invocaes para o Hub (Join/Leave)
+    private data class SignalRInvocation(
+        @SerializedName("type") val type: Int,
+        @SerializedName("target") val target: String,
+        @SerializedName("arguments") val arguments: List<Any>
     )
 }

@@ -39,7 +39,8 @@ object ApiClient {
                     .addInterceptor(loggingInterceptor) // Adicionado para debug em nvel BODY
                     .connectTimeout(60, TimeUnit.SECONDS)
                     .readTimeout(60, TimeUnit.SECONDS)
-                    .pingInterval(15, TimeUnit.SECONDS) // Ping de WebSocket nativo para o Render Free
+                    // Removido pingInterval nativo para evitar conflito com Heartbeat do SignalR (ngrok timeout)
+                    // .pingInterval(15, TimeUnit.SECONDS)
                     .build()
                 
                 this.httpClient = okHttpClient

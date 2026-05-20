@@ -15,7 +15,7 @@ class RealtimeRepository(private val realtimeService: RealtimeService) {
             Log.d("RealtimeRepository", "Sinalizando subida de websocket atraves de repositorio")
             realtimeService.connect(token)
         } catch (e: Exception) {
-            Log.e("RealtimeRepository", "Erro crítico ao encaminhar start do servico de realtime", e)
+            Log.e("RealtimeRepository", "Erro crtico ao encaminhar start do servico de realtime", e)
         }
     }
 
@@ -25,6 +25,24 @@ class RealtimeRepository(private val realtimeService: RealtimeService) {
             realtimeService.disconnect()
         } catch (e: Exception) {
             Log.e("RealtimeRepository", "Problema crasso ao despachar drop the conexao RT do ws", e)
+        }
+    }
+
+    fun joinDrain(bueiroId: String) {
+        try {
+            Log.d("RealtimeRepository", "Encaminhando pedido de Pub/Sub para o bueiro $bueiroId")
+            realtimeService.joinDrain(bueiroId)
+        } catch (e: Exception) {
+            Log.e("RealtimeRepository", "Falha ao encaminhar JoinDrain", e)
+        }
+    }
+
+    fun leaveDrain(bueiroId: String) {
+        try {
+            Log.d("RealtimeRepository", "Encaminhando pedido de desinscricao para o bueiro $bueiroId")
+            realtimeService.leaveDrain(bueiroId)
+        } catch (e: Exception) {
+            Log.e("RealtimeRepository", "Falha ao encaminhar LeaveDrain", e)
         }
     }
 }
