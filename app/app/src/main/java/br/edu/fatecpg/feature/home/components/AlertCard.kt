@@ -19,14 +19,14 @@ fun AlertCard(
     onDismiss: () -> Unit,
     onOpenMapClick: (Double, Double, String) -> Unit
 ) {
-    val statusLower = alert.status.lowercase()
+    val statusLower = alert.status?.lowercase() ?: ""
     val cardColor = when (statusLower) {
-        "crнtico", "critico" -> MaterialTheme.colorScheme.errorContainer
+        "crítico", "critico" -> MaterialTheme.colorScheme.errorContainer
         "alerta" -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = when (statusLower) {
-        "crнtico", "critico" -> MaterialTheme.colorScheme.onErrorContainer
+        "crítico", "critico" -> MaterialTheme.colorScheme.onErrorContainer
         "alerta" -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -69,7 +69,7 @@ fun AlertCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Atualizado аs: ${alert.ultimaAtualizacao}",
+                    text = "Atualizado às: ${alert.ultimaAtualizacao}",
                     style = MaterialTheme.typography.bodySmall,
                     color = contentColor.copy(alpha = 0.8f)
                 )
@@ -78,7 +78,7 @@ fun AlertCard(
 
                 val level = alert.nivelObstrucao
                 Text(
-                    text = "Obstruзгo: ${level.toInt()}%",
+                    text = "Obstrução: ${level.toInt()}%",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = contentColor

@@ -16,7 +16,7 @@ const char *senha = WIFI_PASS;
 const char *hardwareToken = HARDWARE_TOKEN;
 const char *urlApi = API_URL;
 
-const String ID_BUEIRO = "B-01-CENTRO";
+const String ID_BUEIRO = "B-02-CENTRO";
 
 int const trig = 4;
 int const echo = 2;

@@ -107,7 +107,7 @@ fun MonitoringScreen(
                             viewModel.dismissLoginDialog()
                         },
                         title = { Text("Acesso Restrito") },
-                        text = { Text("Para ver a localizaзгo exata e detalhes do bueiro, й necessбrio estar logado.") },
+                        text = { Text("Para ver a localização exata e detalhes do bueiro, é necessário estar logado.") },
                         confirmButton = {
                             TextButton(onClick = {
                                 viewModel.dismissLoginDialog()
@@ -131,55 +131,58 @@ fun MonitoringScreen(
 
 @Composable
 fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
-        Card(
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
+            // CORREÇÃO: Garante um valor padrão seguro antes de chamar o uppercase()
+            val safeStatus = drain.status?.uppercase() ?: "DESCONHECIDO"
+
+            val statusColor = when (safeStatus) {
+                "CRÍTICO", "CRITICO", "CRITICAL" -> Color(0xFFF44336)
+                "ALERTA", "WARNING" -> Color(0xFFFF9800)
+                "NORMAL", "BOM", "OK" -> Color(0xFF4CAF50)
+                else -> Color.Gray // Cai aqui se for DESCONHECIDO
+            }
+
+            // Indicador de Status (Bolinha colorida)
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val statusColor = when (drain.status.uppercase()) {
-                    "CRÍTICO", "CRITICO", "CRITICAL" -> Color(0xFFF44336)
-                    "ALERTA", "WARNING" -> Color(0xFFFF9800)
-                    "NORMAL", "BOM", "OK" -> Color(0xFF4CAF50)
-                    else -> Color.Gray
-                }
+                    .size(16.dp)
+                    .background(
+                        color = statusColor,
+                        shape = CircleShape
+                    )
+            )
 
-                // Indicador de Status (Bolinha colorida)
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(
-                            color = statusColor,
-                            shape = CircleShape
-                        )
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Bueiro ${drain.idBueiro}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
                 )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Bueiro ${drain.idBueiro}",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "Status: ${drain.status.uppercase()}",
-                        fontSize = 14.sp,
-                        color = Color.DarkGray
-                    )
-                    Text(
-                        text = "Obstruзгo: ${drain.nivelObstrucao.toInt()}%",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
+                Text(
+                    text = "Status: $safeStatus", // Exibe o status tratado de forma segura
+                    fontSize = 14.sp,
+                    color = Color.DarkGray
+                )
+                Text(
+                    text = "Obstrução: ${drain.nivelObstrucao.toInt()}%",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
             }
         }
+    }
 }

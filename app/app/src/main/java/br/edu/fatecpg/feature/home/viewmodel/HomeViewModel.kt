@@ -52,7 +52,7 @@ class HomeViewModel(
             try {
                 realtimeRepository.alertas.collect { status ->
                     try {
-                        val currentStatus = status.status.lowercase()
+                        val currentStatus = status.status?.lowercase() ?: ""
                         if (currentStatus == "alerta" || currentStatus == "crítico" || currentStatus == "critico") {
                             Log.i("HomeViewModel", "Alerta recebido para o bueiro: ${status.idBueiro}")
                             _activeAlert.value = status

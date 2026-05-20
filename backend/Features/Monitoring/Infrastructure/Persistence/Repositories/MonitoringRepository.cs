@@ -1,4 +1,5 @@
 using backend.Core;
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Entities;
@@ -26,48 +27,95 @@ public sealed class MonitoringRepository(
 
         await dbContext.DrainStatuses.AddAsync(entity, ct).ConfigureAwait(false);
     }
-
-    public async Task<DrainStatusDTO?> GetLatestStatusAsync(
-        string drainId,
+    // Adicione esta assinatura na interface IMonitoringRepository se houver, 
+    // e implemente o método abaixo na classe MonitoringRepository.cs:
+    public async Task<Drain?> GetDrainByHardwareIdAsync(
+        string hardwareId,
         CancellationToken ct = default
     )
+    {
+        if (string.IsNullOrWhiteSpace(hardwareId))
+            throw LogicException.InvalidValue(nameof(hardwareId), hardwareId);
+
+        try
+        {
+            return await dbContext.Drains
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.HardwareId == hardwareId, ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            throw new ConnectionException(
+                "PostgreSQL",
+                $"Erro ao buscar bueiro pelo HardwareId: {hardwareId}",
+                ex
+            );
+        }
+    }
+
+    public async Task<DrainStatusDTO?> GetLatestStatusAsync(string drainId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(drainId))
             throw LogicException.InvalidValue(nameof(drainId), drainId);
 
         try
         {
-            DrainStatus? record = null;
+            // 1. HIGIENIZAÇÃO: Remove espaços fantasmas vindos da URL do React e padroniza para maiúsculo
+            var cleanDrainId = drainId.Trim().ToUpperInvariant();
+            var isGuid = Guid.TryParse(cleanDrainId, out var parsedGuid);
 
-            // Verifica se o ID recebido é um GUID (vindo do front-end referente à tabela 'drains')
-            if (Guid.TryParse(drainId, out var parsedGuid))
+            // 2. BYPASS DE FILTROS E SPLIT DA QUERY: Resolvemos o OR condicional no C# para não explodir
+            // no provedor Npgsql durante a conversão do LINQ para SQL com tipos de dados diferentes.
+            Drain? drain;
+            if (isGuid)
             {
-                // Faz o JOIN entre as tabelas usando o HardwareId = DrainIdentifier
-                record = await (from d in dbContext.Drains.AsNoTracking()
-                                join s in dbContext.DrainStatuses.AsNoTracking()
-                                  on d.HardwareId equals s.DrainIdentifier
-                                where d.Id == parsedGuid
-                                orderby s.LastUpdate descending, s.Id descending
-                                select s)
-                               .FirstOrDefaultAsync(ct)
-                               .ConfigureAwait(false);
+                drain = await dbContext.Drains
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == parsedGuid, ct)
+                    .ConfigureAwait(false);
             }
             else
             {
-                record = await dbContext
-                    .DrainStatuses.AsNoTracking()
-                    .Where(s => s.DrainIdentifier == drainId)
-                    .OrderByDescending(s => s.LastUpdate)
-                    .ThenByDescending(s => s.Id)
-                    .FirstOrDefaultAsync(ct)
+                drain = await dbContext.Drains
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.HardwareId == cleanDrainId, ct)
                     .ConfigureAwait(false);
             }
 
-            return record is null ? null : MapToDto(record);
+            if (drain is null) return null;
+
+            // 2. Busca a telemetria mais recente para este bueiro específico
+            var latestStatus = await dbContext.DrainStatuses.AsNoTracking()
+                .Where(s => s.DrainIdentifier == drain.HardwareId)
+                .OrderByDescending(s => s.LastUpdate)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefaultAsync(ct)
+                .ConfigureAwait(false);
+
+            // COLD START TRATADO: Existe no catálogo mas não tem telemetria ainda
+            if (latestStatus is null)
+            {
+                logger.LogInformation("Bueiro {DrainId} localizado no catálogo. Sem telemetria, gerando payload inicial.", drainId);
+                return new DrainStatusDTO(
+                    IdBueiro: drain.HardwareId,
+                    DistanciaCm: drain.MaxHeight,
+                    NivelObstrucao: 0.0,
+                    Status: "Normal",
+                    Latitude: drain.Latitude,
+                    Longitude: drain.Longitude,
+                    UltimaAtualizacao: DateTimeOffset.UtcNow,
+                    DataHash: string.Empty
+                );
+            }
+
+            return MapToDto(latestStatus);
         }
         catch (Exception ex)
         {
-            throw new ConnectionException("PostgreSQL", $"Erro ao buscar status de {drainId}", ex);
+            throw new ConnectionException("PostgreSQL", $"Erro ao buscar status para o bueiro {drainId}", ex);
         }
     }
 

@@ -61,16 +61,11 @@ public static class ExceptionHandlingExtensions
 
     // Remova a dependência desnecessária do ILoggerFactory
     private static (int StatusCode, string Title, string Detail) ResolveProblemDetails(
-        HttpContext context,
-        Exception? exception,
-        IWebHostEnvironment env
-    )
+    HttpContext context,
+    Exception? exception,
+    IWebHostEnvironment env
+)
     {
-        // AQUI ESTÁ A MUDANÇA: Use Serilog.Log estático em vez de ILoggerFactory
-        var frontendDetail = env.IsDevelopment()
-            ? exception?.Message ?? "MISTÉRIO FATAL: A exceção chegou NULA no handler!"
-            : "Ocorreu um erro interno ao processar a requisição.";
-
         // Log usando o motor que já provou funcionar na inicialização
         Serilog.Log.Error(
             exception,
@@ -79,6 +74,21 @@ public static class ExceptionHandlingExtensions
             context.Request.Path
         );
 
-        return (500, "Erro Interno", frontendDetail);
+        // Mapeamento dinâmico de Exceções de Domínio para Status Code HTTP
+        var (statusCode, title) = exception switch
+        {
+            NotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
+            LogicException => (StatusCodes.Status400BadRequest, "Regra de negócio violada"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Não autorizado"),
+            _ => (StatusCodes.Status500InternalServerError, "Erro Interno")
+        };
+
+        var frontendDetail = env.IsDevelopment()
+            ? exception?.Message ?? "MISTÉRIO FATAL: A exceção chegou NULA no handler!"
+            : statusCode == 500
+                ? "Ocorreu um erro interno ao processar a requisição."
+                : exception?.Message; // Para erros 400/404, é seguro e útil enviar a mensagem de domínio para o front
+
+        return (statusCode, title, frontendDetail!);
     }
 }

@@ -78,9 +78,11 @@ public sealed class DrainService(
             if (userId == Guid.Empty)
                 throw new LogicException("O ID do usuário é obrigatório para criar um bueiro.");
 
+            var cleanHardwareId = request.HardwareId?.Trim().ToUpperInvariant() ?? string.Empty;
+
             // Verifica se o hardware já existe (como você já faz)
-            if (await _repository.GetByHardwareIdAsync(request.HardwareId, ct).ConfigureAwait(false) is not null)
-                throw new LogicException($"O hardware_id '{request.HardwareId}' já está em uso.");
+            if (await _repository.GetByHardwareIdAsync(cleanHardwareId, ct).ConfigureAwait(false) is not null)
+                throw new LogicException($"O hardware_id '{cleanHardwareId}' já está em uso.");
 
             Drain drain = new()
             {
@@ -88,7 +90,7 @@ public sealed class DrainService(
                 Address = request.Address,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
-                HardwareId = request.HardwareId,
+                HardwareId = cleanHardwareId,
                 IsActive = request.IsActive,
                 UserId = userId,
             };
@@ -141,18 +143,19 @@ public sealed class DrainService(
 
             if (
                 request.HardwareId is not null
-                && !string.Equals(request.HardwareId, drain.HardwareId, StringComparison.Ordinal)
+                && !string.Equals(request.HardwareId.Trim(), drain.HardwareId, StringComparison.OrdinalIgnoreCase)
             )
             {
-                ValidateField(request.HardwareId, nameof(request.HardwareId));
+                var cleanHardwareId = request.HardwareId.Trim().ToUpperInvariant();
+                ValidateField(cleanHardwareId, nameof(request.HardwareId));
                 var existing = await _repository
-                    .GetByHardwareIdAsync(request.HardwareId, ct)
+                    .GetByHardwareIdAsync(cleanHardwareId, ct)
                     .ConfigureAwait(false);
 
                 if (existing is not null && existing.Id != drain.Id)
-                    throw new LogicException($"hardware_id '{request.HardwareId}' já está em uso.");
+                    throw new LogicException($"hardware_id '{cleanHardwareId}' já está em uso.");
 
-                drain.HardwareId = request.HardwareId;
+                drain.HardwareId = cleanHardwareId;
             }
 
             var updated = await _unitOfWork.ExecuteTransactionAsync(async transactionCt =>

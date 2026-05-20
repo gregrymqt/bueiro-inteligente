@@ -3,10 +3,12 @@ using System.Security.Cryptography;
 using System.Text;
 using backend.Core;
 using backend.extensions.Services.Realtime.Abstractions;
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace backend.Features.Monitoring.Application.Services;
@@ -23,10 +25,7 @@ public sealed class MonitoringService(
         CancellationToken ct = default
     )
     {
-        logger.LogInformation(
-            "Processando leitura para o bueiro {DrainIdentifier}",
-            payload?.IdBueiro
-        );
+        logger.LogInformation("Processando leitura via hardware para o bueiro {DrainIdentifier}", payload?.IdBueiro);
 
         try
         {
@@ -35,80 +34,45 @@ public sealed class MonitoringService(
             if (string.IsNullOrWhiteSpace(payload.IdBueiro))
                 throw LogicException.InvalidValue(nameof(payload.IdBueiro), payload.IdBueiro);
 
-            BueiroConfiguration? config = await monitoringRepository
-                .GetConfigByIdAsync(payload.IdBueiro, ct)
+            // 1. Busca isolada via Repository pela coluna HardwareId (Garante Clean Architecture)
+            Drain? bueiro = await monitoringRepository
+                .GetDrainByHardwareIdAsync(payload.IdBueiro, ct)
                 .ConfigureAwait(false);
 
-            if (config is null)
-                throw new NotFoundException("Bueiro", payload.IdBueiro);
+            if (bueiro is null)
+                throw new NotFoundException("Bueiro não cadastrado no catálogo", payload.IdBueiro);
 
-            ValidateSensorNoise(payload.IdBueiro, payload.DistanciaCm, config.MaxHeight);
+            // 2. Processa e valida os cálculos base do sensor físico
+            ValidateSensorNoise(bueiro.HardwareId, payload.DistanciaCm, bueiro.MaxHeight);
+            
+            double nivel = CalculateObstructionLevel(payload.DistanciaCm, bueiro.MaxHeight);
+            string status = ResolveStatus(nivel, bueiro.CriticalThreshold, bueiro.AlertThreshold);
+            
+            // 3. Executa a montagem do Hash Criptográfico de integridade anti-duplicação
+            string hash = CalculateDataHash(bueiro.HardwareId, payload.DistanciaCm, payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow);
 
-            double normalizedDistance = Math.Round(payload.DistanciaCm, 2);
-            double obstructionLevel = Math.Round(
-                CalculateObstructionLevel(normalizedDistance, config.MaxHeight),
-                2
-            );
-            string status = ResolveStatus(
-                obstructionLevel,
-                config.CriticalThreshold,
-                config.AlertThreshold
-            );
-
-            DateTimeOffset ultimaAtualizacao = payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow;
-
-            string rawHash =
-                $"{payload.IdBueiro}|{normalizedDistance.ToString(CultureInfo.InvariantCulture)}|{ultimaAtualizacao.ToString("O", CultureInfo.InvariantCulture)}";
-            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawHash));
-            string dataHash = Convert.ToHexString(hashBytes);
-
-            var result = new DrainStatusDTO(
-                payload.IdBueiro,
-                normalizedDistance,
-                obstructionLevel,
-                status,
-                payload.Latitude,
-                payload.Longitude,
-                ultimaAtualizacao,
-                dataHash
+            var drainStatusDto = new DrainStatusDTO(
+                IdBueiro: bueiro.HardwareId, // Seta na coluna id_bueiro para identificação relacional
+                DistanciaCm: payload.DistanciaCm,
+                NivelObstrucao: nivel,
+                Status: status,
+                Latitude: payload.Latitude ?? bueiro.Latitude,
+                Longitude: payload.Longitude ?? bueiro.Longitude,
+                UltimaAtualizacao: payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow,
+                DataHash: hash
             );
 
-            await monitoringIngestionService.SaveSensorDataAsync(result, ct).ConfigureAwait(false);
+            // 4. Persiste de forma transacionada no PostgreSQL
+            await monitoringIngestionService.SaveSensorDataAsync(drainStatusDto, ct).ConfigureAwait(false);
 
-            // Disparo condicional de Realtime
-            if (result.Status is not ("Alerta" or "Crítico")) return result;
-            try
-            {
-                await _realtimeService.PublishToDrainAsync(result.IdBueiro, "BUEIRO_STATUS_MUDOU", result);
-            }
-            catch (Exception)
-            {
-                logger.LogWarning(
-                    "Falha no Realtime Broadcast para o bueiro {Id}. O socket pode estar instável.",
-                    result.IdBueiro
-                );
-            }
+            // 5. Broadcast em tempo real via WebSockets (SignalR) para o App e React
+            await _realtimeService.PublishToDrainAsync(bueiro.HardwareId, "BUEIRO_STATUS_MUDOU", drainStatusDto).ConfigureAwait(false);
 
-            return result;
-        }
-        catch (NotFoundException ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Tentativa de envio por hardware não cadastrado {IdBueiro} bloqueada. Payload: {@Payload}",
-                payload?.IdBueiro,
-                payload
-            );
-            throw;
+            return drainStatusDto;
         }
         catch (Exception ex)
         {
-            logger.LogError(
-                ex,
-                "Erro ao processar medição do bueiro {Id}. Payload: {@Payload}",
-                payload?.IdBueiro,
-                payload
-            );
+            logger.LogError(ex, "Falha ao processar telemetria do bueiro {DrainId}.", payload?.IdBueiro);
             throw;
         }
     }
@@ -118,7 +82,7 @@ public sealed class MonitoringService(
         CancellationToken ct = default
     )
     {
-        logger.LogInformation("Obtendo status do bueiro {DrainId}", drainId);
+        logger.LogInformation("Consultando status atual do bueiro {DrainId}", drainId);
 
         try
         {
@@ -129,6 +93,7 @@ public sealed class MonitoringService(
                 .GetLatestStatusAsync(drainId, ct)
                 .ConfigureAwait(false);
 
+            // Só lança exceção se o bueiro não existir em NENHUMA tabela do banco de dados
             return status ?? throw new NotFoundException("Bueiro", drainId);
         }
         catch (Exception ex)
@@ -151,15 +116,25 @@ public sealed class MonitoringService(
     private static double CalculateObstructionLevel(double dist, double maxHeight) =>
         ((maxHeight - dist) / maxHeight) * 100d;
 
-    private static string ResolveStatus(
-        double level,
-        double criticalThreshold,
-        double alertThreshold
-    ) =>
+    private static string ResolveStatus(double level, double criticalThreshold, double alertThreshold) =>
         level switch
         {
             _ when level >= criticalThreshold => "Crítico",
             _ when level >= alertThreshold => "Alerta",
-            _ => "Normal",
+            _ => "Normal"
         };
+
+    // 🔒 REQUISITO: Montagem do método de criptografia de payload do sensor
+    private static string CalculateDataHash(string id, double distanceCm, DateTimeOffset timestamp)
+    {
+        // Monta uma string única concatenando o ID, a distância com ponto invariante e o timestamp Unix
+        string rawInput = $"{id}|{distanceCm.ToString(CultureInfo.InvariantCulture)}|{timestamp.ToUnixTimeSeconds()}";
+        
+        // Aplica o algoritmo SHA256 padrão
+        byte[] inputBytes = Encoding.UTF8.GetBytes(rawInput);
+        byte[] hashBytes = SHA256.HashData(inputBytes);
+        
+        // Retorna em formato hexadecimal string amigável para o banco de dados
+        return Convert.ToHexString(hashBytes).ToLowerInvariant();
+    }
 }

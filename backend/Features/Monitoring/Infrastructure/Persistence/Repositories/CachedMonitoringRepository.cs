@@ -1,4 +1,5 @@
 using backend.Core;
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Entities;
@@ -27,6 +28,9 @@ public sealed class CachedMonitoringRepository(
             .SetAsync(GetStatusCacheKey(entity.DrainIdentifier), MapToDto(entity), CurrentStatusCacheTtl)
             .ConfigureAwait(false);
     }
+
+    public Task<Drain?> GetDrainByHardwareIdAsync(string hardwareId, CancellationToken ct = default) =>
+    decorated.GetDrainByHardwareIdAsync(hardwareId, ct);
 
     public async Task<DrainStatusDTO?> GetLatestStatusAsync(
         string drainId,

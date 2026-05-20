@@ -1,3 +1,4 @@
+using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Entities;
@@ -10,6 +11,10 @@ public interface IMonitoringRepository
     Task<DrainStatusDTO?> GetLatestStatusAsync(string drainId, CancellationToken ct = default);
     Task<IReadOnlyList<DrainStatusDTO>> GetUnsyncedDataAsync(
         int limit = 100,
+        CancellationToken ct = default
+    );
+    Task<Drain?> GetDrainByHardwareIdAsync(
+        string hardwareId,
         CancellationToken ct = default
     );
     Task MarkAsSyncedAsync(IReadOnlyCollection<string> drainIds, CancellationToken ct = default);
