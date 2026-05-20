@@ -154,7 +154,9 @@ fun HomeScreen(
                     }
                     is HomeUiState.Success -> {
                         // Ordena os stats baseados na propriedade 'order' do backend
-                        val sortedStats = state.data.stats.sortedBy { it.order }
+                        val sortedStats = androidx.compose.runtime.remember(state.data.stats) {
+                            state.data.stats.sortedBy { it.order }
+                        }
 
                         if (sortedStats.isEmpty()) {
                             item {

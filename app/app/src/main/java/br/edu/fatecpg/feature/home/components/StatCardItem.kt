@@ -16,10 +16,10 @@ import br.edu.fatecpg.feature.home.dto.StatCardDTO
 fun StatCardItem(stat: StatCardDTO) {
     // Deriva a cor da borda/destaque baseado no enum do backend
     val accentColor = when (stat.color.lowercase()) {
-        "success" -> Color(0xFF10B981) // Verde Padrão
-        "warning" -> Color(0xFFF59E0B) // Amarelo Alerta
-        "danger" -> Color(0xFFEF4444)  // Vermelho Crítico
-        else -> MaterialTheme.colorScheme.primary
+        "success" -> MaterialTheme.colorScheme.primary
+        "warning" -> MaterialTheme.colorScheme.tertiary
+        "danger" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.primaryContainer
     }
 
     Card(

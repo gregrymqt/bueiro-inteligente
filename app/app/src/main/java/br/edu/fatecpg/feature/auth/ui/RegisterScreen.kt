@@ -23,6 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterUiState
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModel
 
+private val InputShape = RoundedCornerShape(12.dp)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
@@ -34,8 +36,6 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-
-    val InputShape = RoundedCornerShape(12.dp)
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

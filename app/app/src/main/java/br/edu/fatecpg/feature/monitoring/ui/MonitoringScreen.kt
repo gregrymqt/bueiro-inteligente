@@ -66,12 +66,16 @@ fun MonitoringScreen(
                                 contentPadding = PaddingValues(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(drains) { drain ->
+                                items(
+                                    items = drains,
+                                    key = { drain -> drain.idBueiro }
+                                ) { drain ->
+                                    val onClickMemoized = androidx.compose.runtime.remember(drain.idBueiro, isLoggedIn) {
+                                        { viewModel.onDrainClick(isLoggedIn, drain) }
+                                    }
                                     DrainItemCard(
                                         drain = drain,
-                                        onClick = {
-                                            viewModel.onDrainClick(isLoggedIn, drain)
-                                        }
+                                        onClick = onClickMemoized
                                     )
                                 }
                             }
@@ -130,7 +134,7 @@ fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onClick() },
+                .clickable(onClick = onClick),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
@@ -140,12 +144,19 @@ fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val statusColor = when (drain.status.uppercase()) {
+                    "CRÍTICO", "CRITICO", "CRITICAL" -> Color(0xFFF44336)
+                    "ALERTA", "WARNING" -> Color(0xFFFF9800)
+                    "NORMAL", "BOM", "OK" -> Color(0xFF4CAF50)
+                    else -> Color.Gray
+                }
+
                 // Indicador de Status (Bolinha colorida)
                 Box(
                     modifier = Modifier
                         .size(16.dp)
                         .background(
-                            color = Color(MonitoringViewModel.getStatusColor(drain.status)),
+                            color = statusColor,
                             shape = CircleShape
                         )
                 )

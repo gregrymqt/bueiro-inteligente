@@ -7,16 +7,22 @@ plugins {
 
 android {
     namespace = "br.edu.fatecpg"
-    compileSdk = 36 // Mantendo 35 para estabilidade na demo
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "br.edu.fatecpg"
         minSdk = 24
-        targetSdk = 36
+
+        // Mantemos o target em 35 para preservar o comportamento de runtime atual
+        targetSdk = 35
+
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     buildTypes {
@@ -45,10 +51,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "21"
-    }
 }
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     // BOM do Compose para alinhar versões automaticamente
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))

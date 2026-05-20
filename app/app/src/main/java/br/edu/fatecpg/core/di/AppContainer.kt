@@ -16,6 +16,7 @@ import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.home.services.HomeService
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.monitoring.services.MonitoringService
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModelFactory
@@ -25,7 +26,6 @@ import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModelFactory
 import br.edu.fatecpg.feature.realtime.client.RealtimeWebSocketClient
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import br.edu.fatecpg.feature.realtime.services.RealtimeService
-import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -21,16 +21,21 @@ fun AlertCard(
 ) {
     val statusLower = alert.status.lowercase()
     val cardColor = when (statusLower) {
-        "crнtico", "critico" -> Color(0xFFFFCDD2) // Vermelho suave
-        "alerta" -> Color(0xFFFFE082) // Amarelo suave
+        "crнtico", "critico" -> MaterialTheme.colorScheme.errorContainer
+        "alerta" -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = when (statusLower) {
+        "crнtico", "critico" -> MaterialTheme.colorScheme.onErrorContainer
+        "alerta" -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor),
+        colors = CardDefaults.cardColors(containerColor = cardColor, contentColor = contentColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
             Column(
@@ -47,15 +52,16 @@ fun AlertCard(
                         text = "Bueiro ID: ${alert.idBueiro}",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.Black
+                        color = contentColor
                     )
                     IconButton(onClick = {
                         onDismiss()
-                    }, modifier = Modifier.size(24.dp)) {
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Fechar Alerta",
-                            tint = Color.Black
+                            tint = contentColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -65,7 +71,7 @@ fun AlertCard(
                 Text(
                     text = "Atualizado аs: ${alert.ultimaAtualizacao}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray
+                    color = contentColor.copy(alpha = 0.8f)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -75,7 +81,7 @@ fun AlertCard(
                     text = "Obstruзгo: ${level.toInt()}%",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = contentColor
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -85,8 +91,8 @@ fun AlertCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
-                    color = if (level >= 80) Color.Red else Color.DarkGray,
-                    trackColor = Color.White
+                    color = if (level >= 80) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -98,11 +104,14 @@ fun AlertCard(
                         onOpenMapClick(lat, lng, alert.idBueiro)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Icon(imageVector = Icons.Default.Map, contentDescription = "Mapa", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Abrir no Mapa", color = Color.White)
+                    Text(text = "Abrir no Mapa")
                 }
             }
     }
