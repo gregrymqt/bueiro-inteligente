@@ -87,7 +87,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     // --- Auth Feature ---
     private val authService: AuthService by lazy { ApiClient.createService(AuthService::class.java) }
-    private val authRepository: AuthRepository by lazy { AuthRepository(authService, tokenManager) }
+    val authRepository: AuthRepository by lazy { AuthRepository(authService, tokenManager, localCacheService) }
 
     private val localCacheService: LocalCacheService by lazy {
         LocalCacheService(database.cacheDao(), gson)

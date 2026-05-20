@@ -9,6 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,15 +37,18 @@ fun AppNavigation(appContainer: AppContainer) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val scope = rememberCoroutineScope()
     val onLogout: () -> Unit = {
-        try {
-            Log.i("AppNavigation", "Executando logout...")
-            appContainer.tokenManager.clearToken()
-            navController.navigate("login") {
-                popUpTo(0) { inclusive = true }
+        scope.launch {
+            try {
+                Log.i("AppNavigation", "Executando logout centralizado via Repository...")
+                appContainer.authRepository.logout()
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+            } catch (e: Exception) {
+                Log.e("AppNavigation", "Erro ao executar logout", e)
             }
-        } catch (e: Exception) {
-            Log.e("AppNavigation", "Erro ao executar logout", e)
         }
     }
 
