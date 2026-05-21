@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.core.network.TokenManager
+import br.edu.fatecpg.core.notifications.NotificationHelper
 import br.edu.fatecpg.feature.home.dto.HomeResponseDTO
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
@@ -25,7 +26,8 @@ sealed class HomeUiState {
 class HomeViewModel(
     private val realtimeRepository: RealtimeRepository,
     private val homeRepository: HomeRepository, // <-- Injetado nosso novo repositório
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val notificationHelper: NotificationHelper
 ) : ViewModel() {
 
     // --- ESTADOS REATIVOS ---
@@ -54,8 +56,13 @@ class HomeViewModel(
                     try {
                         val currentStatus = status.status?.lowercase() ?: ""
                         if (currentStatus == "alerta" || currentStatus == "crítico" || currentStatus == "critico") {
-                            Log.i("HomeViewModel", "Alerta recebido para o bueiro: ${status.idBueiro}")
+                            Log.i("HomeViewModel", "Alerta recebido para o bueiro: ${status.name}")
                             _activeAlert.value = status
+
+                            // Dispara notificação nativa para status críticos
+                            if (currentStatus == "crítico" || currentStatus == "critico") {
+                                notificationHelper.showCriticalNotification(status)
+                            }
                         }
                     } catch (e: Exception) {
                         Log.w("HomeViewModel", "Erro ao checar status do alerta", e)

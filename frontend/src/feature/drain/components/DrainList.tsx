@@ -59,12 +59,22 @@ export const DrainList = ({
                     <dd>{drain.hardware_id}</dd>
                   </div>
                   <div>
-                    <dt>Latitude</dt>
-                    <dd>{drain.latitude}</dd>
+                    <dt>Telemetria</dt>
+                    <dd>
+                      {drain.status ? (
+                        <span>
+                          {drain.status} ({drain.nivel_obstrucao ?? 0}%)
+                        </span>
+                      ) : (
+                        <span style={{ opacity: 0.6 }}>Sem telemetria</span>
+                      )}
+                    </dd>
                   </div>
                   <div>
-                    <dt>Longitude</dt>
-                    <dd>{drain.longitude}</dd>
+                    <dt>Lat / Lng</dt>
+                    <dd title={`${drain.latitude}, ${drain.longitude}`}>
+                      {drain.latitude.toFixed(4)}, {drain.longitude.toFixed(4)}
+                    </dd>
                   </div>
                 </dl>
 

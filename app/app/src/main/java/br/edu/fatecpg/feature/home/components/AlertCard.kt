@@ -49,7 +49,7 @@ fun AlertCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Bueiro ID: ${alert.idBueiro}",
+                        text = alert.name,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
                         color = contentColor
@@ -76,7 +76,7 @@ fun AlertCard(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val level = alert.nivelObstrucao
+                val level = alert.nivelObstrucao ?: 0.0
                 Text(
                     text = "Obstrução: ${level.toInt()}%",
                     style = MaterialTheme.typography.bodyMedium,
@@ -101,7 +101,7 @@ fun AlertCard(
                     onClick = {
                         val lat = alert.latitude ?: 0.0
                         val lng = alert.longitude ?: 0.0
-                        onOpenMapClick(lat, lng, alert.idBueiro)
+                        onOpenMapClick(lat, lng, alert.name)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(

@@ -6,6 +6,10 @@ export interface Drain {
   longitude: number;
   hardware_id: string;
   is_active: boolean;
+  status?: string;
+  nivel_obstrucao?: number;
+  distancia_cm?: number;
+  ultima_atualizacao?: string;
 }
 
 export type DrainCreatePayload = Omit<Drain, 'id'>;

@@ -136,6 +136,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     val homeViewModelFactory by lazy {
         HomeViewModelFactory(
+            context = appContext,
             realtimeRepository = realtimeRepository,
             homeRepository = homeRepository, // Injetando o repositório HTTP/Cache
             tokenManager = tokenManager

@@ -4,12 +4,15 @@ using backend.Features.Drains.Application.Interfaces;
 using backend.Features.Drains.Domain;
 using backend.Features.Drains.Domain.Entities;
 using backend.Features.Drains.Domain.Interfaces;
+using backend.Features.Monitoring.Domain.Interfaces;
+using backend.Features.Monitoring.Application.DTOs;
 using backend.Infrastructure.Persistence;
 
 namespace backend.Features.Drains.Application.Services;
 
 public sealed class DrainService(
     IDrainRepository repository,
+    IMonitoringRepository monitoringRepository,
     IUnitOfWork unitOfWork,
     ILogger<DrainService> logger
 )
@@ -17,6 +20,8 @@ public sealed class DrainService(
 {
     private readonly IDrainRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
+    private readonly IMonitoringRepository _monitoringRepository =
+        monitoringRepository ?? throw new ArgumentNullException(nameof(monitoringRepository));
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ILogger<DrainService> _logger =
@@ -33,7 +38,15 @@ public sealed class DrainService(
         try
         {
             var drains = await _repository.GetAllAsync(skip, limit, ct).ConfigureAwait(false);
-            return [.. drains.Select(MapToResponse)]; // C# 12: Collection expression
+            
+            var responses = new List<DrainResponse>(drains.Count);
+            foreach (var drain in drains)
+            {
+                var status = await _monitoringRepository.GetLatestStatusAsync(drain.HardwareId, ct).ConfigureAwait(false);
+                responses.Add(MapToResponse(drain, status));
+            }
+            
+            return [.. responses]; // C# 12: Collection expression
         }
         catch (Exception ex)
         {
@@ -57,7 +70,9 @@ public sealed class DrainService(
                 await _repository.GetByIdAsync(drainId, ct).ConfigureAwait(false)
                 ?? throw new NotFoundException("Drain", drainId);
 
-            return MapToResponse(drain);
+            var status = await _monitoringRepository.GetLatestStatusAsync(drain.HardwareId, ct).ConfigureAwait(false);
+
+            return MapToResponse(drain, status);
         }
         catch (Exception ex)
         {
@@ -101,7 +116,7 @@ public sealed class DrainService(
             }, ct).ConfigureAwait(false);
             _logger.LogInformation("Drain created: {DrainId}", created.Id);
 
-            return MapToResponse(created);
+            return MapToResponse(created, null);
         }
         catch (Exception ex)
         {
@@ -164,7 +179,9 @@ public sealed class DrainService(
             }, ct).ConfigureAwait(false);
             _logger.LogInformation("Drain updated: {DrainId}", updated.Id);
 
-            return MapToResponse(updated);
+            var status = await _monitoringRepository.GetLatestStatusAsync(updated.HardwareId, ct).ConfigureAwait(false);
+
+            return MapToResponse(updated, status);
         }
         catch (Exception ex)
         {
@@ -201,7 +218,7 @@ public sealed class DrainService(
         }
     }
 
-    private static DrainResponse MapToResponse(Drain d) =>
+    private static DrainResponse MapToResponse(Drain d, DrainStatusDTO? status) =>
         new(
             d.Id,
             d.Name,
@@ -210,7 +227,11 @@ public sealed class DrainService(
             d.Longitude,
             d.IsActive,
             d.HardwareId,
-            d.CreatedAt
+            d.CreatedAt,
+            status?.Status ?? "Normal",
+            status?.NivelObstrucao ?? 0.0,
+            status?.DistanciaCm ?? d.MaxHeight,
+            status?.UltimaAtualizacao ?? DateTimeOffset.UtcNow
         );
 
     private static string ValidateField(string value, string paramName) =>

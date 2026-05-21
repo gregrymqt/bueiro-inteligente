@@ -49,6 +49,10 @@ public sealed record DrainResponse(
     double Longitude,
     [property: JsonPropertyName("is_active")] bool IsActive,
     [property: JsonPropertyName("hardware_id")] string HardwareId,
-    [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt
+    [property: JsonPropertyName("created_at")] DateTimeOffset CreatedAt,
+    [property: JsonPropertyName("status")] string? Status = null,
+    [property: JsonPropertyName("nivel_obstrucao")] double? NivelObstrucao = null,
+    [property: JsonPropertyName("distancia_cm")] double? DistanciaCm = null,
+    [property: JsonPropertyName("ultima_atualizacao")] DateTimeOffset? UltimaAtualizacao = null
 );
 

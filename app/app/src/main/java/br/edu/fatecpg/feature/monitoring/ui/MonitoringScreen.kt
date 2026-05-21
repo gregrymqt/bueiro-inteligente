@@ -68,9 +68,9 @@ fun MonitoringScreen(
                             ) {
                                 items(
                                     items = drains,
-                                    key = { drain -> drain.idBueiro }
+                                    key = { drain -> drain.id }
                                 ) { drain ->
-                                    val onClickMemoized = androidx.compose.runtime.remember(drain.idBueiro, isLoggedIn) {
+                                    val onClickMemoized = androidx.compose.runtime.remember(drain.id, isLoggedIn) {
                                         { viewModel.onDrainClick(isLoggedIn, drain) }
                                     }
                                     DrainItemCard(
@@ -144,15 +144,7 @@ fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // CORREÇÃO: Garante um valor padrão seguro antes de chamar o uppercase()
-            val safeStatus = drain.status?.uppercase() ?: "DESCONHECIDO"
-
-            val statusColor = when (safeStatus) {
-                "CRÍTICO", "CRITICO", "CRITICAL" -> Color(0xFFF44336)
-                "ALERTA", "WARNING" -> Color(0xFFFF9800)
-                "NORMAL", "BOM", "OK" -> Color(0xFF4CAF50)
-                else -> Color.Gray // Cai aqui se for DESCONHECIDO
-            }
+            val statusColor = Color(MonitoringViewModel.getStatusColor(drain.status))
 
             // Indicador de Status (Bolinha colorida)
             Box(
@@ -168,17 +160,24 @@ fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Bueiro ${drain.idBueiro}",
+                    text = drain.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = "Status: $safeStatus", // Exibe o status tratado de forma segura
+                    text = drain.address,
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    lineHeight = 16.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Status: ${drain.status ?: "Desconhecido"}",
                     fontSize = 14.sp,
                     color = Color.DarkGray
                 )
                 Text(
-                    text = "Obstrução: ${drain.nivelObstrucao.toInt()}%",
+                    text = "Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

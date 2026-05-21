@@ -30,10 +30,10 @@ class MonitoringViewModel(private val repository: MonitoringRepository, private 
             val lat = drain.latitude
             val lng = drain.longitude
             if (lat != null && lng != null) {
-                Log.d("MonitoringViewModel", "Requisitando abertura de localizacao GPS do bueiro ${drain.idBueiro}")
-                locationHandler.openLocation(lat, lng, "Bueiro ${drain.idBueiro}")
+                Log.d("MonitoringViewModel", "Requisitando abertura de localizacao GPS do bueiro ${drain.name}")
+                locationHandler.openLocation(lat, lng, drain.name)
             } else {
-                Log.w("MonitoringViewModel", "Tentativa de abrir localizacao de bueiro que nao possui coordenadas. ID = ${drain.idBueiro}")
+                Log.w("MonitoringViewModel", "Tentativa de abrir localizacao de bueiro que nao possui coordenadas. ID = ${drain.id}")
             }
         } else {
             Log.d("MonitoringViewModel", "Usuario nao autenticado tentou acessar detalhe de bueiro. Mostrando modal de login.")
@@ -85,12 +85,13 @@ class MonitoringViewModel(private val repository: MonitoringRepository, private 
     }
 
     companion object {
-        fun getStatusColor(status: String): Long {
+        fun getStatusColor(status: String?): Long {
+            val safeStatus = status?.lowercase() ?: "desconhecido"
             return try {
-                when (status.lowercase()) {
-                    "ok" -> 0xFF4CAF50 // Verde
-                    "alerta" -> 0xFFFF9800 // Laranja
-                    "crítico", "critico" -> 0xFFF44336 // Vermelho
+                when (safeStatus) {
+                    "ok", "normal", "bom" -> 0xFF4CAF50 // Verde
+                    "alerta", "warning" -> 0xFFFF9800 // Laranja
+                    "crítico", "critico", "critical" -> 0xFFF44336 // Vermelho
                     else -> 0xFF9E9E9E // Cinza (Desconhecido)
                 }
             } catch (e: Exception) {

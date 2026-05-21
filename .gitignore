@@ -91,3 +91,5 @@ eslint-report*.json
 
 */wwwroot
 build_output.txt
+
+google-services.json
