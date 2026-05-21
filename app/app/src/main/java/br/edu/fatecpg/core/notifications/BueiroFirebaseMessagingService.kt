@@ -4,7 +4,6 @@ import android.util.Log
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
 
 class BueiroFirebaseMessagingService : FirebaseMessagingService() {
 

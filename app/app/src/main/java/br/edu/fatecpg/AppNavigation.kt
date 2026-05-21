@@ -9,10 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
@@ -24,6 +26,7 @@ import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModel
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModel
 import br.edu.fatecpg.feature.home.ui.HomeScreen
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
+import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
 import br.edu.fatecpg.feature.monitoring.ui.MonitoringScreen
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
 import br.edu.fatecpg.feature.profile.ui.ProfileScreen
@@ -126,7 +129,17 @@ fun AppNavigation(appContainer: AppContainer) {
 
             composable("home") {
                 Log.d("AppNavigation", "NavHost -> Criando HomeScreen")
-                val homeViewModel: HomeViewModel = viewModel(factory = appContainer.homeViewModelFactory)
+                val context = LocalContext.current
+                val homeViewModel: HomeViewModel = viewModel(
+                    factory = remember(context) {
+                        HomeViewModelFactory(
+                            context = context,
+                            realtimeRepository = appContainer.realtimeRepository,
+                            homeRepository = appContainer.homeRepository,
+                            tokenManager = appContainer.tokenManager
+                        )
+                    }
+                )
 
                 HomeScreen(
                     viewModel = homeViewModel,

@@ -114,7 +114,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
         }
     }
     private val realtimeService: RealtimeService by lazy { RealtimeService(realtimeWebSocketClient) }
-    private val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }
+    val realtimeRepository: RealtimeRepository by lazy { RealtimeRepository(realtimeService) }
 
     private val homeService: HomeService by lazy {
         ApiClient.createService(HomeService::class.java)
@@ -134,14 +134,6 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     val registerViewModelFactory by lazy { RegisterViewModelFactory(authRepository) }
 
-    val homeViewModelFactory by lazy {
-        HomeViewModelFactory(
-            context = appContext,
-            realtimeRepository = realtimeRepository,
-            homeRepository = homeRepository, // Injetando o repositório HTTP/Cache
-            tokenManager = tokenManager
-        )
-    }
     val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler) }
 
     val profileViewModelFactory by lazy {
