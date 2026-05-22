@@ -6,13 +6,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.core.notifications.NotificationHelper
+import br.edu.fatecpg.feature.device.repository.DeviceRepository
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 
 class HomeViewModelFactory(
     private val context: Context,
     private val realtimeRepository: RealtimeRepository,
-    private val homeRepository: HomeRepository, // Injeção do novo repositório
+    private val homeRepository: HomeRepository,
+    private val deviceRepository: DeviceRepository,
     private val tokenManager: TokenManager
 ) : ViewModelProvider.Factory {
 
@@ -27,6 +29,7 @@ class HomeViewModelFactory(
                 return HomeViewModel(
                     realtimeRepository = realtimeRepository,
                     homeRepository = homeRepository,
+                    deviceRepository = deviceRepository,
                     tokenManager = tokenManager,
                     notificationHelper = notificationHelper
                 ) as T

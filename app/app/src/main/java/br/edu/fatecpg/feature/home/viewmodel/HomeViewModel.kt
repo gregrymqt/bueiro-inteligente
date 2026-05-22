@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.core.notifications.NotificationHelper
+import br.edu.fatecpg.feature.device.repository.DeviceRepository
 import br.edu.fatecpg.feature.home.dto.HomeResponseDTO
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +27,8 @@ sealed class HomeUiState {
 
 class HomeViewModel(
     private val realtimeRepository: RealtimeRepository,
-    private val homeRepository: HomeRepository, // <-- Injetado nosso novo repositório
+    private val homeRepository: HomeRepository,
+    private val deviceRepository: DeviceRepository,
     private val tokenManager: TokenManager,
     private val notificationHelper: NotificationHelper
 ) : ViewModel() {
@@ -45,6 +48,7 @@ class HomeViewModel(
             Log.d("HomeViewModel", "Inicializando HomeViewModel. Conectando WebSocket e buscando dados.")
             realtimeRepository.connect(tokenManager.getToken())
             loadHomeContent() // <-- Dispara o carregamento dos Stat Cards e Carousels
+            syncDeviceToken()
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Erro inicial no HomeViewModel", e)
         }
@@ -106,6 +110,24 @@ class HomeViewModel(
                         error.message ?: "Não foi possível carregar as estatísticas do sistema."
                     )
                 }
+        }
+    }
+
+    private fun syncDeviceToken() {
+        if (!tokenManager.getToken().isNullOrEmpty()) {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            deviceRepository.registerToken(token)
+                            Log.i("HomeViewModel", "Token FCM sincronizado com sucesso")
+                        } catch (e: Exception) {
+                            Log.e("HomeViewModel", "Falha silenciosa ao sincronizar Token FCM", e)
+                        }
+                    }
+                }
+            }
         }
     }
 

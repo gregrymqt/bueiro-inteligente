@@ -14,6 +14,8 @@ import br.edu.fatecpg.feature.auth.repository.AuthRepository
 import br.edu.fatecpg.feature.auth.services.AuthService
 import br.edu.fatecpg.feature.auth.viewmodel.LoginViewModelFactory
 import br.edu.fatecpg.feature.auth.viewmodel.RegisterViewModelFactory
+import br.edu.fatecpg.feature.device.repository.DeviceRepository
+import br.edu.fatecpg.feature.device.services.DeviceService
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.home.services.HomeService
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModelFactory
@@ -126,6 +128,14 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
             homeService = homeService,
             localCacheService = localCacheService // Reutilizando seu serviço de cache do Room
         )
+    }
+
+    // --- Device/Notification Feature ---
+    private val deviceService: DeviceService by lazy {
+        ApiClient.createService(DeviceService::class.java)
+    }
+    val deviceRepository: DeviceRepository by lazy {
+        DeviceRepository(deviceService)
     }
 
     // --- ViewModel Factories ---

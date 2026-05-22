@@ -136,6 +136,7 @@ fun AppNavigation(appContainer: AppContainer) {
                             context = context,
                             realtimeRepository = appContainer.realtimeRepository,
                             homeRepository = appContainer.homeRepository,
+                            deviceRepository = appContainer.deviceRepository,
                             tokenManager = appContainer.tokenManager
                         )
                     }

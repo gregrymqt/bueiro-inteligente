@@ -1,9 +1,14 @@
 package br.edu.fatecpg.core.notifications
 
 import android.util.Log
+import br.edu.fatecpg.BueiroApplication
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class BueiroFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -46,7 +51,21 @@ class BueiroFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Log.d(TAG, "Novo token gerado pelo Firebase: $token")
         
-        // TODO: Enviar token para o backend via TokenManager
+        val appContainer = (application as BueiroApplication).appContainer
+        val tokenManager = appContainer.tokenManager
+        val deviceRepository = appContainer.deviceRepository
+
+        val userToken = tokenManager.getToken()
+        if (!userToken.isNullOrEmpty()) {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                try {
+                    deviceRepository.registerToken(token)
+                    Log.i(TAG, "Token FCM enviado com sucesso após onNewToken")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao enviar token FCM para o backend", e)
+                }
+            }
+        }
     }
 
     companion object {
