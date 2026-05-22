@@ -8,6 +8,7 @@ using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;
 using backend.Features.Monitoring.Domain.Configuration;
 using backend.Features.Monitoring.Domain.Interfaces;
+using backend.Features.Notifications.Application.Interfaces; // <-- Importação do novo serviço
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,8 @@ namespace backend.Features.Monitoring.Application.Services;
 public sealed class MonitoringService(
     IMonitoringRepository monitoringRepository,
     IMonitoringIngestionService monitoringIngestionService,
-    IRealtimeService _realtimeService,
+    IRealtimeService realtimeService,
+    IPushNotificationService pushNotificationService, 
     ILogger<MonitoringService> logger
 ) : IMonitoringService
 {
@@ -66,7 +68,15 @@ public sealed class MonitoringService(
             await monitoringIngestionService.SaveSensorDataAsync(drainStatusDto, ct).ConfigureAwait(false);
 
             // 5. Broadcast em tempo real via WebSockets (SignalR) para o App e React
-            await _realtimeService.PublishToDrainAsync(bueiro.HardwareId, "BUEIRO_STATUS_MUDOU", drainStatusDto).ConfigureAwait(false);
+            await realtimeService.PublishToDrainAsync(bueiro.HardwareId, "BUEIRO_STATUS_MUDOU", drainStatusDto).ConfigureAwait(false);
+
+            // 6. 🔥 Dispara notificação push via Firebase se o status for Crítico
+            if (status.Equals("Crítico", StringComparison.OrdinalIgnoreCase) || status.Equals("Critico", StringComparison.OrdinalIgnoreCase))
+            {
+                // Dispara em background (Fire-and-Forget) usando CancellationToken.None
+                // Isso evita que a notificação seja cancelada caso o ESP32 feche a conexão HTTP antes do Firebase responder
+                _ = pushNotificationService.SendDrainAlertAsync(status, nivel, bueiro, CancellationToken.None);
+            }
 
             return drainStatusDto;
         }

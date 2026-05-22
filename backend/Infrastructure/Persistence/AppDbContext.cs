@@ -13,6 +13,7 @@ using backend.Features.Payment.Domain.Entities;
 using backend.Features.Subscription.Domain.Entities;
 using backend.Features.Uploads.Domain;
 using backend.Features.Uploads.Domain.Entities;
+using backend.Features.Users.Domain.Entities;
 using backend.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,6 +45,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<Feedback> Feedbacks =>
         Set<Feedback>();
+
+    public DbSet<UserDevice> UserDevices =>
+    Set<UserDevice>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();

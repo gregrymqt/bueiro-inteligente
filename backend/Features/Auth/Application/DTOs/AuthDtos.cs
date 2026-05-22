@@ -46,3 +46,5 @@ public sealed record UserInDb(
 );
 
 public sealed record UserTokenData(string Email, string Role, string Jti);
+
+public sealed record RegisterDeviceRequest(string FcmToken);
