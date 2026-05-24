@@ -19,5 +19,8 @@ public sealed record DrainStatusDTO(
     [property: JsonPropertyName("latitude")] double? Latitude = null,
     [property: JsonPropertyName("longitude")] double? Longitude = null,
     [property: JsonPropertyName("ultima_atualizacao")] DateTimeOffset UltimaAtualizacao = default,
-    [property: JsonPropertyName("data_hash")] string DataHash = ""
+    [property: JsonPropertyName("data_hash")] string DataHash = "",
+    [property: JsonPropertyName("id")] Guid? Id = null,
+    [property: JsonPropertyName("name")] string? Name = null,
+    [property: JsonPropertyName("address")] string? Address = null
 );

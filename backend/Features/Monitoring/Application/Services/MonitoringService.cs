@@ -61,7 +61,10 @@ public sealed class MonitoringService(
                 Latitude: payload.Latitude ?? bueiro.Latitude,
                 Longitude: payload.Longitude ?? bueiro.Longitude,
                 UltimaAtualizacao: payload.UltimaAtualizacao ?? DateTimeOffset.UtcNow,
-                DataHash: hash
+                DataHash: hash,
+                Id: bueiro.Id,
+                Name: bueiro.Name,
+                Address: bueiro.Address
             );
 
             // 4. Persiste de forma transacionada no PostgreSQL

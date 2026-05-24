@@ -53,7 +53,7 @@ export const useDrainStatus = (bueiroId: string) => {
 
       // 2. Registra o listener local
       const unsubscribe = MonitoringService.subscribeToUpdates((payload) => {
-        if (payload.id_bueiro === bueiroId) {
+        if (payload.idBueiro === bueiroId || payload.id_bueiro === bueiroId) {
           setData(payload);
         }
       });

@@ -3,15 +3,36 @@ package br.edu.fatecpg.feature.monitoring.dto
 import com.google.gson.annotations.SerializedName
 
 data class DrainStatusDTO(
-    @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String,
-    @SerializedName("address") val address: String,
-    @SerializedName("hardware_id") val hardwareId: String,
-    @SerializedName("is_active") val isActive: Boolean,
-    @SerializedName("status") val status: String?,
-    @SerializedName("nivel_obstrucao") val nivelObstrucao: Double?,
-    @SerializedName("distancia_cm") val distanciaCm: Double?,
-    @SerializedName("ultima_atualizacao") val ultimaAtualizacao: String?,
-    @SerializedName("latitude") val latitude: Double?,
-    @SerializedName("longitude") val longitude: Double?
+    @SerializedName("id", alternate = ["Id", "idBueiro", "IdBueiro"])
+    val id: String,
+
+    @SerializedName("name", alternate = ["Name", "nome", "Nome"])
+    val name: String,
+
+    @SerializedName("address", alternate = ["Address", "endereco", "Endereco"])
+    val address: String,
+
+    @SerializedName("hardwareId", alternate = ["hardware_id", "id_bueiro", "idBueiro", "IdBueiro"])
+    val hardwareId: String,
+
+    @SerializedName("isActive", alternate = ["is_active", "IsActive"])
+    val isActive: Boolean,
+
+    @SerializedName("status", alternate = ["Status"])
+    val status: String?,
+
+    @SerializedName("nivelObstrucao", alternate = ["nivel_obstrucao", "NivelObstrucao"])
+    val nivelObstrucao: Double?,
+
+    @SerializedName("distanciaCm", alternate = ["distancia_cm", "DistanciaCm"])
+    val distanciaCm: Double?,
+
+    @SerializedName("ultimaAtualizacao", alternate = ["ultima_atualizacao", "UltimaAtualizacao"])
+    val ultimaAtualizacao: String?,
+
+    @SerializedName("latitude", alternate = ["Latitude"])
+    val latitude: Double?,
+
+    @SerializedName("longitude", alternate = ["Longitude"])
+    val longitude: Double?
 )

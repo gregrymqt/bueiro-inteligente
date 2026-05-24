@@ -3,6 +3,7 @@ package br.edu.fatecpg.feature.realtime.client
 import android.util.Log
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -148,15 +149,17 @@ class RealtimeWebSocketClient(
             if (message.target == "BUEIRO_STATUS_MUDOU" && !message.arguments.isNullOrEmpty()) {
                 try {
                     Log.i("DrainWebSocketListener", "Broadcast 'BUEIRO_STATUS_MUDOU' capturado. Fazendo parsing...")
-                    // O SignalR empacota argumentos em um array JSON
-                    val dataJson = gson.toJson(message.arguments[0])
-                    val status = gson.fromJson(dataJson, DrainStatusDTO::class.java)
+                    // O SignalR empacota argumentos em um array JSON. 
+                    // O parsing agora utiliza o JsonElement diretamente para garantir o mapeamento do DTO
+                    val status = gson.fromJson(message.arguments[0], DrainStatusDTO::class.java)
                     
-                    coroutineScope.launch {
-                        _drainStatusFlow.emit(status)
+                    if (status != null) {
+                        coroutineScope.launch {
+                            _drainStatusFlow.emit(status)
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e("DrainWebSocketListener", "Falha catastrfica no parse do DrainStatusDTO vindo do SignalR", e)
+                    Log.e("DrainWebSocketListener", "Falha catastrófica no parse do DrainStatusDTO vindo do SignalR", e)
                 }
             }
         }
@@ -177,7 +180,7 @@ class RealtimeWebSocketClient(
     private data class SignalRMessage(
         @SerializedName("type") val type: Int,
         @SerializedName("target") val target: String? = null,
-        @SerializedName("arguments") val arguments: List<Any>? = null
+        @SerializedName("arguments") val arguments: List<JsonElement>? = null
     )
 
     // Estrutura para envio de invocaes para o Hub (Join/Leave)

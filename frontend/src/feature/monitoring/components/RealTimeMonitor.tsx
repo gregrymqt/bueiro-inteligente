@@ -33,8 +33,8 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
     <section className="monitor-card">
       <header className="monitor-card__header">
         <div className="monitor-card__info">
-          <h2 className="monitor-card__title">{locationName}</h2>
-          <span className="monitor-card__id">ID: {data?.id_bueiro}</span>
+          <h2 className="monitor-card__title">{data?.name || locationName}</h2>
+          <span className="monitor-card__id">ID: {data?.idBueiro || data?.id_bueiro}</span>
         </div>
         {/* Passa o status vindo direto do Pydantic (NORMAL, ALERTA, CRITICO) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -55,16 +55,16 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       <div className="monitor-card__metrics">
         <div className="metric">
           <span className="metric__label">Nível de Obstrução</span>
-          <strong className="metric__value">{data?.nivel_obstrucao?.toFixed(2)}%</strong>
+          <strong className="metric__value">{(data?.nivelObstrucao ?? data?.nivel_obstrucao)?.toFixed(2)}%</strong>
         </div>
         <div className="metric">
           <span className="metric__label">Distância Interna</span>
-          <strong className="metric__value">{data?.distancia_cm?.toFixed(2)} cm</strong>
+          <strong className="metric__value">{(data?.distanciaCm ?? data?.distancia_cm)?.toFixed(2)} cm</strong>
         </div>
       </div>
 
       <footer className="monitor-card__footer">
-        <span>🕒 Atualizado em: {new Date(data?.ultima_atualizacao || '').toLocaleTimeString()}</span>
+        <span>🕒 Atualizado em: {new Date(data?.ultimaAtualizacao || data?.ultima_atualizacao || '').toLocaleTimeString()}</span>
       </footer>
     </section>
   );
