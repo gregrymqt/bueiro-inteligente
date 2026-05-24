@@ -59,8 +59,15 @@ class AuthRepository(
     }
 
     suspend fun logout() {
-        tokenManager.clearToken()
-        localCacheService.remove(KEY_USER_PROFILE)
-        Log.d(TAG, "Sessão encerrada e cache de perfil removido")
+        withContext(Dispatchers.IO) {
+            runCatching {
+                authService.logout()
+            }.onFailure {
+                Log.e(TAG, "Falha na chamada de logout do servidor: ${it.message}")
+            }
+            tokenManager.clearToken()
+            localCacheService.remove(KEY_USER_PROFILE)
+            Log.d(TAG, "Sessão encerrada localmente e cache de perfil removido")
+        }
     }
 }

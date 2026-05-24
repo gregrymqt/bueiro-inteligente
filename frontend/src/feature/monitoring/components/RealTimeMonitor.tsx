@@ -55,11 +55,11 @@ export const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       <div className="monitor-card__metrics">
         <div className="metric">
           <span className="metric__label">Nível de Obstrução</span>
-          <strong className="metric__value">{data?.nivel_obstrucao}%</strong>
+          <strong className="metric__value">{data?.nivel_obstrucao?.toFixed(2)}%</strong>
         </div>
         <div className="metric">
           <span className="metric__label">Distância Interna</span>
-          <strong className="metric__value">{data?.distancia_cm} cm</strong>
+          <strong className="metric__value">{data?.distancia_cm?.toFixed(2)} cm</strong>
         </div>
       </div>
 

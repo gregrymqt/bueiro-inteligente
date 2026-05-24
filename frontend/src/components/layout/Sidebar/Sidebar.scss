@@ -1,6 +1,6 @@
 @use "sass:color";
 
-// Sub-header mobile gerado automaticamente pela Sidebar
+// Cabeçalho superior (Header) - Agora visível e fixo no topo em TODAS as telas
 .sidebar__mobile-subheader {
   display: flex;
   align-items: center;
@@ -12,8 +12,16 @@
   border-bottom: 1px solid $color-border;
   color: $color-text-main;
 
+  // 🔥 A CORREÇÃO AQUI: Mudado de fixed para absolute
+  position: absolute; 
+  top: 0;
+  left: 0;
+  height: 60px;
+  z-index: 45; 
+  box-sizing: border-box;
+
   @include respond-to('md') {
-    display: none;
+    padding: $spacing-md $spacing-xl;
   }
 }
 
@@ -46,7 +54,7 @@
   white-space: nowrap;
 }
 
-// Overlay escuro só aparece no mobile
+// Overlay escuro de fundo - Agora ativo em qualquer tela quando aberto
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -54,12 +62,12 @@
   z-index: 40; // Fica abaixo da sidebar, mas acima do resto
   
   @include respond-to('md') {
-    display: none; // No desktop, não precisamos de overlay
+    // display: none; <-- REMOVIDO para que clicar fora feche a sidebar no desktop também
   }
 }
 
+// Menu Lateral (Sidebar) - Agora se comporta como Drawer (Gaveta flutuante) em todas as telas
 .sidebar {
-  // Mobile-first: Escondida fora do ecrã, posição fixa
   position: fixed;
   top: 0;
   left: 0;
@@ -67,24 +75,20 @@
   width: 260px;
   background-color: #ffffff;
   border-right: 1px solid $color-border;
-  z-index: 50;
-  transform: translateX(-100%); // Esconde
+  z-index: 50; // Sempre por cima de tudo
+  transform: translateX(-100%); // Escondida por padrão à esquerda
   transition: transform 0.3s ease-in-out;
   display: flex;
   flex-direction: column;
 
-  // Quando o estado isOpenMobile é true
+  // Quando o estado isOpenMobile (ou open) for true
   &--open {
-    transform: translateX(0); // Mostra
+    transform: translateX(0); // Desliza para dentro da tela
   }
 
-  // Desktop: Fica estática e sempre visível na lateral
-  @include respond-to('md') {
-    position: static;
-    transform: translateX(0);
-    z-index: auto;
-    // Aqui você pode adicionar um min-height se necessário
-  }
+  // --- ALTERAÇÃO CRÍTICA DESKTOP ---
+  // Removido o '@include respond-to('md')' antigo que forçava position: static 
+  // e transform: translateX(0), permitindo que ela seja uma gaveta flutuante também no PC.
 
   &__header {
     display: flex;
@@ -110,7 +114,7 @@
     color: #6b7280;
     
     @include respond-to('md') {
-      display: none; // Esconde o "X" no desktop
+      // display: none; <-- REMOVIDO para permitir fechar no botão "X" no desktop também
     }
   }
 
@@ -183,7 +187,7 @@
     }
 
     &--active {
-      background-color: rgba($color-success, 0.1); // Usando a cor de sucesso do nosso token
+      background-color: rgba($color-success, 0.1);
       color: color.adjust($color-success, $lightness: -10%);
       font-weight: 600;
 
@@ -220,4 +224,12 @@
       transform: rotate(180deg);
     }
   }
+}
+
+// --- AJUSTE AUTOMÁTICO DO CONTEÚDO PRINCIPAL (DASHBOARD) ---
+// Como a Sidebar injeta elementos no mesmo nível que a tag <main> através de React.Fragment,
+// usamos o seletor (~), que intercepta o componente <main> vizinho e adiciona o recuo superior 
+// necessário para o conteúdo não sumir por baixo do Header fixo.
+.sidebar__mobile-subheader ~ main {
+  padding-top: 60px !important; // Mesma altura definida no cabeçalho fixo (.sidebar__mobile-subheader)
 }

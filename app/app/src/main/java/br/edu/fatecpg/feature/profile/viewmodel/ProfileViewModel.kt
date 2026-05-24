@@ -27,6 +27,9 @@ class ProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Idle)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private val _showLogoutDialog = MutableStateFlow(false)
+    val showLogoutDialog: StateFlow<Boolean> = _showLogoutDialog.asStateFlow()
+
     val canOpenDashboardWeb: Boolean
         get() = dashboardWebUrl.isNotBlank()
 
@@ -35,6 +38,14 @@ class ProfileViewModel(
             ProfileAction.LoadProfile -> loadProfile()
             ProfileAction.OpenDashboardWeb -> openDashboardWeb()
         }
+    }
+
+    fun showLogoutConfirmation() {
+        _showLogoutDialog.value = true
+    }
+
+    fun dismissLogoutConfirmation() {
+        _showLogoutDialog.value = false
     }
 
     private fun loadProfile() {

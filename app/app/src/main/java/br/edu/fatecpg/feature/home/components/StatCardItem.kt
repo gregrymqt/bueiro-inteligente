@@ -13,7 +13,10 @@ import androidx.compose.ui.unit.sp
 import br.edu.fatecpg.feature.home.dto.StatCardDTO
 
 @Composable
-fun StatCardItem(stat: StatCardDTO) {
+fun StatCardItem(
+    stat: StatCardDTO,
+    modifier: Modifier = Modifier
+) {
     // Deriva a cor da borda/destaque baseado no enum do backend
     val accentColor = when (stat.color.lowercase()) {
         "success" -> MaterialTheme.colorScheme.primary
@@ -23,9 +26,8 @@ fun StatCardItem(stat: StatCardDTO) {
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
+        modifier = modifier
+            .fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)

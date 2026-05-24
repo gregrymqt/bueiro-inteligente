@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,19 +19,48 @@ import br.edu.fatecpg.feature.profile.viewmodel.ProfileUiState
 import br.edu.fatecpg.feature.profile.viewmodel.ProfileViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onLogoutClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showLogoutDialog by viewModel.showLogoutDialog.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         Log.d("ProfileScreen", "Iniciando recomposicao, requisitando dados do usuario.")
         viewModel.onAction(ProfileAction.LoadProfile)
     }
 
-    Scaffold { paddingValues ->
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissLogoutConfirmation() },
+            title = { Text("Confirmar Saída", fontWeight = FontWeight.Bold) },
+            text = { Text("Você realmente deseja sair do aplicativo?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissLogoutConfirmation()
+                    onLogoutClick()
+                }) {
+                    Text("Confirmar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissLogoutConfirmation() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Meu Perfil", fontWeight = FontWeight.Bold) }
+            )
+        }
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -60,102 +91,109 @@ fun ProfileScreen(
                     }
                 }
                 is ProfileUiState.Success -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    PullToRefreshBox(
+                        isRefreshing = false, // O estado de loading já é controlado pelo uiState
+                        onRefresh = { viewModel.onAction(ProfileAction.LoadProfile) },
+                        state = rememberPullToRefreshState(),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Avatar do Usuario",
-                            modifier = Modifier.size(120.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Avatar do Usuario",
+                                modifier = Modifier.size(120.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             ) {
-                                // CORREÇÃO: Usando fullName mapeado do backend com um fallback amigável
-                                Text(
-                                    text = state.user.fullName ?: "Usuário Smart Drain",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = state.user.email,
-                                    fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                )
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.padding(top = 8.dp)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // CORREÇÃO: Extraindo a role principal contida na lista retornada do C#
-                                    val primaryRole = state.user.roles.firstOrNull() ?: "USER"
+                                    // CORREÇÃO: Usando fullName mapeado do backend com um fallback amigável
                                     Text(
-                                        text = primaryRole.uppercase(),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
+                                        text = state.user.fullName ?: "Usuário Smart Drain",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = state.user.email,
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    )
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = RoundedCornerShape(16.dp),
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        // CORREÇÃO: Extraindo a role principal contida na lista retornada do C#
+                                        val primaryRole = state.user.roles.firstOrNull() ?: "USER"
+                                        Text(
+                                            text = primaryRole.uppercase(),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (viewModel.canOpenDashboardWeb) {
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        Log.d("ProfileScreen", "Disparando action de abertura do dashboard web")
+                                        viewModel.onAction(ProfileAction.OpenDashboardWeb)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
+                                ) {
+                                    Text(
+                                        text = "Abrir Dashboard Web",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
-                        }
 
-                        if (viewModel.canOpenDashboardWeb) {
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.weight(1f))
 
-                            OutlinedButton(
+                            Button(
                                 onClick = {
-                                    Log.d("ProfileScreen", "Disparando action de abertura do dashboard web")
-                                    viewModel.onAction(ProfileAction.OpenDashboardWeb)
+                                    Log.d("ProfileScreen", "Acionando dialogo de confirmacao de logout")
+                                    viewModel.showLogoutConfirmation()
                                 },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
                             ) {
-                                Text(
-                                    text = "Abrir Dashboard Web",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text(text = "Sair", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Button(
-                            onClick = {
-                                Log.d("ProfileScreen", "Clique de Logout processado com sucesso")
-                                onLogoutClick()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                        ) {
-                            Text(text = "Sair", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -188,8 +188,25 @@ fun HomeScreen(
                                 )
                             }
                         } else {
-                            items(sortedStats, key = { it.id }) { stat ->
-                                StatCardItem(stat = stat)
+                            items(sortedStats.chunked(2), key = { pair -> pair.first().id }) { pair ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    StatCardItem(
+                                        stat = pair[0],
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (pair.size > 1) {
+                                        StatCardItem(
+                                            stat = pair[1],
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
                     }

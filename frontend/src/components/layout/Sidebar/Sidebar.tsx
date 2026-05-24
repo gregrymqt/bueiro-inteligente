@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { NavigationItem } from './types';
 import './Sidebar.scss';
 
@@ -51,6 +51,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showMobileSubheader = false,
 }) => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // 2. Crie uma referência para o subheader
+  const subheaderRef = useRef<HTMLHeadElement>(null);
+
+  // 3. Efeito autônomo para garantir o alinhamento correto abaixo da Navbar global
+  useEffect(() => {
+    if (subheaderRef.current && subheaderRef.current.parentElement) {
+      subheaderRef.current.parentElement.style.position = 'relative';
+    }
+  }, [showMobileSubheader]);
 
   useEffect(() => {
     setExpandedItems(prev => {
@@ -143,8 +153,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {showMobileSubheader && (
-        /* Sub-header Mobile Gerado Automaticamente pela Sidebar */
-        <header className="sidebar__mobile-subheader">
+        /* 4. ADICIONE A REF AQUI NO HEADER */
+        <header ref={subheaderRef} className="sidebar__mobile-subheader">
           <button
             type="button"
             className="sidebar__mobile-toggle"

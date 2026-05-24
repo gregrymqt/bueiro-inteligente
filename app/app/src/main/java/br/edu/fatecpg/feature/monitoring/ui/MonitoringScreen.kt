@@ -1,6 +1,7 @@
 package br.edu.fatecpg.feature.monitoring.ui
 
 import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -33,6 +35,7 @@ fun MonitoringScreen(
 ) {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
+        val expandedDrainId by viewModel.expandedDrainId.collectAsStateWithLifecycle()
 
         Scaffold(
             floatingActionButton = {
@@ -70,12 +73,13 @@ fun MonitoringScreen(
                                     items = drains,
                                     key = { drain -> drain.id }
                                 ) { drain ->
-                                    val onClickMemoized = androidx.compose.runtime.remember(drain.id, isLoggedIn) {
-                                        { viewModel.onDrainClick(isLoggedIn, drain) }
-                                    }
+                                    val isExpanded = expandedDrainId == drain.id
+                                    
                                     DrainItemCard(
                                         drain = drain,
-                                        onClick = onClickMemoized
+                                        isExpanded = isExpanded,
+                                        onClick = { viewModel.onDrainClick(isLoggedIn, drain) },
+                                        onOpenInMaps = { viewModel.openDrainInMaps(drain) }
                                     )
                                 }
                             }
@@ -130,56 +134,114 @@ fun MonitoringScreen(
 }
 
 @Composable
-fun DrainItemCard(drain: DrainStatusDTO, onClick: () -> Unit) {
+fun DrainItemCard(
+    drain: DrainStatusDTO, 
+    isExpanded: Boolean, 
+    onClick: () -> Unit,
+    onOpenInMaps: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .animateContentSize(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            val statusColor = Color(MonitoringViewModel.getStatusColor(drain.status))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val statusColor = Color(MonitoringViewModel.getStatusColor(drain.status))
 
-            // Indicador de Status (Bolinha colorida)
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .background(
-                        color = statusColor,
-                        shape = CircleShape
+                // Indicador de Status (Bolinha colorida)
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(
+                            color = statusColor,
+                            shape = CircleShape
+                        )
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = drain.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
-            )
+                    Text(
+                        text = drain.address,
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = Color.LightGray)
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = "Status: ${drain.status ?: "Desconhecido"}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
+                            fontSize = 14.sp,
+                            color = if ((drain.nivelObstrucao ?: 0.0) > 70) MaterialTheme.colorScheme.error else Color.DarkGray
+                        )
+                        Text(
+                            text = "Distância: ${drain.distanciaCm?.toInt() ?: 0} cm",
+                            fontSize = 14.sp,
+                            color = Color.DarkGray
+                        )
+                    }
+                    
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Última atualização:",
+                            fontSize = 10.sp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = drain.ultimaAtualizacao ?: "--:--",
+                            fontSize = 12.sp,
+                            color = Color.DarkGray
+                        )
+                    }
+                }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = drain.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = drain.address,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    lineHeight = 16.sp
-                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onOpenInMaps,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                ) {
+                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Abrir no Google Maps")
+                }
+            } else {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Status: ${drain.status ?: "Desconhecido"}",
-                    fontSize = 14.sp,
+                    text = "Status: ${drain.status ?: "Desconhecido"} • Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
+                    fontSize = 13.sp,
                     color = Color.DarkGray
-                )
-                Text(
-                    text = "Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
-                    fontSize = 14.sp,
-                    color = Color.Gray
                 )
             }
         }
