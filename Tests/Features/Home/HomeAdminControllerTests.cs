@@ -16,7 +16,7 @@ public sealed class HomeAdminControllerTests
         new(
             id ?? Guid.NewGuid(),
             title,
-            "Subtítulo",
+            "Subtítulo",     
             "https://example.com/img.jpg",
             "https://example.com/action",
             1,
