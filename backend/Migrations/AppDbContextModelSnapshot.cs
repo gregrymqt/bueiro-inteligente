@@ -674,6 +674,38 @@ namespace backend.Migrations
                         });
                 });
 
+            modelBuilder.Entity("backend.Features.Users.Domain.Entities.UserDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FcmToken")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("fcm_token");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FcmToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_devices_fcm_token");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_devices_user_id");
+
+                    b.ToTable("user_devices", (string)null);
+                });
+
             modelBuilder.Entity("user_roles", b =>
                 {
                     b.Property<Guid>("user_id")
@@ -722,6 +754,16 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_drain_status_drains_hardware_id");
+                });
+
+            modelBuilder.Entity("backend.Features.Users.Domain.Entities.UserDevice", b =>
+                {
+                    b.HasOne("backend.Features.Auth.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_devices_users_user_id");
                 });
 
             modelBuilder.Entity("user_roles", b =>

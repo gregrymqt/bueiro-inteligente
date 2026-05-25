@@ -45,10 +45,11 @@ public sealed class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevic
             .HasDatabaseName("ix_user_devices_user_id");
 
     
-          builder.HasOne<User>() // Substitua pelo nome da sua classe de Usuário se houver
-          .WithMany()
-          .HasForeignKey(d => d.UserId)
-         .OnDelete(DeleteBehavior.Cascade); // Se o usuário for excluído, remove os tokens dele
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_user_devices_users_user_id");
          
     }
 }

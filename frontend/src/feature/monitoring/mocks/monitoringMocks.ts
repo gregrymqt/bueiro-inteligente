@@ -78,15 +78,20 @@ const getFrame = (frameIndex: number): Pick<DrainStatus, 'distancia_cm' | 'nivel
 
 export const createMockDrainStatusSnapshot = (bueiroId: string, frameIndex: number = 0): DrainStatus => {
   const frame = getFrame(frameIndex);
+  const now = new Date().toISOString();
 
   return {
+    idBueiro: bueiroId,
     id_bueiro: bueiroId,
+    distanciaCm: frame.distancia_cm ?? 0,
     distancia_cm: frame.distancia_cm,
+    nivelObstrucao: frame.nivel_obstrucao ?? 0,
     nivel_obstrucao: frame.nivel_obstrucao,
-    status: frame.status,
+    status: frame.status || 'NORMAL',
     latitude: -23.55052,
     longitude: -46.633308,
-    ultima_atualizacao: new Date().toISOString(),
+    ultimaAtualizacao: now,
+    ultima_atualizacao: now
   };
 };
 

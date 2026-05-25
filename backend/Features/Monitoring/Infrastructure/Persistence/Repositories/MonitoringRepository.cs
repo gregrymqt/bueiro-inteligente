@@ -61,12 +61,11 @@ public sealed class MonitoringRepository(
 
         try
         {
-            // 1. HIGIENIZAÇÃO: Remove espaços fantasmas vindos da URL do React e padroniza para maiúsculo
-            var cleanDrainId = drainId.Trim().ToUpperInvariant();
+            // 1. HIGIENIZAÇÃO: Remove espaços fantasmas sem forçar caixa alta destrutiva
+            var cleanDrainId = drainId.Trim();
             var isGuid = Guid.TryParse(cleanDrainId, out var parsedGuid);
 
-            // 2. BYPASS DE FILTROS E SPLIT DA QUERY: Resolvemos o OR condicional no C# para não explodir
-            // no provedor Npgsql durante a conversão do LINQ para SQL com tipos de dados diferentes.
+            // 2. Localiza o bueiro no catálogo de forma resiliente
             Drain? drain;
             if (isGuid)
             {
@@ -78,16 +77,17 @@ public sealed class MonitoringRepository(
             }
             else
             {
+                // Usa ILike nativo do Postgres + Trim na coluna para neutralizar collations e paddings de CHAR fixo
                 drain = await dbContext.Drains
                     .IgnoreQueryFilters()
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(d => d.HardwareId == cleanDrainId, ct)
+                    .FirstOrDefaultAsync(d => EF.Functions.ILike(d.HardwareId.Trim(), cleanDrainId), ct)
                     .ConfigureAwait(false);
             }
 
             if (drain is null) return null;
 
-            // 2. Busca a telemetria mais recente para este bueiro específico
+            // 3. Busca a telemetria mais recente para este bueiro usando o HardwareId correto
             var latestStatus = await dbContext.DrainStatuses.AsNoTracking()
                 .Where(s => s.DrainIdentifier == drain.HardwareId)
                 .OrderByDescending(s => s.LastUpdate)
@@ -95,7 +95,7 @@ public sealed class MonitoringRepository(
                 .FirstOrDefaultAsync(ct)
                 .ConfigureAwait(false);
 
-            // COLD START TRATADO: Existe no catálogo mas não tem telemetria ainda
+            // 4. TRATAMENTO DE COLD START: Existe no catálogo mas não tem telemetria ainda (Injeta os metadados!)
             if (latestStatus is null)
             {
                 logger.LogInformation("Bueiro {DrainId} localizado no catálogo. Sem telemetria, gerando payload inicial.", drainId);
@@ -107,11 +107,27 @@ public sealed class MonitoringRepository(
                     Latitude: drain.Latitude,
                     Longitude: drain.Longitude,
                     UltimaAtualizacao: DateTimeOffset.UtcNow,
-                    DataHash: string.Empty
+                    DataHash: string.Empty,
+                    Id: drain.Id,
+                    Name: drain.Name,
+                    Address: drain.Address
                 );
             }
 
-            return MapToDto(latestStatus);
+            // 5. MAPEAR UNIFICANDO TELEMETRIA + CADASTRO (Resolve o Bug do Front/App)
+            return new DrainStatusDTO(
+                IdBueiro: latestStatus.DrainIdentifier,
+                DistanciaCm: latestStatus.DistanceCm,
+                NivelObstrucao: latestStatus.ObstructionLevel,
+                Status: latestStatus.Status,
+                Latitude: latestStatus.Latitude ?? drain.Latitude,
+                Longitude: latestStatus.Longitude ?? drain.Longitude,
+                UltimaAtualizacao: latestStatus.LastUpdate,
+                DataHash: latestStatus.DataHash,
+                Id: drain.Id,
+                Name: drain.Name,
+                Address: drain.Address
+            );
         }
         catch (Exception ex)
         {
