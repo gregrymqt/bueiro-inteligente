@@ -42,7 +42,7 @@ plugins {
                 buildConfigField("String", "APP_ID_SECRET", "\"jZ3frultyGb5G84zX4en0naZDwIal2HuJi83fqgyPmAWjyXtoI5WzywycGvepQew7aEDtLCwZ0MBZy07tuvY8zcRif8iA5M5CcUTCrHgRMx8Hde8oATev72TGmNO0mnR\"")
 
                 // 2. Trocamos o IP do emulador pela sua URL ativa do ngrok com o sufixo da API
-                buildConfigField("String", "BASE_URL", "\"https://2a07-2804-14d-8e90-5783-dd32-bc14-30a5-c5.ngrok-free.app/\"")
+                buildConfigField("String", "BASE_URL", "\"https://4d3e-2804-14d-8e90-5783-b8be-bd16-18b8-979e.ngrok-free.app/\"")
 
                 buildConfigField("String", "DASHBOARD_WEB_URL", "\"http://10.0.2.2:5173/\"")
             }
@@ -92,7 +92,7 @@ plugins {
         kapt("androidx.room:room-compiler:2.8.4")
 
         implementation(platform(libs.firebase.bom))
-        implementation(libs.firebase.messaging)
+        implementation(libs.firebase.messaging) 
 
         testImplementation(libs.junit)
         androidTestImplementation(libs.androidx.junit)

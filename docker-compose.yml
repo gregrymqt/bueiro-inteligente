@@ -1,4 +1,3 @@
-
 services:
   backend:
     build:
@@ -61,7 +60,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bueiro_user -d bueiro_db"]
+      test: [ "CMD-SHELL", "pg_isready -U bueiro_user -d bueiro_db" ]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -77,9 +76,41 @@ services:
     networks:
       - bueiro_net
 
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: bueiro_mosquitto
+    ports:
+      - "1883:1883" # Porta padrão MQTT
+      - "9001:9001" # Websockets (opcional)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - bueiro_net
+    restart: unless-stopped
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: bueiro_nodered
+    environment:
+      # Puxa o valor do seu .env raiz e injeta no ambiente do Node-RED
+      - HARDWARE_TOKEN=${HARDWARE__TOKEN} 
+    ports:
+      - "1880:1880"
+    volumes:
+      - nodered_data:/data
+    depends_on:
+      - mosquitto
+      - db
+    networks:
+      - bueiro_net
+    restart: unless-stopped
+
 networks:
   bueiro_net:
     driver: bridge
 
 volumes:
   postgres_data:
+  nodered_data: 
