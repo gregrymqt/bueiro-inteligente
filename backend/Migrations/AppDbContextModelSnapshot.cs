@@ -217,6 +217,14 @@ namespace backend.Migrations
                         .HasColumnType("character varying(2048)")
                         .HasColumnName("action_url");
 
+                    b.Property<Guid>("DesktopUploadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("desktop_upload_id");
+
+                    b.Property<Guid>("MobileUploadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mobile_upload_id");
+
                     b.Property<int>("Order")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -240,13 +248,11 @@ namespace backend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("title");
 
-                    b.Property<Guid>("UploadId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("upload_id");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UploadId");
+                    b.HasIndex("DesktopUploadId");
+
+                    b.HasIndex("MobileUploadId");
 
                     b.ToTable("home_carousels", (string)null);
                 });
@@ -627,6 +633,11 @@ namespace backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("DeviceType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("device_type");
+
                     b.Property<string>("Extension")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -666,6 +677,7 @@ namespace backend.Migrations
                             Checksum = "A1B2C3D4E5F6",
                             ContentType = "image/jpeg",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DeviceType = "Desktop",
                             Extension = ".jpg",
                             FileName = "sample_home_photo.jpg",
                             Size = 102400L,
@@ -736,13 +748,21 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Features.Home.Domain.Entities.CarouselModel", b =>
                 {
-                    b.HasOne("backend.Features.Uploads.Domain.Entities.UploadModel", "Upload")
+                    b.HasOne("backend.Features.Uploads.Domain.Entities.UploadModel", "DesktopUpload")
                         .WithMany()
-                        .HasForeignKey("UploadId")
+                        .HasForeignKey("DesktopUploadId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Upload");
+                    b.HasOne("backend.Features.Uploads.Domain.Entities.UploadModel", "MobileUpload")
+                        .WithMany()
+                        .HasForeignKey("MobileUploadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DesktopUpload");
+
+                    b.Navigation("MobileUpload");
                 });
 
             modelBuilder.Entity("backend.Features.Monitoring.Domain.Entities.DrainStatus", b =>

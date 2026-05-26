@@ -16,7 +16,7 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
 
     [HttpPost]
     [MaxFileSize]
-    public async Task<ActionResult<UploadDto>> UploadFile(IFormFile? file)
+    public async Task<ActionResult<UploadImagesDto>> UploadFile(IFormFile? file)
     {
         if (file == null || file.Length == 0)
         {
@@ -25,17 +25,26 @@ public sealed class UploadsController(IUploadService uploadService) : ApiControl
 
         var result = await _uploadService.ProcessUploadAsync(file).ConfigureAwait(false);
 
-        // Devolvemos diretamente o result.Url que já contém o caminho relativo correto (/uploads/...)
-        // ou o URL público absoluto do Supabase Storage, integrando nativamente com o ImageResolver.ts
-        var response = new UploadDto(
-            result.Id,
-            result.FileName,
-            result.ContentType,
-            result.Size,
-            result.Url, 
-            result.CreatedAt
+        var desktopResponse = new UploadDto(
+            result.Desktop.Id,
+            result.Desktop.FileName,
+            result.Desktop.ContentType,
+            result.Desktop.Size,
+            result.Desktop.Url, 
+            result.Desktop.CreatedAt
         );
 
-        return Created(result.Url, response);
+        var mobileResponse = new UploadDto(
+            result.Mobile.Id,
+            result.Mobile.FileName,
+            result.Mobile.ContentType,
+            result.Mobile.Size,
+            result.Mobile.Url, 
+            result.Mobile.CreatedAt
+        );
+
+        var response = new UploadImagesDto(desktopResponse, mobileResponse);
+
+        return Created(result.Desktop.Url, response);
     }
 }

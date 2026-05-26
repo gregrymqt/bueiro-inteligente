@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace backend.Features.Home.Application.DTOs;
@@ -11,9 +11,12 @@ public sealed record CarouselCreateDto(
         string Title,
     [StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")]
         string? Subtitle,
-    [Required, Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")]
-    [property: JsonPropertyName("upload_id")]
-        Guid UploadId,
+    [Required, Display(Name = "Desktop Upload Id", Description = "ID do upload da imagem desktop")]
+    [property: JsonPropertyName("desktop_upload_id")]
+        Guid DesktopUploadId,
+    [Required, Display(Name = "Mobile Upload Id", Description = "ID do upload da imagem mobile")]
+    [property: JsonPropertyName("mobile_upload_id")]
+        Guid MobileUploadId,
     [
         Url,
         StringLength(2048),
@@ -35,9 +38,12 @@ public sealed record CarouselUpdateDto(
         string? Title = null,
     [StringLength(255), Display(Name = "Subtítulo", Description = "Subtítulo do carousel")]
         string? Subtitle = null,
-    [Display(Name = "Upload Id", Description = "ID do upload da imagem do carousel")]
-    [property: JsonPropertyName("upload_id")]
-        Guid? UploadId = null,
+    [Display(Name = "Desktop Upload Id", Description = "ID do upload da imagem desktop")]
+    [property: JsonPropertyName("desktop_upload_id")]
+        Guid? DesktopUploadId = null,
+    [Display(Name = "Mobile Upload Id", Description = "ID do upload da imagem mobile")]
+    [property: JsonPropertyName("mobile_upload_id")]
+        Guid? MobileUploadId = null,
     [
         Url,
         StringLength(2048),
@@ -58,7 +64,8 @@ public sealed record CarouselResponseDto(
     Guid Id,
     string Title,
     string? Subtitle,
-    [property: JsonPropertyName("image_url")] string ImageUrl,
+    [property: JsonPropertyName("desktop_image_url")] string DesktopImageUrl,
+    [property: JsonPropertyName("mobile_image_url")] string MobileImageUrl,
     [property: JsonPropertyName("action_url")] string? ActionUrl,
     int Order,
     CarouselSection Section

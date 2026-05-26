@@ -152,8 +152,10 @@ public sealed class HomeService(
                 c.Section = MapEnum<HomeDomain.CarouselSection>(req.Section.Value);
             if (req.Title is not null)
                 c.Title = Normalize(req.Title, nameof(req.Title));
-            if (req.UploadId.HasValue)
-                c.UploadId = req.UploadId.Value;
+            if (req.DesktopUploadId.HasValue)
+                c.DesktopUploadId = req.DesktopUploadId.Value;
+            if (req.MobileUploadId.HasValue)
+                c.MobileUploadId = req.MobileUploadId.Value;
 
             // Como o formulário envia sempre a totalidade dos dados no PATCH,
             // permitimos a atribuição direta para que strings vazias convertidas em null
@@ -358,7 +360,8 @@ public sealed class HomeService(
             c.Id,
             c.Title,
             c.Subtitle,
-            c.Upload?.Url ?? string.Empty,
+            c.DesktopUpload?.Url ?? string.Empty,
+            c.MobileUpload?.Url ?? string.Empty,
             c.ActionUrl,
             c.Order,
             MapEnum<HomeDtos.CarouselSection>(c.Section)
@@ -369,7 +372,8 @@ public sealed class HomeService(
         {
             Title = Normalize(r.Title, nameof(r.Title)),
             Subtitle = r.Subtitle?.Trim(),
-            UploadId = r.UploadId,
+            DesktopUploadId = r.DesktopUploadId,
+            MobileUploadId = r.MobileUploadId,
             ActionUrl = r.ActionUrl?.Trim(),
             Order = r.Order,
             Section = MapEnum<HomeDomain.CarouselSection>(r.Section),
