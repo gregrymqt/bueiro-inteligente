@@ -46,12 +46,11 @@ export interface HomeAdminResponse {
   stats: StatCardResponse[];
 }
 
-// Payloads para Criar/Atualizar
 export interface CarouselSaveDto {
   title: string;
   subtitle?: string | null;
-  desktop_upload_id: string;
-  mobile_upload_id: string;
+  desktop_upload_id?: string; // Opcional no PATCH
+  mobile_upload_id?: string;  // Opcional no PATCH
   action_url?: string | null;
   order: number;
   section: CarouselSection;
