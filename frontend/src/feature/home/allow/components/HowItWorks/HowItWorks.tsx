@@ -1,11 +1,12 @@
 import React from 'react';
-import type { HowItWorksStep } from '../../types/allow.index';
+// 1. Altere a importação aqui de HowItWorksStep para StatCardContent
+import type { StatCardContent } from '../../types/allow.index'; 
 import styles from './HowItWorks.module.scss';
-// Importamos ícones do Lucide já presentes no projeto
 import { Cpu, CloudUpload, BarChart3 } from 'lucide-react';
 
+// 2. Altere o tipo da prop aqui para receber a lista de estatísticas do banco
 interface HowItWorksProps {
-  steps: HowItWorksStep[];
+  steps: StatCardContent[]; 
 }
 
 const IconMapper: Record<string, React.ReactNode> = {
@@ -14,8 +15,9 @@ const IconMapper: Record<string, React.ReactNode> = {
   dashboard: <BarChart3 size={40} />
 };
 
-export const HowItWorks: React.FC<HowItWorksProps> = ({ steps = [] }) => { // Adicionado default []
-  if (!steps || steps.length === 0) return null; // Evita erro se estiver vazio
+export const HowItWorks: React.FC<HowItWorksProps> = ({ steps = [] }) => {
+  if (!steps || steps.length === 0) return null; 
+  
   return (
     <div className={styles.stepsContainer}>
       {steps.map((step) => (
@@ -23,6 +25,8 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ steps = [] }) => { // Ad
           <div className={styles.iconWrapper}>
             {IconMapper[step.icon_name] || <Cpu size={40} />}
           </div>
+          {/* ✨ Agora o TypeScript reconhecerá o .value perfeitamente! */}
+          <h2 className="stat-value">{step.value}</h2>
           <h3>{step.title}</h3>
           <p>{step.description}</p>
         </div>

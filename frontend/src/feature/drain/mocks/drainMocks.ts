@@ -1,5 +1,5 @@
 import { withMockLatency } from '@/core/mock/mockDelay';
-import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
+import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types/drain.index';
 
 const mockDrainsSeed: Drain[] = [
   {

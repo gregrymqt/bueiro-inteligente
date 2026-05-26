@@ -71,9 +71,9 @@ fun MonitoringScreen(
                             ) {
                                 items(
                                     items = drains,
-                                    key = { drain -> drain.id }
+                                    key = { drain -> drain.hardwareId }
                                 ) { drain ->
-                                    val isExpanded = expandedDrainId == drain.id
+                                    val isExpanded = expandedDrainId == (drain.id ?: drain.hardwareId)
                                     
                                     DrainItemCard(
                                         drain = drain,
@@ -172,12 +172,12 @@ fun DrainItemCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = drain.name,
+                        text = drain.name ?: "Bueiro Desconhecido",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = drain.address,
+                        text = drain.address ?: "Endereço não especificado",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp

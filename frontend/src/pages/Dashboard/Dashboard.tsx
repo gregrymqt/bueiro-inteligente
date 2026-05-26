@@ -20,7 +20,7 @@ import { RowsEmbed } from '@/feature/monitoring/components/RowsEmbed';
 import { DrainForm } from '@/feature/drain/components/DrainForm';
 import { DrainList } from '@/feature/drain/components/DrainList';
 import { useDrains } from '@/feature/drain/hooks/useDrains'; 
-import type { Drain } from '@/feature/drain/types'; 
+import type { Drain } from '@/feature/drain/types/drain.index'; 
 
 // Feature: Feedback
 import { FeedbackForm } from '@/feature/feedback/components/FeedbackForm/FeedbackForm';

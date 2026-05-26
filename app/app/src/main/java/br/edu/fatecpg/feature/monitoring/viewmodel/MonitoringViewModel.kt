@@ -40,13 +40,14 @@ class MonitoringViewModel(
             return
         }
 
+            val safeId = drain.id ?: drain.hardwareId
         val currentExpandedId = _expandedDrainId.value
         
-        if (currentExpandedId == drain.id) {
+        if (currentExpandedId == safeId) {
             // Se o bueiro clicado já for o expandido, fecha e desinscreve
             _expandedDrainId.value = null
-            realtimeRepository.leaveDrain(drain.id)
-            Log.d("MonitoringViewModel", "Recolhendo bueiro e saindo do canal pub/sub: ${drain.id}")
+            realtimeRepository.leaveDrain(safeId)
+            Log.d("MonitoringViewModel", "Recolhendo bueiro e saindo do canal pub/sub: $safeId")
         } else {
             // Se for um bueiro novo
             // 1. Desinscreve do anterior se houver
@@ -56,20 +57,21 @@ class MonitoringViewModel(
             }
             
             // 2. Atualiza para o novo ID e se inscreve
-            _expandedDrainId.value = drain.id
-            realtimeRepository.joinDrain(drain.id)
-            Log.d("MonitoringViewModel", "Expandindo bueiro e entrando no canal pub/sub: ${drain.id}")
+            _expandedDrainId.value = safeId
+            realtimeRepository.joinDrain(safeId)
+            Log.d("MonitoringViewModel", "Expandindo bueiro e entrando no canal pub/sub: $safeId")
         }
     }
 
     fun openDrainInMaps(drain: DrainStatusDTO) {
         val lat = drain.latitude
         val lng = drain.longitude
+        val safeName = drain.name ?: "Bueiro Desconhecido"
         if (lat != null && lng != null) {
-            Log.d("MonitoringViewModel", "Requisitando abertura de localizacao GPS do bueiro ${drain.name}")
-            locationHandler.openLocation(lat, lng, drain.name)
+            Log.d("MonitoringViewModel", "Requisitando abertura de localizacao GPS do bueiro $safeName")
+            locationHandler.openLocation(lat, lng, safeName)
         } else {
-            Log.w("MonitoringViewModel", "Tentativa de abrir localizacao de bueiro que nao possui coordenadas. ID = ${drain.id}")
+            Log.w("MonitoringViewModel", "Tentativa de abrir localizacao de bueiro que nao possui coordenadas. ID = ${drain.id ?: drain.hardwareId}")
         }
     }
 
@@ -90,7 +92,10 @@ class MonitoringViewModel(
                     Log.d("MonitoringViewModel", "Recebido alerta RT: ${alerta.id}. Atualizando lista global.")
                     val updatedDrains = currentState.drains.map { drain ->
                         // Atualiza o item específico na lista se bater com ID ou HardwareId
-                        if (drain.id.equals(alerta.id, ignoreCase = true) ||
+                        val drainSafeId = drain.id ?: drain.hardwareId
+                        val alertaSafeId = alerta.id ?: alerta.hardwareId
+                        
+                        if (drainSafeId.equals(alertaSafeId, ignoreCase = true) ||
                             drain.hardwareId.equals(alerta.hardwareId, ignoreCase = true)) {
                             alerta
                         } else {

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/layout/Form';
 import { Button } from '@/components/ui/Button/Button';
-import type { Drain, DrainCreatePayload } from '../types';
+import type { Drain, DrainCreatePayload } from '../types/drain.index';
 import styles from './DrainForm.module.scss';
 
 const formatCoordinate = (value: string): string => {

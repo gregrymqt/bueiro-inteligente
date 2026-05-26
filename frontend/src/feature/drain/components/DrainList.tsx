@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button/Button';
 import { PencilLine, Trash2 } from 'lucide-react';
-import type { Drain } from '../types';
+import type { Drain } from '../types/drain.index';
 import styles from './DrainList.module.scss';
 
 interface DrainListProps {

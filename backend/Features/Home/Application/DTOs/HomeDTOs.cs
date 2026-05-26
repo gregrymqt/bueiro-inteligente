@@ -147,7 +147,7 @@ public sealed record StatCardUpdateDto(
 public sealed record StatCardResponseDto(
     Guid Id,
     string Title,
-    string Value,
+    [property: JsonPropertyName("value")] string Value,
     string Description,
     [property: JsonPropertyName("icon_name")] string IconName,
     StatCardColor Color,

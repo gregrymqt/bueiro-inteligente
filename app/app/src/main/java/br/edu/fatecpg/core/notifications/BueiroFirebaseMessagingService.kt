@@ -22,11 +22,11 @@ class BueiroFirebaseMessagingService : FirebaseMessagingService() {
             try {
                 // Reconstrução manual do DTO garantindo a conversão de tipos
                 val drain = DrainStatusDTO(
-                    id = data["id"] ?: "",
-                    name = data["name"] ?: "Bueiro sem nome",
-                    address = data["address"] ?: "",
+                    id = data["id"],
+                    name = data["name"] ?: "Bueiro Desconhecido",
+                    address = data["address"] ?: "Endereço não especificado",
                     hardwareId = data["hardware_id"] ?: "",
-                    isActive = data["is_active"]?.toBoolean() ?: true,
+                    isActive = data["is_active"]?.toBoolean() ?: false,
                     status = data["status"],
                     nivelObstrucao = data["nivel_obstrucao"]?.toDoubleOrNull(),
                     distanciaCm = data["distancia_cm"]?.toDoubleOrNull(),

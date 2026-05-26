@@ -49,7 +49,7 @@ fun AlertCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = alert.name,
+                        text = alert.name ?: "Sem Nome",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
                         color = contentColor
@@ -101,7 +101,7 @@ fun AlertCard(
                     onClick = {
                         val lat = alert.latitude ?: 0.0
                         val lng = alert.longitude ?: 0.0
-                        onOpenMapClick(lat, lng, alert.name)
+                        onOpenMapClick(lat, lng, alert.name ?: "")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(

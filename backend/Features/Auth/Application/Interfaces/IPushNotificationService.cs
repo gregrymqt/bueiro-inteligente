@@ -1,6 +1,6 @@
 using backend.Features.Drains.Domain.Entities;
 
-namespace backend.Features.Notifications.Application.Interfaces;
+namespace backend.Features.Auth.Application.Interfaces;
 
 public interface IPushNotificationService
 {

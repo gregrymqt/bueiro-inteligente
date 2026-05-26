@@ -1,14 +1,15 @@
 using System.Globalization;
 using backend.Core;
 using backend.Features.Drains.Domain.Entities;
-using backend.Features.Notifications.Application.Interfaces;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Users.Domain.Entities;
 using backend.Features.Users.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
+using backend.Features.Notifications.Application.Interfaces;
 
-namespace backend.Features.Notifications.Application.Services;
+namespace backend.Features.Auth.Application.Services;
 
 public sealed class PushNotificationService(
     IUserDeviceRepository userDeviceRepository,

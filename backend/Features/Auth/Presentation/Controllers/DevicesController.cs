@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using backend.Features.Auth.Application.DTOs;
-using backend.Features.Notifications.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+using backend.Features.Auth.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Features.Users.Presentation.Controllers;
