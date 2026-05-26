@@ -144,7 +144,7 @@ class AppContainer(private val context: Context, private val baseUrl: String, pr
 
     val registerViewModelFactory by lazy { RegisterViewModelFactory(authRepository) }
 
-    val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler, realtimeRepository) }
+    val monitoringViewModelFactory by lazy { MonitoringViewModelFactory(monitoringRepository, locationHandler, realtimeRepository, tokenManager) }
 
     val profileViewModelFactory by lazy {
         ProfileViewModelFactory(

@@ -62,6 +62,10 @@ fun HomeScreen(
         }
     }
 
+    val chunkedStats = androidx.compose.runtime.remember(sortedStats) {
+        sortedStats.chunked(2)
+    }
+
     val carouselsList = androidx.compose.runtime.remember(uiState) {
         if (uiState is HomeUiState.Success) {
             (uiState as HomeUiState.Success).data.carousels.sortedBy { it.order }
@@ -231,7 +235,11 @@ fun HomeScreen(
                                 )
                             }
                         } else {
-                            items(sortedStats.chunked(2), key = { pair -> pair.first().id }) { pair ->
+                            // Renderização em Grid (Row com dois StatCardItem) usando chaves estáveis
+                            items(
+                                items = chunkedStats,
+                                key = { pair -> pair.map { it.id }.joinToString("-") }
+                            ) { pair ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)

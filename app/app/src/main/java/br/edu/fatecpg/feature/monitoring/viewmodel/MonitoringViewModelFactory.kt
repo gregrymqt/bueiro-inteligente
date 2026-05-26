@@ -5,19 +5,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.core.navigation.LocationHandler
+import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 
 class MonitoringViewModelFactory(
     private val repository: MonitoringRepository, 
     private val locationHandler: LocationHandler,
-    private val realtimeRepository: RealtimeRepository
+    private val realtimeRepository: RealtimeRepository,
+    private val tokenManager: TokenManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         try {
             if (modelClass.isAssignableFrom(MonitoringViewModel::class.java)) {     
                 Log.d("MonitoringViewModelFactory", "Criando instância de MonitoringViewModel")
                 @Suppress("UNCHECKED_CAST")
-                return MonitoringViewModel(repository, locationHandler, realtimeRepository) as T
+                return MonitoringViewModel(repository, locationHandler, realtimeRepository, tokenManager) as T
             }
             Log.e("MonitoringViewModelFactory", "ViewModel desconhecido: ${modelClass.name}")
             throw IllegalArgumentException("Unknown ViewModel class")

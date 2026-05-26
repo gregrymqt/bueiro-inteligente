@@ -7,15 +7,15 @@ import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.core.notifications.NotificationHelper
 import br.edu.fatecpg.feature.device.repository.DeviceRepository
 import br.edu.fatecpg.feature.home.dto.HomeResponseDTO
+import br.edu.fatecpg.feature.home.dto.StatCardDTO
 import br.edu.fatecpg.feature.home.repository.HomeRepository
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 // Estado reativo isolado para o conteúdo da Home
 sealed class HomeUiState {
@@ -43,6 +43,9 @@ class HomeViewModel(
     private val _connectionError = MutableStateFlow<String?>(null)
     val connectionError: StateFlow<String?> = _connectionError.asStateFlow()
 
+    // --- TRACKING PARA TEMPO REAL ---
+    private val bueiroStatusMap = mutableMapOf<String, DrainStatusDTO>()
+
     init {
         try {
             Log.d("HomeViewModel", "Inicializando HomeViewModel. Conectando WebSocket e buscando dados.")
@@ -53,25 +56,19 @@ class HomeViewModel(
             Log.e("HomeViewModel", "Erro inicial no HomeViewModel", e)
         }
 
-        // Observa Alertas Críticos do WebSocket
+        // Observa Alertas Críticos e Atualiza Estatísticas em Tempo Real
         viewModelScope.launch(Dispatchers.Main) {
             try {
-                realtimeRepository.alertas.collect { status ->
-                    try {
-                        val currentStatus = status.status?.lowercase() ?: ""
-                        if (currentStatus == "alerta" || currentStatus == "crítico" || currentStatus == "critico") {
-                            Log.i("HomeViewModel", "Alerta recebido para o bueiro: ${status.name}")
-                            _activeAlert.value = status
-
-                            // Dispara notificação nativa para status críticos
-                            if (currentStatus == "crítico" || currentStatus == "critico") {
-                                notificationHelper.showCriticalNotification(status)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.w("HomeViewModel", "Erro ao checar status do alerta", e)
+                realtimeRepository.alertas
+                    .onEach { status ->
+                        // 1. Lógica de Alerta Imediato (Card de Alerta)
+                        processIncomingAlert(status)
                     }
-                }
+                    .sample(600.milliseconds) // Otimização: evita recomposições excessivas da malha de cards
+                    .collect { status ->
+                        // 2. Lógica de Recalculo das Estatísticas da Home
+                        updateHomeStatsRealtime(status)
+                    }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Erro crítico ao processar fluxo de alertas", e)
             }
@@ -129,6 +126,90 @@ class HomeViewModel(
                 }
             }
         }
+    }
+
+    private fun processIncomingAlert(status: DrainStatusDTO) {
+        try {
+            val currentStatus = status.status?.lowercase() ?: ""
+            if (currentStatus == "alerta" || currentStatus == "crítico" || currentStatus == "critico") {
+                Log.i("HomeViewModel", "Alerta em tempo real: ${status.name}")
+                _activeAlert.value = status
+
+                if (currentStatus == "crítico" || currentStatus == "critico") {
+                    notificationHelper.showCriticalNotification(status)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("HomeViewModel", "Erro ao processar alerta", e)
+        }
+    }
+
+    /**
+     * Atualiza dinamicamente os StatCards do HomeUiState.Success baseando-se no novo status recebido.
+     * Implementa o cálculo matemático exato de variação Delta global.
+     */
+    private fun updateHomeStatsRealtime(newStatus: DrainStatusDTO) {
+        val currentState = _uiState.value
+        if (currentState !is HomeUiState.Success) return
+
+        val previousStatus = bueiroStatusMap[newStatus.hardwareId]
+        bueiroStatusMap[newStatus.hardwareId] = newStatus
+
+        val totalManholes = findTotalManholes(currentState.data.stats)
+
+        val updatedStats = currentState.data.stats.map { stat ->
+            when {
+                isAlertStat(stat.title) -> updateAlertCount(stat, newStatus, previousStatus)
+                isObstructionStat(stat.title) -> updateObstructionAverage(stat, newStatus, previousStatus, totalManholes)
+                else -> stat
+            }
+        }
+
+        _uiState.value = HomeUiState.Success(
+            currentState.data.copy(stats = updatedStats)
+        )
+    }
+
+    private fun findTotalManholes(stats: List<StatCardDTO>): Double {
+        return stats.find {
+            it.title.contains("Total", ignoreCase = true) ||
+            it.title.contains("Sensores", ignoreCase = true) ||
+            it.title.contains("Bueiros", ignoreCase = true)
+        }?.value?.filter { it.isDigit() }?.toDoubleOrNull() ?: 10.0
+    }
+
+    private fun isAlertStat(title: String): Boolean {
+        return title.contains("Alerta", ignoreCase = true) ||
+                title.contains("Crítico", ignoreCase = true) ||
+                title.contains("Critico", ignoreCase = true)
+    }
+
+    private fun isObstructionStat(title: String): Boolean {
+        return title.contains("Obstrução", ignoreCase = true) ||
+                title.contains("Média", ignoreCase = true) ||
+                title.contains("Media", ignoreCase = true)
+    }
+
+    private fun updateAlertCount(stat: StatCardDTO, newStatus: DrainStatusDTO, previousStatus: DrainStatusDTO?): StatCardDTO {
+        var count = stat.value.toIntOrNull() ?: 0
+        val isNowCritical = newStatus.status?.lowercase() in listOf("alerta", "crítico", "critico")
+        val wasCritical = previousStatus?.status?.lowercase() in listOf("alerta", "crítico", "critico")
+
+        if (isNowCritical && !wasCritical) count++
+        else if (!isNowCritical && wasCritical) count--
+
+        return stat.copy(value = count.coerceAtLeast(0).toString())
+    }
+
+    private fun updateObstructionAverage(stat: StatCardDTO, newStatus: DrainStatusDTO, previousStatus: DrainStatusDTO?, totalManholes: Double): StatCardDTO {
+        val newNivel = newStatus.nivelObstrucao ?: return stat
+        val currentAvg = stat.value.replace("%", "").replace(",", ".").toDoubleOrNull() ?: 0.0
+        val previousNivel = previousStatus?.nivelObstrucao ?: currentAvg
+
+        val delta = newNivel - previousNivel
+        val newAvg = currentAvg + (delta / totalManholes)
+
+        return stat.copy(value = "${String.format("%.1f", newAvg)}%".replace(".", ","))
     }
 
     fun dismissAlert() {

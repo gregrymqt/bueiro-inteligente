@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.core.navigation.LocationHandler
+import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,11 +22,15 @@ sealed class MonitoringUiState {
 class MonitoringViewModel(
     private val repository: MonitoringRepository, 
     private val locationHandler: LocationHandler,
-    private val realtimeRepository: RealtimeRepository
+    private val realtimeRepository: RealtimeRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MonitoringUiState>(MonitoringUiState.Loading)
     val uiState: StateFlow<MonitoringUiState> = _uiState.asStateFlow()
+
+    private var bueirosMemoria = listOf<DrainStatusDTO>()
+    private val atualizacoesPendentes = mutableMapOf<String, DrainStatusDTO>()
 
     private val _showLoginDialog = MutableStateFlow(false)
     val showLoginDialog: StateFlow<Boolean> = _showLoginDialog.asStateFlow()
@@ -35,31 +40,32 @@ class MonitoringViewModel(
 
     fun onDrainClick(isLoggedIn: Boolean, drain: DrainStatusDTO) {
         if (!isLoggedIn) {
-            Log.d("MonitoringViewModel", "Usuario nao autenticado tentou acessar detalhe de bueiro. Mostrando modal de login.")
             _showLoginDialog.value = true
             return
         }
 
-            val safeId = drain.id ?: drain.hardwareId
+        // Mantemos o id/hardwareId para controlar a expansão visual do card na tela
+        val visualExpandedId = drain.id ?: drain.hardwareId
         val currentExpandedId = _expandedDrainId.value
-        
-        if (currentExpandedId == safeId) {
-            // Se o bueiro clicado já for o expandido, fecha e desinscreve
+
+        // Mas para o SignalR, usamos estritamente o hardwareId do bueiro físico
+        val socketGroupId = drain.hardwareId
+
+        if (currentExpandedId == visualExpandedId) {
             _expandedDrainId.value = null
-            realtimeRepository.leaveDrain(safeId)
-            Log.d("MonitoringViewModel", "Recolhendo bueiro e saindo do canal pub/sub: $safeId")
+            realtimeRepository.leaveDrain(socketGroupId) // Sai usando o HardwareId
+            Log.d("MonitoringViewModel", "Saindo do canal Pub/Sub do hardware: $socketGroupId")
         } else {
-            // Se for um bueiro novo
-            // 1. Desinscreve do anterior se houver
-            currentExpandedId?.let { 
-                realtimeRepository.leaveDrain(it)
-                Log.d("MonitoringViewModel", "Saindo do canal anterior: $it")
+            // Desinscreve do anterior se houver (buscando o hardwareId correspondente)
+            if (currentExpandedId != null) {
+                bueirosMemoria.find { (it.id ?: it.hardwareId) == currentExpandedId }?.let { bueiroAnterior ->
+                    realtimeRepository.leaveDrain(bueiroAnterior.hardwareId)
+                }
             }
-            
-            // 2. Atualiza para o novo ID e se inscreve
-            _expandedDrainId.value = safeId
-            realtimeRepository.joinDrain(safeId)
-            Log.d("MonitoringViewModel", "Expandindo bueiro e entrando no canal pub/sub: $safeId")
+
+            _expandedDrainId.value = visualExpandedId
+            realtimeRepository.joinDrain(socketGroupId) // Entra usando o HardwareId
+            Log.d("MonitoringViewModel", "Inscrito com sucesso no grupo de hardware: $socketGroupId")
         }
     }
 
@@ -81,28 +87,31 @@ class MonitoringViewModel(
 
     init {
         Log.d("MonitoringViewModel", "Inicializando tela de Monitoramento, buscando dados parciais...")
+
+        // Inicia conexão WebSocket automaticamente
+        realtimeRepository.connect(tokenManager.getToken())
+
         refreshDrains()
-        
-        // Coleta de alertas em tempo real
+
+        // Coleta de alertas em tempo real contínua para evitar perda de pacotes durante o Loading
         viewModelScope.launch {
             realtimeRepository.alertas.collect { alerta ->
-                val currentState = _uiState.value
 
-                if (currentState is MonitoringUiState.Success) {
-                    Log.d("MonitoringViewModel", "Recebido alerta RT: ${alerta.id}. Atualizando lista global.")
-                    val updatedDrains = currentState.drains.map { drain ->
-                        // Atualiza o item específico na lista se bater com ID ou HardwareId
-                        val drainSafeId = drain.id ?: drain.hardwareId
-                        val alertaSafeId = alerta.id ?: alerta.hardwareId
-                        
-                        if (drainSafeId.equals(alertaSafeId, ignoreCase = true) ||
-                            drain.hardwareId.equals(alerta.hardwareId, ignoreCase = true)) {
-                            alerta
-                        } else {
-                            drain
-                        }
+                // 1. Guarda no mapa de transição para o refreshDrains pegar se estiver carregando
+                atualizacoesPendentes[alerta.hardwareId] = alerta
+
+                // 2. Mapeia para dentro do bueirosMemoria de forma limpa e direta pelo HardwareId
+                bueirosMemoria = bueirosMemoria.map { drain ->
+                    if (drain.hardwareId.equals(alerta.hardwareId, ignoreCase = true)) {
+                        alerta
+                    } else {
+                        drain
                     }
-                    _uiState.value = MonitoringUiState.Success(updatedDrains)
+                }
+
+                // 3. Se estiver em estado de Success, emite a nova lista imediatamente para acionar recomposição
+                if (_uiState.value is MonitoringUiState.Success) {
+                    _uiState.value = MonitoringUiState.Success(bueirosMemoria)
                 }
             }
         }
@@ -114,7 +123,19 @@ class MonitoringViewModel(
             repository.getAllDrains()
                 .onSuccess { drains ->
                     Log.i("MonitoringViewModel", "Trocando estado UI pra Success. Lista recebida: ${drains.size} bueiros")
-                    _uiState.value = MonitoringUiState.Success(drains)
+
+                    // 💡 CORREÇÃO: Usa estritamente o hardwareId para ler o mapa de tempo real
+                    bueirosMemoria = drains.map { drain ->
+                        atualizacoesPendentes[drain.hardwareId] ?: drain
+                    }
+
+                    _uiState.value = MonitoringUiState.Success(bueirosMemoria)
+
+                    // 🚀 PERFEITO: Agora sim o App entra na sala certa do SignalR!
+                    drains.forEach { drain ->
+                        realtimeRepository.joinDrain(drain.hardwareId)
+                        Log.v("MonitoringViewModel", "Inscricao automatica realizada para o grupo: ${drain.hardwareId}")
+                    }
                 }
                 .onFailure { error ->
                     Log.e("MonitoringViewModel", "Repasse de falha de carregamento: ${error.message}", error)
@@ -144,9 +165,10 @@ class MonitoringViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        _expandedDrainId.value?.let { id ->
-            Log.d("MonitoringViewModel", "ViewModel destruida. Saindo do canal pub/sub para bueiro: $id")
-            realtimeRepository.leaveDrain(id)
+        _expandedDrainId.value?.let { currentId ->
+            bueirosMemoria.find { (it.id ?: it.hardwareId) == currentId }?.let { bueiro ->
+                realtimeRepository.leaveDrain(bueiro.hardwareId)
+            }
         }
     }
 
