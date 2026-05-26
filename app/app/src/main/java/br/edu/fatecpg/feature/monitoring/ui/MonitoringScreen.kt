@@ -179,7 +179,7 @@ fun DrainItemCard(
                     Text(
                         text = drain.address,
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
                 }
@@ -187,7 +187,7 @@ fun DrainItemCard(
 
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -202,12 +202,12 @@ fun DrainItemCard(
                         Text(
                             text = "Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
                             fontSize = 14.sp,
-                            color = if ((drain.nivelObstrucao ?: 0.0) > 70) MaterialTheme.colorScheme.error else Color.DarkGray
+                            color = if ((drain.nivelObstrucao ?: 0.0) > 70) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Distância: ${drain.distanciaCm?.toInt() ?: 0} cm",
                             fontSize = 14.sp,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
@@ -215,12 +215,12 @@ fun DrainItemCard(
                         Text(
                             text = "Última atualização:",
                             fontSize = 10.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = drain.ultimaAtualizacao ?: "--:--",
                             fontSize = 12.sp,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -241,7 +241,7 @@ fun DrainItemCard(
                 Text(
                     text = "Status: ${drain.status ?: "Desconhecido"} • Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
                     fontSize = 13.sp,
-                    color = Color.DarkGray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

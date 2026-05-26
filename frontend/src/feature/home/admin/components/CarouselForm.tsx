@@ -14,7 +14,7 @@ interface CarouselFormProps {
 
 export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSubmit, isLoading }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    initialData?.image_url ? ImageResolver.resolve(initialData.image_url) : null
+    initialData?.desktop_image_url ? ImageResolver.resolve(initialData.desktop_image_url) : null
   );
   
   const { uploadImage, isUploading } = useHomeAdmin({ autoFetch: false });
@@ -26,11 +26,13 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSubmi
       section: initialData.section,
       order: initialData.order,
       action_url: initialData.action_url,
-      upload_id: '' 
+      desktop_upload_id: '',
+      mobile_upload_id: ''
     } : {
       section: 'hero',
       order: 0,
-      upload_id: ''
+      desktop_upload_id: '',
+      mobile_upload_id: ''
     }
   });
 
@@ -41,9 +43,10 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSubmi
     const result = await uploadImage(file);
     
     if (result) {
-      methods.setValue('upload_id', result.uploadId, { shouldValidate: true });
-      if (result.uploadUrl) {
-        setPreviewUrl(ImageResolver.resolve(result.uploadUrl));
+      methods.setValue('desktop_upload_id', result.desktopId, { shouldValidate: true });
+      methods.setValue('mobile_upload_id', result.mobileId, { shouldValidate: true });
+      if (result.desktopUrl) {
+        setPreviewUrl(ImageResolver.resolve(result.desktopUrl));
       }
     }
   };
@@ -131,13 +134,17 @@ export const CarouselForm: React.FC<CarouselFormProps> = ({ initialData, onSubmi
         
         <input 
           type="hidden" 
-          {...methods.register('upload_id', { 
+          {...methods.register('desktop_upload_id', { 
             required: initialData ? false : 'A seleção de uma imagem é obrigatória' 
           })} 
         />
-        {methods.formState.errors.upload_id && (
+        <input 
+          type="hidden" 
+          {...methods.register('mobile_upload_id')} 
+        />
+        {methods.formState.errors.desktop_upload_id && (
           <span style={{ color: '#ef4444', fontSize: '14px', display: 'block', marginTop: '4px' }}>
-            {methods.formState.errors.upload_id.message}
+            {methods.formState.errors.desktop_upload_id.message}
           </span>
         )}
       </div>

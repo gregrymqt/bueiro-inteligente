@@ -6,10 +6,17 @@ export type StatCardColor = 'success' | 'warning' | 'danger';
 
 // DTO de Retorno do Upload de Arquivos
 export interface UploadDto {
-  id?: string;
-  Id?: string;
-  url?: string;
-  Url?: string;
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+}
+
+export interface UploadImagesDto {
+  desktop: UploadDto;
+  mobile: UploadDto;
 }
 
 // Respostas (GET)
@@ -17,7 +24,8 @@ export interface CarouselResponse {
   id: string;
   title: string;
   subtitle: string | null;
-  image_url: string;
+  desktop_image_url: string;
+  mobile_image_url: string;
   action_url: string | null;
   order: number;
   section: CarouselSection;
@@ -42,7 +50,8 @@ export interface HomeAdminResponse {
 export interface CarouselSaveDto {
   title: string;
   subtitle?: string | null;
-  upload_id: string; // Guid retornado pelo seu serviço de upload
+  desktop_upload_id: string;
+  mobile_upload_id: string;
   action_url?: string | null;
   order: number;
   section: CarouselSection;

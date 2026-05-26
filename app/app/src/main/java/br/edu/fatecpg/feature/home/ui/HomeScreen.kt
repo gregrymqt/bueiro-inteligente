@@ -7,6 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -16,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +27,7 @@ import br.edu.fatecpg.feature.home.components.AlertCard
 import br.edu.fatecpg.feature.home.components.StatCardItem
 import br.edu.fatecpg.feature.home.viewmodel.HomeUiState
 import br.edu.fatecpg.feature.home.viewmodel.HomeViewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +57,14 @@ fun HomeScreen(
     val sortedStats = androidx.compose.runtime.remember(uiState) {
         if (uiState is HomeUiState.Success) {
             (uiState as HomeUiState.Success).data.stats.sortedBy { it.order }
+        } else {
+            emptyList()
+        }
+    }
+
+    val carouselsList = androidx.compose.runtime.remember(uiState) {
+        if (uiState is HomeUiState.Success) {
+            (uiState as HomeUiState.Success).data.carousels.sortedBy { it.order }
         } else {
             emptyList()
         }
@@ -154,16 +166,6 @@ fun HomeScreen(
                     }
                 }
 
-                // Seção de Estatísticas do Sistema (Dados do Room / HTTP)
-                item {
-                    Text(
-                        text = "Métricas da Malha",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
                 when (val state = uiState) {
                     is HomeUiState.Idle, is HomeUiState.Loading -> {
                         item {
@@ -178,6 +180,47 @@ fun HomeScreen(
                         }
                     }
                     is HomeUiState.Success -> {
+                        if (carouselsList.isNotEmpty()) {
+                            item {
+                                val pagerState = rememberPagerState(pageCount = { carouselsList.size })
+
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .padding(vertical = 8.dp)
+                                ) { page ->
+                                    val carouselItem = carouselsList[page]
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxSize(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        )
+                                    ) {
+                                        AsyncImage(
+                                            model = carouselItem.imageUrl,
+                                            contentDescription = carouselItem.title,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+
+                        // Seção de Estatísticas do Sistema (Dados do Room / HTTP)
+                        item {
+                            Text(
+                                text = "Métricas da Malha",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
                         if (sortedStats.isEmpty()) {
                             item {
                                 Text(

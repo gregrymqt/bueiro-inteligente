@@ -39,18 +39,20 @@ export function useHomeAdmin(options: UseHomeAdminOptions = { autoFetch: true })
   }, [fetchAdminData, options.autoFetch]);
 
   // --- Manipulação de Upload de Imagem ---
-  const handleUploadImage = async (file: File): Promise<{ uploadId: string; uploadUrl: string } | null> => {
+  const handleUploadImage = async (file: File): Promise<{ desktopId: string; desktopUrl: string; mobileId: string; mobileUrl: string } | null> => {
     setIsUploading(true);
     try {
       const response = await HomeAdminService.uploadImage(file);
-      const uploadId = response.Id || response.id;
-      const uploadUrl = response.Url || response.url;
+      const desktopId = response.desktop.id;
+      const desktopUrl = response.desktop.url;
+      const mobileId = response.mobile.id;
+      const mobileUrl = response.mobile.url;
       
-      if (!uploadId) {
-        throw new Error('ID de upload não retornado pelo servidor.');
+      if (!desktopId || !mobileId) {
+        throw new Error('IDs de upload não retornados pelo servidor.');
       }
 
-      return { uploadId, uploadUrl: uploadUrl || '' };
+      return { desktopId, desktopUrl, mobileId, mobileUrl };
     } catch (err) {
       AlertService.error('Erro no upload', 'Não foi possível carregar a imagem. Tente novamente.');
       return null;

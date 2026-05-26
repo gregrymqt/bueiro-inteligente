@@ -1,6 +1,6 @@
 // feature/home/components/HeroSlide.tsx
 import { Link } from 'react-router-dom';
-import type { CarouselContent } from '../../types';
+import type { CarouselContent } from '../../types/allow.index';
 import styles from '@/pages/Home/Home.module.scss';
 import { ImageResolver } from '@/core/http/ImageResolver';
 
@@ -9,21 +9,19 @@ interface HeroSlideProps {
 }
 
 export function HeroSlide({ slide }: HeroSlideProps) {
-  const resolvedImageUrl = ImageResolver.resolve(slide.image_url);
-
   return (
     <article className={styles.heroSlide}>
-      <div className={styles.heroMedia}>
-        {/* Removemos o <picture> e a lógica de .webp para carregar apenas o arquivo real */}
+      <picture className={styles.heroMedia}>
+        <source media="(max-width: 768px)" srcSet={ImageResolver.resolve(slide.mobile_image_url)} />
         <img 
           className={styles.heroImage} 
-          src={resolvedImageUrl} 
+          src={ImageResolver.resolve(slide.desktop_image_url)} 
           alt={slide.title}
           loading="eager" 
           fetchPriority="high" 
           decoding="async" 
         />
-      </div>
+      </picture>
 
       <div className={styles.heroContent}>
         <h2 className={styles.heroTitle}>{slide.title}</h2>

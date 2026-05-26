@@ -85,26 +85,19 @@ class MonitoringViewModel(
         viewModelScope.launch {
             realtimeRepository.alertas.collect { alerta ->
                 val currentState = _uiState.value
-                val expandedId = _expandedDrainId.value
 
-                if (currentState is MonitoringUiState.Success && expandedId != null) {
-                    // Comparação robusta por ID ou HardwareId (Case Insensitive e Safe)
-                    val isTargetDrain = alerta.id.equals(expandedId, ignoreCase = true) || 
-                                       alerta.hardwareId.equals(expandedId, ignoreCase = true)
-
-                    if (isTargetDrain) {
-                        Log.d("MonitoringViewModel", "Recebido alerta RT compatível: ${alerta.id}. Atualizando lista.")
-                        val updatedDrains = currentState.drains.map { drain ->
-                            // Atualiza o item específico na lista se bater com ID ou HardwareId
-                            if (drain.id.equals(alerta.id, ignoreCase = true) || 
-                                drain.hardwareId.equals(alerta.hardwareId, ignoreCase = true)) {
-                                alerta
-                            } else {
-                                drain
-                            }
+                if (currentState is MonitoringUiState.Success) {
+                    Log.d("MonitoringViewModel", "Recebido alerta RT: ${alerta.id}. Atualizando lista global.")
+                    val updatedDrains = currentState.drains.map { drain ->
+                        // Atualiza o item específico na lista se bater com ID ou HardwareId
+                        if (drain.id.equals(alerta.id, ignoreCase = true) ||
+                            drain.hardwareId.equals(alerta.hardwareId, ignoreCase = true)) {
+                            alerta
+                        } else {
+                            drain
                         }
-                        _uiState.value = MonitoringUiState.Success(updatedDrains)
                     }
+                    _uiState.value = MonitoringUiState.Success(updatedDrains)
                 }
             }
         }

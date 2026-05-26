@@ -27,6 +27,9 @@ class ProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Idle)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private val _showLogoutDialog = MutableStateFlow(false)
     val showLogoutDialog: StateFlow<Boolean> = _showLogoutDialog.asStateFlow()
 
@@ -51,17 +54,30 @@ class ProfileViewModel(
     private fun loadProfile() {
         Log.d("ProfileViewModel", "Iniciando carregamento do perfil de usuário através da API de Auth")
         viewModelScope.launch {
-            _uiState.value = ProfileUiState.Loading
+            if (_uiState.value is ProfileUiState.Success) {
+                _isRefreshing.value = true
+            } else {
+                _uiState.value = ProfileUiState.Loading
+            }
             // Bate na rota correta: api/v1/auth/users/me
             repository.getCurrentUser()
                 .onSuccess { user ->
                     Log.i("ProfileViewModel", "Perfil do usuário carregado com sucesso!")
                     _uiState.value = ProfileUiState.Success(user)
+                    _isRefreshing.value = false
                 }
                 .onFailure { error ->
                     Log.w("ProfileViewModel", "Falha ao obter dados do perfil logado:", error)
                     _uiState.value = ProfileUiState.Error(error.message ?: "Erro desconhecido ao carregar perfil")
+                    _isRefreshing.value = false
                 }
+        }
+    }
+
+    fun logout(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            repository.logout()
+            onSuccess()
         }
     }
 

@@ -1,1 +1,1 @@
-export * from '../allow/types';
+export * from '../allow/types/allow.index';

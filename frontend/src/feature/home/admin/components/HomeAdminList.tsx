@@ -35,7 +35,7 @@ export const HomeAdminList: React.FC<HomeAdminListProps> = ({
 
   const carouselColumns: Column<CarouselResponse>[] = [
     {
-      key: 'image_url',
+      key: 'desktop_image_url',
       label: 'Preview',
       render: (url: string) => {
         // Resolvemos o caminho da imagem de forma segura antes de passar para a tag img

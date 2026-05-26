@@ -28,7 +28,8 @@ export interface CarouselContent {
   id: string;
   title: string;
   subtitle?: string | null;
-  image_url: string;
+  desktop_image_url: string;
+  mobile_image_url: string;
   action_url?: string | null;
   order: number;
   section: CarouselSection;

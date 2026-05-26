@@ -1,5 +1,5 @@
 import React from 'react';
-import type { HowItWorksStep } from '../../types';
+import type { HowItWorksStep } from '../../types/allow.index';
 import styles from './HowItWorks.module.scss';
 // Importamos ícones do Lucide já presentes no projeto
 import { Cpu, CloudUpload, BarChart3 } from 'lucide-react';
