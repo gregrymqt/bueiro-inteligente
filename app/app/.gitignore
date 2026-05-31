@@ -1,2 +1,4 @@
 /build
 google-services.json
+!gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
