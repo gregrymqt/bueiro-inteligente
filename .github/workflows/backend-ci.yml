@@ -4,9 +4,17 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'backend/**'
+      - 'Tests/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: 
       - master 
+    paths:
+      - 'backend/**'
+      - 'Tests/**'
+      - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
 
 jobs:
@@ -54,4 +62,4 @@ jobs:
     steps:
       - name: Disparar Hook de Deploy
         run: |
-          curl -f ${{ secrets.RENDER_DEPLOY_HOOK_URL }}      
+          curl -f ${{ secrets.RENDER_DEPLOY_HOOK_URL }}

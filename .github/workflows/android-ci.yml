@@ -1,0 +1,40 @@
+name: Android CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'app/**'
+      - '.github/workflows/android-ci.yml'
+  pull_request:
+    branches: 
+      - master 
+    paths:
+      - 'app/**'
+      - '.github/workflows/android-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  testes-android:
+    name: Testes Unitários Kotlin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle' # Cache automático para não baixar as dependências do build.gradle toda vez
+
+      - name: Dar permissão de execução ao Gradle
+        run: chmod +x app/gradlew
+
+      - name: Executar Testes Unitários
+        run: |
+          cd app
+          ./gradlew testDebugUnitTest --no-daemon
