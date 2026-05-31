@@ -1,18 +1,19 @@
 using System.Globalization;
 using backend.Core;
 using backend.Features.Drains.Domain.Entities;
-using backend.Features.Notifications.Application.Interfaces;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Users.Domain.Entities;
 using backend.Features.Users.Domain.Interfaces;
 using backend.Infrastructure.Persistence;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
+using backend.Features.Notifications.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection; // Obrigatório para acessar a injeção de dependência manual (IServiceScopeFactory)
 
-namespace backend.Features.Notifications.Application.Services;
+namespace backend.Features.Auth.Application.Services;
 
 public sealed class PushNotificationService(
-    IUserDeviceRepository userDeviceRepository,
-    IUnitOfWork unitOfWork,
+    IServiceScopeFactory scopeFactory, // 1. Injetamos apenas a Fábrica de Escopos e o Logger no construtor principal
     ILogger<PushNotificationService> logger
 ) : IPushNotificationService
 {
@@ -20,6 +21,14 @@ public sealed class PushNotificationService(
     {
         if (userId == Guid.Empty) throw new LogicException("ID do usuário inválido.");
         if (string.IsNullOrWhiteSpace(fcmToken)) throw new LogicException("Token FCM não pode ser vazio.");
+
+        // 2. Criamos um escopo assíncrono. Isso garante que o repositório e o DbContext
+        // terão vida útil apenas dentro dessas chaves, evitando qualquer concorrência.
+        await using var scope = scopeFactory.CreateAsyncScope();
+        
+        // 3. Resolvemos as instâncias necessárias sob demanda
+        var userDeviceRepository = scope.ServiceProvider.GetRequiredService<IUserDeviceRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var existingDevice = await userDeviceRepository.GetByTokenAsync(fcmToken, ct).ConfigureAwait(false);
 
@@ -31,7 +40,6 @@ public sealed class PushNotificationService(
                 FcmToken = fcmToken
             };
 
-            // Usamos o UnitOfWork para garantir que a gravação seja transacionada corretamente
             await unitOfWork.ExecuteTransactionAsync(async transactionCt =>
             {
                 await userDeviceRepository.AddAsync(newDevice, transactionCt).ConfigureAwait(false);
@@ -45,6 +53,10 @@ public sealed class PushNotificationService(
     {
         try
         {
+            // 4. O segredo principal: escopo independente para a execução de background
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var userDeviceRepository = scope.ServiceProvider.GetRequiredService<IUserDeviceRepository>();
+
             var tokens = await userDeviceRepository.GetTokensByUserIdAsync(bueiro.UserId, ct).ConfigureAwait(false);
 
             if (tokens.Count == 0) return;

@@ -13,7 +13,7 @@ data class CarouselDTO(
     val id: String,
     val title: String,
     val subtitle: String?,
-    @SerializedName("image_url")
+    @SerializedName("mobile_image_url")
     val imageUrl: String,
     @SerializedName("action_url")
     val actionUrl: String?,

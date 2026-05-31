@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using backend.Core;
 using backend.extensions.Services.Realtime.Abstractions;
+using backend.Features.Auth.Application.Interfaces;
 using backend.Features.Drains.Domain.Entities;
 using backend.Features.Monitoring.Application.DTOs;
 using backend.Features.Monitoring.Application.Interfaces;

@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
+import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types/drain.index';
 import { useDrains } from './useDrains';
 
 const drainServiceMocks = vi.hoisted(() => {

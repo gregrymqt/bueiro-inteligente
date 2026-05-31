@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.Features.Uploads.Domain.Enums;
 
 namespace backend.Features.Uploads.Domain.Entities;
 
@@ -13,4 +14,5 @@ public class UploadModel
     public string Checksum { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DeviceType DeviceType { get; set; }
 }

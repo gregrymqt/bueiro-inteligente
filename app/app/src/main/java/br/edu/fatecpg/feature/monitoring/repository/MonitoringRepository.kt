@@ -32,8 +32,12 @@ class MonitoringRepository(
                 
                 Result.success(drains)
             } else {
-                // Tenta fallback para cache em caso de erro de rede, se desejar
-                Result.failure(responseResult.exceptionOrNull() ?: Exception("Unknown error"))
+                val cached = localCacheService.get<Array<DrainStatusDTO>>(ALL_DRAINS_CACHE_KEY)
+                if (cached != null) {
+                    Result.success(cached.toList())
+                } else {
+                    Result.failure(responseResult.exceptionOrNull() ?: Exception("Unknown error"))
+                }
             }
         }
     }

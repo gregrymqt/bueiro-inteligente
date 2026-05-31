@@ -37,7 +37,8 @@ const Home: React.FC = () => {
             id: '1',
             title: "Proteja sua cidade com Inteligência",
             subtitle: "Monitoramento de bueiros em tempo real com tecnologia ESP32.",
-            image_url: "/assets/hero-bg.jpg",
+            desktop_image_url: "/assets/hero-bg.jpg",
+            mobile_image_url: "/assets/hero-bg-mobile.jpg",
             section: 'hero',
             order: 1
           }} />

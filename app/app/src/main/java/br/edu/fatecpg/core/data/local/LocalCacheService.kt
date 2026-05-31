@@ -66,6 +66,9 @@ class LocalCacheService(
         }
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
+    suspend inline fun <reified T : Any> get(key: String): T? = get(key, typeOf<T>().javaType)
+
     suspend fun remove(key: String) {
         withContext(ioDispatcher) {
             try {

@@ -26,6 +26,7 @@ fun ProfileScreen(
     onLogoutClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val showLogoutDialog by viewModel.showLogoutDialog.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -41,7 +42,7 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.dismissLogoutConfirmation()
-                    onLogoutClick()
+                    viewModel.logout(onSuccess = onLogoutClick)
                 }) {
                     Text("Confirmar", color = MaterialTheme.colorScheme.error)
                 }
@@ -68,7 +69,11 @@ fun ProfileScreen(
             contentAlignment = Alignment.Center
         ) {
             when (val state = uiState) {
-                is ProfileUiState.Idle, is ProfileUiState.Loading -> {
+                is ProfileUiState.Idle -> {
+                    CircularProgressIndicator()
+                }
+                is ProfileUiState.Loading -> {
+                    // Se não houver dados carregados, mostra o indicador central
                     CircularProgressIndicator()
                 }
                 is ProfileUiState.Error -> {
@@ -92,7 +97,7 @@ fun ProfileScreen(
                 }
                 is ProfileUiState.Success -> {
                     PullToRefreshBox(
-                        isRefreshing = false, // O estado de loading já é controlado pelo uiState
+                        isRefreshing = isRefreshing,
                         onRefresh = { viewModel.onAction(ProfileAction.LoadProfile) },
                         state = rememberPullToRefreshState(),
                         modifier = Modifier.fillMaxSize()

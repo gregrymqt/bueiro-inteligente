@@ -5,7 +5,8 @@ namespace backend.Features.Home.Domain.Entities;
 public sealed class CarouselModel(
     Guid id = default,
     string title = "",
-    Guid uploadId = default,
+    Guid desktopUploadId = default,
+    Guid mobileUploadId = default,
     CarouselSection section = CarouselSection.hero,
     string? subtitle = null,
     string? actionUrl = null,
@@ -18,9 +19,13 @@ public sealed class CarouselModel(
 
     public string? Subtitle { get; set; } = subtitle;
 
-    public required Guid UploadId { get; set; } = uploadId;
+    public required Guid DesktopUploadId { get; set; } = desktopUploadId;
 
-    public UploadModel? Upload { get; set; }
+    public UploadModel? DesktopUpload { get; set; }
+
+    public required Guid MobileUploadId { get; set; } = mobileUploadId;
+
+    public UploadModel? MobileUpload { get; set; }
 
     public string? ActionUrl { get; set; } = actionUrl;
 

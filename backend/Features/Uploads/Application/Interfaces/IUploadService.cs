@@ -7,6 +7,6 @@ public interface IUploadService
 {
     Task<UploadModel?> GetUploadByIdAsync(Guid id);
     Task<IEnumerable<UploadModel>> GetAllUploadsAsync();
-    Task<UploadModel> ProcessUploadAsync(IFormFile file);
+    Task<(UploadModel Desktop, UploadModel Mobile)> ProcessUploadAsync(IFormFile file);
     Task DeleteUploadAsync(Guid id);
 }

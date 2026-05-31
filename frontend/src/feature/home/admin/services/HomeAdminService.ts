@@ -6,7 +6,7 @@ import type {
   CarouselResponse, 
   StatCardSaveDto, 
   StatCardResponse,
-  UploadDto
+  UploadImagesDto
 } from "../types/homeAdmin.types";
 
 export class HomeAdminService {
@@ -17,10 +17,10 @@ export class HomeAdminService {
     return apiClient.get<HomeAdminResponse>(this.PUBLIC_API);
   }
 
-  public static async uploadImage(file: File): Promise<UploadDto> {
+  public static async uploadImage(file: File): Promise<UploadImagesDto> {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.postFile<UploadDto>('/api/v1/uploads', formData);
+    return apiClient.postFile<UploadImagesDto>('/api/v1/uploads', formData);
   }
 
   // --- Operações de Carousel ---

@@ -35,7 +35,8 @@ public sealed class HomeRepository(
         try
         {
             return await dbContext.HomeCarousels.AsNoTracking()
-                .Include(c => c.Upload)
+                .Include(c => c.DesktopUpload)
+                .Include(c => c.MobileUpload)
                 .OrderBy(c => c.Order)
                 .ThenBy(c => c.Id)
                 .ToListAsync(ct)
@@ -57,7 +58,8 @@ public sealed class HomeRepository(
         try
         {
             return await dbContext.HomeCarousels.AsNoTracking()
-                .Include(c => c.Upload)
+                .Include(c => c.DesktopUpload)
+                .Include(c => c.MobileUpload)
                 .FirstOrDefaultAsync(c => c.Id == id, ct)
                 .ConfigureAwait(false);
         }
@@ -105,7 +107,8 @@ public sealed class HomeRepository(
         {
             // Proteção estrita: Desassocia a entidade de navegação para impedir que o EF Core
             // tente efetuar o rastreamento ou o update indevido da tabela de ficheiros associada.
-            c.Upload = null;
+            c.DesktopUpload = null;
+            c.MobileUpload = null;
             dbContext.HomeCarousels.Update(c);
 
             return c;

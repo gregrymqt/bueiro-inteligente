@@ -83,6 +83,12 @@ public sealed class AppIdMiddleware
 
         string path = request.Path.Value ?? string.Empty;
 
+        // 💡 SOLUÇÃO: Se a requisição for direcionada ao Hub do SignalR, faz o bypass do Header
+        if (path.StartsWith("/realtime/ws", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         return ExcludedPaths.Any(segments =>
             string.Equals(segments, "/", StringComparison.Ordinal)
                 ? string.Equals(path, "/", StringComparison.OrdinalIgnoreCase)

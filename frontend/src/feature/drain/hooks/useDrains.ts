@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertService } from '@/core/alert/AlertService';
 import { DrainService } from '../services/DrainService';
-import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
+import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types/drain.index';
 
 const USE_DRAIN_ADMIN_MOCK = false;
 

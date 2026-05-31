@@ -32,16 +32,25 @@ class RealtimeWebSocketClient(
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val RECORD_SEPARATOR = "\u001e"
 
-    private val _drainStatusFlow = MutableSharedFlow<DrainStatusDTO>()
+    private val _drainStatusFlow = MutableSharedFlow<DrainStatusDTO>(
+        replay = 1,
+        extraBufferCapacity = 64
+    )
     val drainStatusFlow: SharedFlow<DrainStatusDTO> = _drainStatusFlow.asSharedFlow()
 
     private val _connectionErrorFlow = MutableSharedFlow<String?>()
     val connectionErrorFlow: SharedFlow<String?> = _connectionErrorFlow.asSharedFlow()
 
     fun connect(token: String?) {
-        try {
-            val requestBuilder = Request.Builder().url(baseUrl)
+        if (webSocket != null) {
+            Log.d("RealtimeWebSocketClient", "Conexão WebSocket já está ativa. Ignorando novo pedido.")
+            return
+        }
 
+        try {
+            val requestBuilder = Request.Builder()
+                .url(baseUrl)
+                .addHeader("X-App-Id", "bueiro_inteligente_mobile_key")
             if (!token.isNullOrEmpty()) {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
@@ -166,6 +175,7 @@ class RealtimeWebSocketClient(
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             Log.e("DrainWebSocketListener", "Queda de conexao WebSocket detectada. Code: ${response?.code}", t)
+            this@RealtimeWebSocketClient.webSocket = null
             coroutineScope.launch {
                 try {
                     _connectionErrorFlow.emit("Falha na conexao de tempo real. Tentando reconectar...")
@@ -173,6 +183,11 @@ class RealtimeWebSocketClient(
                     Log.e("DrainWebSocketListener", "Erro ao notificar erro de conexao", e)
                 }
             }
+        }
+
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            Log.i("DrainWebSocketListener", "Conexão WebSocket fechada: $code / $reason")
+            this@RealtimeWebSocketClient.webSocket = null
         }
     }
 

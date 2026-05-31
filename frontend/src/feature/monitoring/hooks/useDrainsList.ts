@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertService } from '@/core/alert/AlertService';
-import type { Drain } from '@/feature/drain/types';
+import type { Drain } from '@/feature/drain/types/drain.index';
 import { DrainService } from '@/feature/drain/services/DrainService';
 
 export const useDrainsList = () => {

@@ -1,6 +1,5 @@
 package br.edu.fatecpg.feature.monitoring.ui
 
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,16 +11,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.text.style.TextAlign
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringUiState
 import br.edu.fatecpg.feature.monitoring.viewmodel.MonitoringViewModel
@@ -33,104 +31,96 @@ fun MonitoringScreen(
     isLoggedIn: Boolean,
     onNavigateToLogin: () -> Unit
 ) {
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
-        val expandedDrainId by viewModel.expandedDrainId.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
+    val expandedDrainId by viewModel.expandedDrainId.collectAsStateWithLifecycle()
 
-        Scaffold(
-            floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    viewModel.refreshDrains()
-                }) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Atualizar")
-                }
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                when (uiState) {
-                    is MonitoringUiState.Loading -> {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    }
-                    is MonitoringUiState.Success -> {
-                        val drains = (uiState as MonitoringUiState.Success).drains
-                        
-                        if (drains.isEmpty()) {
-                            Text(
-                                "Nenhum bueiro cadastrado no momento.",
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(
-                                    items = drains,
-                                    key = { drain -> drain.id }
-                                ) { drain ->
-                                    val isExpanded = expandedDrainId == drain.id
-                                    
-                                    DrainItemCard(
-                                        drain = drain,
-                                        isExpanded = isExpanded,
-                                        onClick = { viewModel.onDrainClick(isLoggedIn, drain) },
-                                        onOpenInMaps = { viewModel.openDrainInMaps(drain) }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is MonitoringUiState.Error -> {
-                        Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = (uiState as MonitoringUiState.Error).message,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                            Button(onClick = {
-                                viewModel.refreshDrains()
-                            }) {
-                                Text("Tentar Novamente")
-                            }
-                        }
-                    }
-                }
-
-                if (showLoginDialog) {
-                    AlertDialog(
-                        onDismissRequest = {
-                            viewModel.dismissLoginDialog()
-                        },
-                        title = { Text("Acesso Restrito") },
-                        text = { Text("Para ver a localização exata e detalhes do bueiro, é necessário estar logado.") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                viewModel.dismissLoginDialog()
-                                onNavigateToLogin()
-                            }) {
-                                Text("Fazer Login")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = {
-                                viewModel.dismissLoginDialog()
-                            }) {
-                                Text("Cancelar")
-                            }
-                        }
-                    )
-                }
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { viewModel.refreshDrains() }) {
+                Icon(imageVector = Icons.Default.Refresh, contentDescription = "Atualizar")
             }
         }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (val state = uiState) {
+                is MonitoringUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is MonitoringUiState.Success -> {
+                    if (state.drains.isEmpty()) {
+                        Text(
+                            text = "Nenhum bueiro cadastrado no momento.",
+                            modifier = Modifier.align(Alignment.Center),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Chave estável configurada com hardwareId para evitar recomposições desnecessárias da lista
+                            items(
+                                items = state.drains,
+                                key = { drain -> drain.hardwareId }
+                            ) { drain ->
+                                val isExpanded = expandedDrainId == (drain.id ?: drain.hardwareId)
+                                
+                                DrainItemCard(
+                                    drain = drain,
+                                    isExpanded = isExpanded,
+                                    onClick = { viewModel.onDrainClick(isLoggedIn, drain) },
+                                    onOpenInMaps = { viewModel.openDrainInMaps(drain) }
+                                )
+                            }
+                        }
+                    }
+                }
+                is MonitoringUiState.Error -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        Button(onClick = { viewModel.refreshDrains() }) {
+                            Text("Tentar Novamente")
+                        }
+                    }
+                }
+            }
+
+            if (showLoginDialog) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissLoginDialog() },
+                    title = { Text("Acesso Restrito") },
+                    text = { Text("Para ver a localização exata e detalhes do bueiro, é necessário estar logado.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.dismissLoginDialog()
+                            onNavigateToLogin()
+                        }) {
+                            Text("Fazer Login")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissLoginDialog() }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -156,30 +146,27 @@ fun DrainItemCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Reação direta à propriedade status do objeto drain
                 val statusColor = Color(MonitoringViewModel.getStatusColor(drain.status))
 
-                // Indicador de Status (Bolinha colorida)
                 Box(
                     modifier = Modifier
                         .size(16.dp)
-                        .background(
-                            color = statusColor,
-                            shape = CircleShape
-                        )
+                        .background(color = statusColor, shape = CircleShape)
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = drain.name,
+                        text = drain.name ?: "Bueiro Desconhecido",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = drain.address,
+                        text = drain.address ?: "Endereço não especificado",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
                 }
@@ -187,13 +174,18 @@ fun DrainItemCard(
 
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = Color.LightGray)
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp), 
+                    thickness = 0.5.dp, 
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
+                        // Exibição textual reagindo dinamicamente às propriedades do bueiro
                         Text(
                             text = "Status: ${drain.status ?: "Desconhecido"}",
                             fontSize = 14.sp,
@@ -202,12 +194,15 @@ fun DrainItemCard(
                         Text(
                             text = "Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
                             fontSize = 14.sp,
-                            color = if ((drain.nivelObstrucao ?: 0.0) > 70) MaterialTheme.colorScheme.error else Color.DarkGray
+                            color = if ((drain.nivelObstrucao ?: 0.0) > 70) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Distância: ${drain.distanciaCm?.toInt() ?: 0} cm",
                             fontSize = 14.sp,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
@@ -215,12 +210,12 @@ fun DrainItemCard(
                         Text(
                             text = "Última atualização:",
                             fontSize = 10.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = drain.ultimaAtualizacao ?: "--:--",
                             fontSize = 12.sp,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -230,7 +225,10 @@ fun DrainItemCard(
                 Button(
                     onClick = onOpenInMaps,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer, 
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 ) {
                     Icon(imageVector = Icons.Default.LocationOn, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -238,10 +236,11 @@ fun DrainItemCard(
                 }
             } else {
                 Spacer(modifier = Modifier.height(4.dp))
+                // Resumo também reage dinamicamente para atualizações em tempo real
                 Text(
                     text = "Status: ${drain.status ?: "Desconhecido"} • Obstrução: ${drain.nivelObstrucao?.toInt() ?: 0}%",
                     fontSize = 13.sp,
-                    color = Color.DarkGray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

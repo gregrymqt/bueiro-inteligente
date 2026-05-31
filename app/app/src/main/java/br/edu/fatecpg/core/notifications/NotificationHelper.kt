@@ -36,13 +36,13 @@ class NotificationHelper(private val context: Context) {
             
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_warning)
-                .setContentTitle("🚨 Risco de Enchente - ${drain.name}")
+                .setContentTitle("🚨 Risco de Enchente - ${drain.name ?: "Bueiro Desconhecido"}")
                 .setContentText("O bueiro atingiu ${drain.nivelObstrucao?.toInt() ?: 0}% de obstrução!")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
 
             // Usa o hashCode do ID para evitar que bueiros diferentes se sobrescrevam
-            val notificationId = drain.id.hashCode()
+            val notificationId = (drain.id ?: drain.hardwareId).hashCode()
             notificationManager.notify(notificationId, builder.build())
         } catch (e: Exception) {
             Log.e("NotificationHelper", "Erro ao disparar notificação", e)

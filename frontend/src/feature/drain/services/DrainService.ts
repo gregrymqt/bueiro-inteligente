@@ -1,5 +1,5 @@
 import { apiClient } from '@/core/http/ApiClient';
-import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types';
+import type { Drain, DrainCreatePayload, DrainUpdatePayload } from '../types/drain.index';
 import { createMockDrain, deleteMockDrain, getMockDrainById, getMockDrains, updateMockDrain } from '../mocks/drainMocks';
 
 export class DrainService {
