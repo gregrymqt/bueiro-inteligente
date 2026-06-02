@@ -89,7 +89,7 @@ fun AppNavigation(appContainer: AppContainer) {
             composable("login") {
                 Log.d("AppNavigation", "NavHost -> Criando LoginScreen")
                 val loginViewModel: LoginViewModel = viewModel(factory = appContainer.authViewModelFactory)
-
+        
                 LaunchedEffect(Unit) {
                     if (appContainer.tokenManager.getToken() != null) {
                         Log.i("AppNavigation", "Token encontrado. Redirecionando para home.")
