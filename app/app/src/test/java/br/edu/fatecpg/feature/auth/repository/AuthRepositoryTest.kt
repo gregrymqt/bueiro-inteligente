@@ -73,10 +73,10 @@ class AuthRepositoryTest {
     fun login_comFalhaNaRede_deveRetornarFailureComException() = runTest {
         // Arrange
         val request = LoginRequest(
-            email = "usuario@teste.com",
+            email = "usuario@teste.commmm",
             password = "Senha123!"
         )
-        val exception = RuntimeException("401 Unauthorized")
+        val exception = RuntimeException("200 Unauthorized")
         coEvery { authService.login(request) } returns Result.failure(exception)
 
         // Act
