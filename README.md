@@ -4,7 +4,7 @@ Ecossistema distribuído para monitoramento preventivo de bueiros urbanos, combi
 
 ## Visão Geral
 
-O projeto foi desenhado para receber leituras dos sensores, processar os dados no backend, persistir histórico, emitir eventos em tempo real e alimentar as interfaces web, mobile e embarcada.
+O projeto foi desenhado para receber leituras dos sensores, processar os dados no backend, persistir histórico, emitir eventos em tempo real e alimentar as interfaces web, mobile e embarcada. A telemetria do hardware (ESP32/ESP8266) pode passar opcionalmente pelo Node-RED ou por um broker MQTT (Mosquitto) antes de ser processada via HTTP e distribuída em tempo real via SignalR.
 
 ## Stack
 
@@ -12,7 +12,14 @@ O projeto foi desenhado para receber leituras dos sensores, processar os dados n
 - **Frontend Web:** React 19, Vite, TypeScript e SCSS.
 - **Mobile:** Android nativo em Kotlin, com minSdk 24.
 - **Hardware:** ESP32/ESP8266 em C++ com Arduino IDE.
-- **Infraestrutura:** Docker e Docker Compose.
+- **Infraestrutura:** Docker, Docker Compose, PostgreSQL, Redis e Mosquitto (Broker MQTT).
+
+### Integrações e Serviços de Terceiros
+- **Supabase:** Armazenamento de arquivos (Storage).
+- **Mercado Pago:** Pagamentos e gestão de assinaturas.
+- **Rows API:** Integração e exportação de dados para planilhas.
+- **Google OAuth & Firebase AdminSDK:** Autenticação unificada de usuários.
+- **Node-RED:** Roteamento e processamento opcional de telemetria de hardware antes de chegar ao backend.
 
 ## Estrutura do Repositório
 
@@ -26,7 +33,9 @@ O projeto foi desenhado para receber leituras dos sensores, processar os dados n
 
 ### 1. Configurar o ambiente
 
-Crie um arquivo [.env](.env) na raiz do repositório com as variáveis do projeto. O backend carrega esse arquivo automaticamente e o `docker-compose.yml` também injeta os valores no container.
+Crie um arquivo [.env](.env) na raiz do repositório baseado no `.env.example` com as variáveis do projeto. O backend carrega esse arquivo automaticamente e o `docker-compose.yml` também injeta os valores no container. 
+
+> **⚠️ Aviso:** Além das configurações de banco de dados, certifique-se de preencher as chaves das integrações externas (Mercado Pago, Supabase, Rows API, Google OAuth e Node-RED) para garantir o funcionamento completo das features da aplicação.
 
 ### 2. Subir backend, banco e Redis
 

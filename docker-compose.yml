@@ -48,6 +48,43 @@ services:
       - bueiro_net
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+        - VITE_WS_URL=${VITE_WS_URL}
+        - VITE_BACKEND_LOCAL=${VITE_BACKEND_LOCAL}
+        - VITE_WS_LOCAL=${VITE_WS_LOCAL}
+        - VITE_ENABLE_RATE_LIMIT=${VITE_ENABLE_RATE_LIMIT}
+        - VITE_APP_ID=${VITE_APP_ID}
+        - VITE_ROWS_EMBED_DASHBOARD_URL=${VITE_ROWS_EMBED_DASHBOARD_URL}
+        - VITE_ROWS_EMBED_TABLE_URL=${VITE_ROWS_EMBED_TABLE_URL}
+        - VITE_ANDROID_APP_DOWNLOAD_URL=${VITE_ANDROID_APP_DOWNLOAD_URL}
+        - VITE_MERCADO_PAGO_PUBLIC_KEY=${VITE_MERCADO_PAGO_PUBLIC_KEY}
+    container_name: bueiro_frontend
+    env_file:
+      - ./frontend/.env
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - VITE_WS_URL=${VITE_WS_URL}
+      - VITE_BACKEND_LOCAL=${VITE_BACKEND_LOCAL}
+      - VITE_WS_LOCAL=${VITE_WS_LOCAL}
+      - VITE_ENABLE_RATE_LIMIT=${VITE_ENABLE_RATE_LIMIT}
+      - VITE_APP_ID=${VITE_APP_ID}
+      - VITE_ROWS_EMBED_DASHBOARD_URL=${VITE_ROWS_EMBED_DASHBOARD_URL}
+      - VITE_ROWS_EMBED_TABLE_URL=${VITE_ROWS_EMBED_TABLE_URL}
+      - VITE_ANDROID_APP_DOWNLOAD_URL=${VITE_ANDROID_APP_DOWNLOAD_URL}
+      - VITE_MERCADO_PAGO_PUBLIC_KEY=${VITE_MERCADO_PAGO_PUBLIC_KEY}
+    ports:
+      - "5173:80" # Nginx escuta na 80 interna e expõe na 5173 externa
+    depends_on:
+      - backend
+    networks:
+      - bueiro_net
+    restart: unless-stopped
+
   db:
     image: postgres:15-alpine
     container_name: bueiro_db
@@ -80,8 +117,8 @@ services:
     image: eclipse-mosquitto:2.0
     container_name: bueiro_mosquitto
     ports:
-      - "1883:1883" # Porta padrão MQTT
-      - "9001:9001" # Websockets (opcional)
+      - "1883:1883"
+      - "9001:9001"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
@@ -94,7 +131,6 @@ services:
     image: nodered/node-red:latest
     container_name: bueiro_nodered
     environment:
-      # Puxa o valor do seu .env raiz e injeta no ambiente do Node-RED
       - HARDWARE_TOKEN=${HARDWARE__TOKEN} 
     ports:
       - "1880:1880"
@@ -113,4 +149,4 @@ networks:
 
 volumes:
   postgres_data:
-  nodered_data: 
+  nodered_data:
