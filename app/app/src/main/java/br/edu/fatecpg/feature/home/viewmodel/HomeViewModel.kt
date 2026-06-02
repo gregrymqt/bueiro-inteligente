@@ -13,11 +13,11 @@ import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
-// Estado reativo isolado para o conteúdo da Home
 sealed class HomeUiState {
     object Idle : HomeUiState()
     object Loading : HomeUiState()
@@ -25,6 +25,7 @@ sealed class HomeUiState {
     data class Error(val message: String) : HomeUiState()
 }
 
+@OptIn(FlowPreview::class)
 class HomeViewModel(
     private val realtimeRepository: RealtimeRepository,
     private val homeRepository: HomeRepository,

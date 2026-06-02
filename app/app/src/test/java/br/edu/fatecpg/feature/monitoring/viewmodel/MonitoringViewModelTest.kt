@@ -2,6 +2,7 @@ package br.edu.fatecpg.feature.monitoring.viewmodel
 
 import android.util.Log
 import br.edu.fatecpg.core.navigation.LocationHandler
+import br.edu.fatecpg.core.network.TokenManager
 import br.edu.fatecpg.feature.monitoring.dto.DrainStatusDTO
 import br.edu.fatecpg.feature.monitoring.repository.MonitoringRepository
 import br.edu.fatecpg.feature.realtime.repository.RealtimeRepository
@@ -35,12 +36,14 @@ class MonitoringViewModelTest {
     private val repository = mockk<MonitoringRepository>()
     private val locationHandler = mockk<LocationHandler>(relaxed = true)
     private val realtimeRepository = mockk<RealtimeRepository>(relaxed = true)
+    private val tokenManager = mockk<TokenManager>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockkStatic(Log::class)
         stubAndroidLog()
+        every { tokenManager.getToken() } returns "test-token"
     }
 
     @After
@@ -102,7 +105,7 @@ class MonitoringViewModelTest {
         assertEquals(drain.id, harness.viewModel.expandedDrainId.value)
         coVerify(exactly = 1) { repository.getAllDrains() }
         verify(exactly = 1) { realtimeRepository.alertas }
-        verify(exactly = 1) { realtimeRepository.joinDrain(drain.id) }
+        verify(exactly = 1) { realtimeRepository.joinDrain(requireNotNull(drain.hardwareId)) }
         verify(exactly = 0) { realtimeRepository.leaveDrain(any()) }
         confirmVerified(repository, locationHandler, realtimeRepository)
     }
@@ -125,8 +128,8 @@ class MonitoringViewModelTest {
         assertEquals(null, harness.viewModel.expandedDrainId.value)
         coVerify(exactly = 1) { repository.getAllDrains() }
         verify(exactly = 1) { realtimeRepository.alertas }
-        verify(exactly = 1) { realtimeRepository.joinDrain(drain.id) }
-        verify(exactly = 1) { realtimeRepository.leaveDrain(drain.id) }
+        verify(exactly = 1) { realtimeRepository.joinDrain(requireNotNull(drain.hardwareId)) }
+        verify(exactly = 1) { realtimeRepository.leaveDrain(requireNotNull(drain.hardwareId)) }
         confirmVerified(repository, locationHandler, realtimeRepository)
     }
 
@@ -158,7 +161,7 @@ class MonitoringViewModelTest {
         assertEquals(expandedDrain.id, harness.viewModel.expandedDrainId.value)
         coVerify(exactly = 1) { repository.getAllDrains() }
         verify(exactly = 1) { realtimeRepository.alertas }
-        verify(exactly = 1) { realtimeRepository.joinDrain(expandedDrain.id) }
+        verify(exactly = 1) { realtimeRepository.joinDrain(requireNotNull(expandedDrain.hardwareId)) }
         verify(exactly = 0) { realtimeRepository.leaveDrain(any()) }
         confirmVerified(repository, locationHandler, realtimeRepository)
     }
@@ -176,7 +179,7 @@ class MonitoringViewModelTest {
 
         // Assert
         verify(exactly = 1) {
-            locationHandler.openLocation(drain.latitude!!, drain.longitude!!, drain.name)
+            locationHandler.openLocation(drain.latitude!!, drain.longitude!!, requireNotNull(drain.name))
         }
         coVerify(exactly = 1) { repository.getAllDrains() }
         verify(exactly = 1) { realtimeRepository.alertas }
@@ -197,8 +200,8 @@ class MonitoringViewModelTest {
         invokeOnCleared(harness.viewModel)
 
         // Assert
-        verify(exactly = 1) { realtimeRepository.joinDrain(drain.id) }
-        verify(exactly = 1) { realtimeRepository.leaveDrain(drain.id) }
+        verify(exactly = 1) { realtimeRepository.joinDrain(requireNotNull(drain.hardwareId)) }
+        verify(exactly = 1) { realtimeRepository.leaveDrain(requireNotNull(drain.hardwareId)) }
         coVerify(exactly = 1) { repository.getAllDrains() }
         verify(exactly = 1) { realtimeRepository.alertas }
         confirmVerified(repository, locationHandler, realtimeRepository)
@@ -213,7 +216,8 @@ class MonitoringViewModelTest {
             viewModel = MonitoringViewModel(
                 repository = repository,
                 locationHandler = locationHandler,
-                realtimeRepository = realtimeRepository
+                realtimeRepository = realtimeRepository,
+                tokenManager = tokenManager
             ),
             alertasFlow = alertasFlow
         )
